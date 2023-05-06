@@ -1,0 +1,55 @@
+Type      => TypeName
+TypeName  => identifier
+
+Block => "{" StatementList "}"
+
+StatementList => { Statement ";" }
+Declaration   => VarDecl
+TopLevelDecl  => Declaration | FunctionDecl
+
+VarDecl     => "var" VarSpec
+VarSpec     => identifier Type
+
+FunctionDecl => "func" FunctionName Signature FunctionBody
+FunctionName => identifier
+FunctionBody => Block
+
+Signature      => Parameters [ Result ]
+Result         => Type
+Parameters     => "(" [ ParameterList [ "," ] ] ")"
+ParameterList  => ParameterDecl { "," ParameterDecl }
+ParameterDecl  => identifier Type
+
+Operand     => Literal | OperandName | "(" Expression ")"
+Literal     => BasicLit
+BasicLit    => "int_lit" | "string_lit"
+OperandName => identifier
+PrimaryExpr => Operand | PrimaryExpr Arguments
+
+Arguments      => "(" [ ExpressionList [ "," ] ] ")"
+ExpressionList => Expression { "," Expression }
+
+Expression => UnaryExpr | Expression "binary_op" Expression
+UnaryExpr  => PrimaryExpr | "unary_op" UnaryExpr
+
+Statement => Declaration | SimpleStmt | ReturnStmt | BreakStmt | Block | IfStmt | ForStmt
+
+SimpleStmt => EmptyStmt | ExpressionStmt | Assignment
+
+EmptyStmt => empty
+
+ExpressionStmt => Expression
+
+Assignment => Expression "assign_op" Expression
+
+IfStmt => "if" Expression Block [ "else" IfStmt | "else" Block ]
+
+ForStmt => "for" [ Condition ] Block
+
+Condition => Expression
+
+ReturnStmt => "return" [ Expression ]
+
+BreakStmt => "break"
+
+SourceFile       => { TopLevelDecl ";" }

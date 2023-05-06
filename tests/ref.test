@@ -1,0 +1,8 @@
+Start => [{Rule}]
+Rule => [RULE ARROW Rules] BREAK
+Rules => RulesEl | RulesEl [OR] Rules
+RulesEl => EMPTY
+RulesEl => RULE
+RulesEl => TOK
+RulesEl => LOPT Rules ROPT
+RulesEl => LREP Rules RREP
