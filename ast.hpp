@@ -32,6 +32,11 @@ class ast {
         int _tok;
 };
 
+class ast_empty : public ast {
+    public:
+        ast_empty() : ast("empty", Tokens::EMPTY) {}
+};
+
 class lit : public ast {
     public:
         lit(int t, string lex) : ast("lit", t) {
@@ -67,7 +72,7 @@ class ast_el : public ast {
         }
 
         ast* get_ast() {return _in;}
-        void set_ast(ast* in) {_in = in;} 
+        ast* get_nxt() {return _nxt;}
 
         void addnext(ast* nxt) {
             if (_nxt != nullptr) {
@@ -153,12 +158,13 @@ class ast_or : public ast {
 
 class ast_rule : public ast {
     public:
-        ast_rule(ast* lhs, ast_el* rhs) : ast("rule-stmt", Tokens::P_RULE) {
+        ast_rule(ast* lhs, vector<ast*> rhs) : ast("rule-stmt", Tokens::P_RULE) {
             _lhs = lhs;
             _rhs = rhs;
-            add(_lhs);
-            add(_rhs);
         }
+
+        ast* get_lhs() {return _lhs;}
+        vector<ast*> get_rhs() {return _rhs;}
 
         virtual void print(int INDENT = 0) override {
             cout << string(4*(INDENT++), ' ')
@@ -167,15 +173,17 @@ class ast_rule : public ast {
                  << std::endl;
             cout << string(4*INDENT, ' ') 
                  << "left: " << std::endl;
-            _chlds[0]->print(INDENT+1);
+            _lhs->print(INDENT+1);
             cout << string(4*INDENT, ' ') 
                  << "right: " << std::endl;
-            _chlds[1]->print(INDENT+1);
+            for (auto x : _rhs) {
+                x->print(INDENT+1);
+            }
         }
 
     private:
         ast* _lhs;
-        ast_el* _rhs;
+        vector<ast*> _rhs;
 };
 
 /**
@@ -185,8 +193,7 @@ class ast_rule : public ast {
 class ast_in : public ast {
     public:
         ast_in(ast* in, Tokens op) : ast("closed-expr", op) {
-            _content = in;
-            add(_content);
+            add(in);
         }
 
         virtual void print(int INDENT = 0) {
@@ -197,9 +204,6 @@ class ast_in : public ast {
             for (int i = _chlds.size()-1; i >= 0; --i)
                 _chlds[i]->print(INDENT+1);
         }
-
-    private:
-        ast* _content;
 };
 
 /**

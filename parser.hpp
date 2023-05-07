@@ -67,7 +67,13 @@ class Parser {
             string ch = "cannot transitiion from " + string(tokname(t_tos)) + " with input " + string(tokname(t_cur));
             parse_err(ch.c_str());
         }
-        void print_root() {res_stack[0]->print();}
+        
+        void print_root() {
+            if (root == nullptr) {
+                parse_err("cannot view root before parsing\n");
+            } else root->print();
+        }
+        ast_rt* getroot() {return root;}
 
         int prime_table() {
             dict[make_pair<Tokens, Tokens>(P_START, ENDFILE)] = new vector<Tokens>({});
@@ -127,34 +133,40 @@ class Parser {
                         tail.push_back(apop());
 
                     switch(mytos->name()) {
-                        case Tokens::P_START:
+                        case Tokens::P_START: {
                             if (len == 0)
                                 head = new ast_rt();
                             else {
                                 head = (ast_rt*)tail[0];
                                 if (tail[1]->get_tok() > -1)
                                     head->add(tail[1]);
-                            } 
-                            break;
+                            } break;
+                        }
                         
-                        case Tokens::P_RULE:
+                        case Tokens::P_RULE: {
                             if (len == 1)
                                 head = new ast();
-                            else head = new ast_rule(tail[3], (ast_el*)tail[1]);
-                            break;
+                            else {
+                                vector<ast*> lst;
+                                ast_el* root = (ast_el*)tail[1];
+                                while (root != nullptr) {
+                                    lst.push_back(root->get_ast());
+                                    root = (ast_el*)root->get_nxt();
+                                } head = new ast_rule(tail[3], lst);
+                            } break;
+                        }
                         
                         case Tokens::P_RULES: {
                             if (tail[0]->get_type() == "or-stmt") {
-                                ast_or *myr = (ast_or*)tail[0];
+                                ast_or *myr = (ast_or*)((ast_el*)tail[0])->get_ast();
                                 myr->setleft(tail[1]);
-                                head = myr;
+                                head = tail[0];
                             }
                             else {
                                 ast_el *myr = (ast_el*)tail[1];
                                 myr->addnext(tail[0]);
                                 head = myr;
-                            }
-                            break;
+                            } break;
                         }
                         
                         case Tokens::P_RULES1: {
@@ -163,29 +175,29 @@ class Parser {
                             else
                             if (len == 3) {
                                 if (tail[0]->get_type() == "or-stmt") {
-                                    ast_or *myr = (ast_or*)tail[0];
+                                    ast_or *myr = (ast_or*)((ast_el*)tail[0])->get_ast();
                                     myr->setleft(tail[1]);
-                                    head = new ast_or(myr);
+                                    head = new ast_el(new ast_or(myr));
                                 }
                                 else {
                                     ast_el *myr = (ast_el*)tail[1];
                                     myr->addnext(tail[0]);
-                                    head = new ast_or(myr);
+                                    head = new ast_el(new ast_or(myr));
                                 }
-                            }
-                            else if (len == 2) {
+                            } 
+                            else 
+                            if (len == 2) {
                                 if (tail[0]->get_type() == "or-stmt") {
-                                    ast_or *myr = (ast_or*)tail[0];
+                                    ast_or *myr = (ast_or*)((ast_el*)tail[0])->get_ast();
                                     myr->setleft(tail[1]);
-                                    head = myr;
+                                    head = tail[0];
                                 }
                                 else {
                                     ast_el *myr = (ast_el*)tail[1];
                                     myr->addnext(tail[0]);
                                     head = myr;
                                 }
-                            }
-                            break;
+                            } break;
                         }
                         
                         case Tokens::P_RULES_EL: {
@@ -194,13 +206,13 @@ class Parser {
                             else {
                                 ast_el *myop = (ast_el*)tail[1];
                                 head = new ast_el(new ast_in(myop, (Tokens)myop->get_tok()));
-                            }
-                            break;
+                            } break;
                         }
 
-                        default: parse_err("invalid reduce symbol");
+                        default: 
+                            parse_err("invalid reduce symbol");
                     }
-
+                    
                     apush(head);
                 }
 
@@ -225,7 +237,9 @@ class Parser {
                     if (tos->name() == cur) {
                         tos = ppop();
                         if (cur != Tokens::ENDFILE) {
-                            apush(new lit(cur, sc->getlexeme()));
+                            if (tos->type() == "empty")
+                                apush(new ast_empty());
+                            else apush(new lit(cur, sc->getlexeme()));
                         }
                         cur = sc->lex();
                         free(tos);
@@ -233,6 +247,7 @@ class Parser {
                 }
             }
             
+            root = (ast_rt*)res_stack[0];
             return EXIT_SUCCESS;
         }
 
@@ -242,7 +257,7 @@ class Parser {
         ParseDict dict;
         vector<ast*> res_stack;
         vector<ParserItem*> pred_stack;
-        ast_rt *root;
+        ast_rt *root = nullptr;
 
 };
 

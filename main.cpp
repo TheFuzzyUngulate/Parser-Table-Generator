@@ -13,17 +13,17 @@
 #include "ast.hpp"
 #include "parseritems.hpp"
 
-vector<ast*> astlist_cpy(vector<ast*> orig) {
-    vector<ast*> cpy = {};
-    for (auto x : orig) {
-        ast* y = new ast(*x);
-        y->setchlds(vector<ast*>(x->getchlds()));
-        if (y->get_type() == "ast-el") {
-            ast_el* yptr = (ast_el*)y;
-            yptr->set_ast(new ast(*yptr->get_ast()));
+ast* tollist(vector<ast*> lst) {
+    if (lst.size() <= 0) {
+        cerr << "empty list given\n";
+        exit(-1);
+    }
+    ast_el *head = new ast_el(lst[0]);
+    for (int i = 1; i < lst.size(); ++i) {
+        if (head->get_nxt() == nullptr) {
+            head->addnext(lst[i]);
         }
-        cpy.push_back(y);
-    } return cpy;
+    } return head;
 }
 
 bool ast_op1(vector<ast_rule*> a) {
@@ -32,18 +32,50 @@ bool ast_op1(vector<ast_rule*> a) {
     // that is, A => {B} becomes A => B A1; A1 => B A1 | empty
     // return false if it is changed, so that 'simplify' can do an AND op on all 5 checks to comp
     bool ret = true;
+    vector<ast_rule*> cpy = {};
     for (auto el : a) {
         // check if there exists a semi-exp of token type '{'
         // if it exists, remove it
         // have to use loops, oopsie
         vector<ast*> st;
-        auto lhs = el->getchlds()[0];
-        auto rhs = el->getchlds()[1];
+        auto rhs = el->get_rhs();
+        auto lhs = (lit*)el->get_lhs();
+        bool found = false;
 
-        while (true) {
-            
+        for (int i = 0; i < rhs.size(); ++i) {
+            if (rhs[i]->get_type() == "closed-expr") {
+                auto new_tok = new lit(Tokens::RULE, lhs->get_lex() + "\'");
+
+                vector<ast*> rhs1(i);
+                std::copy_n(rhs.begin(), i, rhs1.begin());
+                rhs1.push_back(new_tok);
+                cpy.push_back(new ast_rule(lhs, rhs1));
+                cpy.back()->print();
+
+
+                ast_or *opt1;
+                vector<ast*> rhs2(rhs.size()-i-1);
+                if (rhs2.size() > 0) {
+                    std::copy_n(rhs.begin()+i+1, rhs.size()-i-1, rhs2.begin());
+                    opt1 = new ast_or(tollist(rhs2));
+                    rhs2.clear();
+                } else opt1 = new ast_or(new ast_el(new ast_empty()));
+                opt1->setleft(new ast_el(new_tok));
+                rhs[i]->getchlds().back()->print();
+                opt1->setleft(rhs[i]->getchlds()[0]);
+                cout << "we closed the pools?\n";
+                rhs2.push_back(opt1);
+                cpy.push_back(new ast_rule(new_tok, rhs2));
+                found = true;
+                cpy.back()->print();
+
+                break;
+            }
         }
+
+        if (!found) cpy.push_back(el);
     }
+
     return false;
 }
 
@@ -74,9 +106,12 @@ int main(int argc, char **argv) {
     Scanner *sc = new Scanner((std::fstream*)&myfile);
     Parser *par = new Parser(sc);
     par->parse();
-    par->print_root();
+    //par->print_root();
 
-    simplify((ast_rule*)par->apop()->getchlds()[0]);
+    vector<ast_rule*> cb1 = {};
+    for (auto x : par->getroot()->getchlds())
+        cb1.push_back((ast_rule*)x);
+    ast_op1(cb1);
 
     return EXIT_SUCCESS;
 }

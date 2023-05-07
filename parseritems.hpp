@@ -2,6 +2,7 @@
 #define PARSERITEMS_HPP
 #pragma once
 
+#include <map>
 using std::cout, std::cerr, std::string, std::vector, std::make_pair;
 
 class ParserItem {
