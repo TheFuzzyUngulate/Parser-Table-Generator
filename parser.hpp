@@ -6,6 +6,7 @@
 #include "scanner.hpp"
 #include "parseritems.hpp"
 #include "ast.hpp"
+#include "runutils.hpp"
 
 using std::cout, std::cerr, std::string, std::vector, std::make_pair;
 
@@ -120,7 +121,13 @@ class Parser {
 
             ParserItem *tos;
             int cur = sc->lex();
+            if (flags.SCANNER_TRACE)
+                cout << "first symbol: " 
+                     << tokname(cur) 
+                     << std::endl;
             while (!pred_stack.empty()) {
+                if (flags.PARSER_TRACE) 
+                    pprint();
                 tos = pred_stack.back();
                 if (tos->type() == "reduce") {
                     ParserRed *mytos = (ParserRed*)tos;
@@ -206,7 +213,8 @@ class Parser {
                             else {
                                 ast_el *myop = (ast_el*)tail[1];
                                 head = new ast_el(new ast_in(myop, (Tokens)myop->get_tok()));
-                            } break;
+                            } 
+                            break;
                         }
 
                         default: 
@@ -214,6 +222,8 @@ class Parser {
                     }
                     
                     apush(head);
+                    if (flags.PARSER_TRACE)
+                        aprint();
                 }
 
                 else
@@ -240,8 +250,14 @@ class Parser {
                             if (tos->type() == "empty")
                                 apush(new ast_empty());
                             else apush(new lit(cur, sc->getlexeme()));
+                            if (flags.PARSER_TRACE)
+                                aprint();
                         }
                         cur = sc->lex();
+                        if (flags.SCANNER_TRACE)
+                            cout << "next symbol: " 
+                                 << tokname(cur) 
+                                 << std::endl;
                         free(tos);
                     } else parse_unexpected_terminal_err((Tokens)tos->name(), (Tokens)cur);
                 }

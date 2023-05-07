@@ -12,6 +12,7 @@
 #include "parser.hpp"
 #include "ast.hpp"
 #include "parseritems.hpp"
+#include "runutils.hpp"
 
 ast* tollist(vector<ast*> lst) {
     if (lst.size() <= 0) {
@@ -42,16 +43,22 @@ bool ast_op1(vector<ast_rule*> a) {
         auto lhs = (lit*)el->get_lhs();
         bool found = false;
 
+        el->print();
+
         for (int i = 0; i < rhs.size(); ++i) {
             if (rhs[i]->get_type() == "closed-expr") {
+                auto rhsi = ((ast_el*)rhs[i])->get_ast();
+                cout << tokname(rhs[i]->get_tok()) << std::endl;
                 auto new_tok = new lit(Tokens::RULE, lhs->get_lex() + "\'");
+
+                cout << "checkpoint 1\n";
 
                 vector<ast*> rhs1(i);
                 std::copy_n(rhs.begin(), i, rhs1.begin());
                 rhs1.push_back(new_tok);
                 cpy.push_back(new ast_rule(lhs, rhs1));
-                cpy.back()->print();
-
+                
+                cout << "checkpoint 2\n";
 
                 ast_or *opt1;
                 vector<ast*> rhs2(rhs.size()-i-1);
@@ -60,14 +67,14 @@ bool ast_op1(vector<ast_rule*> a) {
                     opt1 = new ast_or(tollist(rhs2));
                     rhs2.clear();
                 } else opt1 = new ast_or(new ast_el(new ast_empty()));
+
+                cout << "checkpoint 3\n";
+                
                 opt1->setleft(new ast_el(new_tok));
-                rhs[i]->getchlds().back()->print();
-                opt1->setleft(rhs[i]->getchlds()[0]);
-                cout << "we closed the pools?\n";
+                opt1->setleft(rhsi->getchlds()[0]);
                 rhs2.push_back(opt1);
                 cpy.push_back(new ast_rule(new_tok, rhs2));
                 found = true;
-                cpy.back()->print();
 
                 break;
             }
@@ -75,6 +82,9 @@ bool ast_op1(vector<ast_rule*> a) {
 
         if (!found) cpy.push_back(el);
     }
+
+    for (auto x : cpy)
+        x->print();
 
     return false;
 }
@@ -91,22 +101,21 @@ vector<ast_rule*> simplify(ast_rule *ast) {
 }
 
 int main(int argc, char **argv) {
-    if (argc != 2) {
-        cerr << "Incorrect calling format\n";
-        exit(-1);
-    }
+
+    vector<string> arguments(argv, argv+argc);
+    string filename = handle_args(arguments, 3);
 
     std::ifstream myfile;
-    myfile.open(argv[1]);
+    myfile.open(filename);
     if (!myfile.is_open()) {
-        cerr << "File error\n";
-        exit(-1);
+        run_error("unable to open file");
     }
 
     Scanner *sc = new Scanner((std::fstream*)&myfile);
     Parser *par = new Parser(sc);
     par->parse();
-    //par->print_root();
+    if (flags.PRINT_PARSE_TREE)
+        par->print_root();
 
     vector<ast_rule*> cb1 = {};
     for (auto x : par->getroot()->getchlds())

@@ -9,6 +9,7 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include "runutils.hpp"
 
 using std::cout, std::cerr, std::string, std::vector, std::make_pair;
 
