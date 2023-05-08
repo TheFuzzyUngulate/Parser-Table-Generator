@@ -157,7 +157,7 @@ class Parser {
                                 vector<ast*> lst;
                                 ast_el* root = (ast_el*)tail[1];
                                 while (root != nullptr) {
-                                    lst.push_back(root->get_ast());
+                                    lst.push_back(root);
                                     root = (ast_el*)root->get_nxt();
                                 } head = new ast_rule(tail[3], lst);
                             } break;
@@ -168,6 +168,10 @@ class Parser {
                                 ast_or *myr = (ast_or*)((ast_el*)tail[0])->get_ast();
                                 myr->setleft(tail[1]);
                                 head = tail[0];
+                            }
+                            else
+                            if (tail[0]->get_tok() == -1) {
+                                head = tail[1];
                             }
                             else {
                                 ast_el *myr = (ast_el*)tail[1];
@@ -212,7 +216,7 @@ class Parser {
                                 head = new ast_el(tail[0]);
                             else {
                                 ast_el *myop = (ast_el*)tail[1];
-                                head = new ast_el(new ast_in(myop, (Tokens)myop->get_tok()));
+                                head = new ast_el(new ast_in(myop, (Tokens)tail[0]->get_tok()));
                             } 
                             break;
                         }

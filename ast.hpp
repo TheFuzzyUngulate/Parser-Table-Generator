@@ -82,7 +82,7 @@ class ast_el : public ast {
             
             ast_el* x;
             if (nxt->get_tok() != -1) {
-                if (nxt->get_type() == "ast-el") {
+                if (nxt->get_tok() == Tokens::P_RULES_EL) {
                     x = (ast_el*)nxt;
                     add(nxt);
                 }
@@ -95,7 +95,9 @@ class ast_el : public ast {
         }
 
         virtual void print(int INDENT = 0) override {
-            _in->print(INDENT);
+            cout << string(4*(INDENT), ' ')
+                 << _type << std::endl;
+            _in->print(INDENT+1);
             for (int i = 0; i < _chlds.size(); ++i)
                 _chlds[i]->print(INDENT);
         }

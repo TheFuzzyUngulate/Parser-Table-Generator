@@ -41,7 +41,7 @@ std::string handle_args(std::vector<std::string> args, int argcount) {
     
     for (auto str : args) {
         if (str == "-h") {
-            std::cout << "usage: scan [-t] [-d] infile\n"
+            std::cout << "usage: scan [-t] [-s] [-d] infile\n"
                       << "    infile:\tthe input file\n"
                       << "    -t:\t\tturn on parser trace\n"
                       << "    -s:\t\tturn on scanner trace\n"
