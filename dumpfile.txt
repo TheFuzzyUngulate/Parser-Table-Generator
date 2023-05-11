@@ -8,12 +8,13 @@
 #include "ast.hpp"
 #include "runutils.hpp"
 
-using std::cout, std::cerr, std::string, std::vector, std::make_pair, std::make_shared;
+using std::cout, std::cerr, std::string, std::vector, std::make_pair;
 
 class Parser {
     public:
         Parser(Scanner* scptr) {
             sc = scptr;
+            root = new ast_rt();
             prime_table();
         }
 
@@ -33,22 +34,30 @@ class Parser {
             }
         }
         // push into the ast stack
-        void ast_push(AST* a) {
-            res_stack.push_back(a);
+        int apush(ast a) {
+            true_res_stack.push_back(a);
+            res_stack.push_back(true_res_stack.size()-1);
+            return true_res_stack.size()-1;
+        }
+        void arepush(int index) {
+            res_stack.push_back(index);
         }
         // pop ast from the ast stack
-        AST* ast_pop() {
-            AST* a = res_stack.back();
-            res_stack.pop_back();
-            return a;
-        }
+        int apop() {int a = res_stack.back(); res_stack.pop_back(); return a;}
+        // get ast from the ast stack
+        ast* aget(int index) {return &true_res_stack[index];}
         // print ast stack
-        void ast_print() {
+        void aprint() {
             if (!res_stack.empty()) {
-                for (int k = (int)res_stack.size() - 1; k >= 0; --k) {
-                    cout << "val[" << k << "]: " 
-                         << res_stack[k]->getId()
-                         << std::endl;
+                for (int k = res_stack.size() - 1; k >= 0; --k) {
+                    if (aget(k)->get_tok() >= 0) {
+                        string nom = tokname(aget(k)->get_tok());
+                        cout << "val[" << k << "]: " 
+                             << aget(k)->get_type() 
+                             << ((aget(k)->get_type() == "lit") 
+                                ? string(", tok: ") + tokname(aget(k)->get_tok()) : "")
+                             << std::endl;
+                    } else cout << "aprint: empty stmt\n";
                 }
                 cout << std::endl;
             }
@@ -70,11 +79,11 @@ class Parser {
         }
         
         void print_root() {
-            if (!root) {
+            if (root == nullptr) {
                 parse_err("cannot view root before parsing\n");
             } else root->print();
         }
-        AST* getroot() {return root;}
+        ast_rt* getroot() {return root;}
 
         int prime_table() {
             dict[make_pair<Tokens, Tokens>(P_START, ENDFILE)] = new vector<Tokens>({});
@@ -125,114 +134,131 @@ class Parser {
                 cout << "first symbol: " 
                      << tokname(cur) 
                      << std::endl;
-
-            vector<AST> trash_pile = {};
-            
             while (!pred_stack.empty()) {
-                
                 if (flags.PARSER_TRACE) 
                     pprint();
                 tos = pred_stack.back();
-                
                 if (tos->type() == "reduce") {
                     ParserRed *mytos = (ParserRed*)tos;
                     tos = ppop();
                     int len = mytos->getarg_count();
                     
-                    AST* head;
-                    vector<AST*> tail;
+                    int head;
+                    vector<int> tail;
                     for (int i = 0; i < len; i++) {
-                        tail.push_back(ast_pop());
+                        tail.push_back(apop());
+                        cout << tail.back() << std::endl;
                     }
-                    
+
                     switch(mytos->name()) {
                         case Tokens::P_START: {
+                            cout << "wa dhinikum1\n";
                             if (len == 0)
-                                ast_push(new StartAST());
-                            else
-                            if (len == 2) {
-                                StartAST *start = (StartAST*)tail[0];
-                                if (tail[1]->getId() != "empty")
-                                    start->add(tail[1]);
-                                ast_push(tail[0]);
-                            }
-                            break;
+                                apush(ast_rt());
+                            else {
+                                auto t1 = aget(tail[1]);
+                                auto t0 = aget(tail[0]);
+                                if (t1->get_tok() > -1)
+                                    t0->add(t1);
+                                arepush(tail[0]);
+                            } break;
                         }
-
+                        
                         case Tokens::P_RULE: {
-                            if (len == 4)
-                                ast_push(new Rule((Literal*)tail[3], (RuleList*)tail[1]));
-                            else
+                            cout << "wa dhinikum2\n";
                             if (len == 1)
-                                ast_push(new EmptyAST());
-                            break;
+                                apush(ast());
+                            else {
+                                auto t3 = aget(tail[3]);
+                                auto t1 = aget(tail[1]);
+                                vector<ast*> lst;
+                                ast_el* root = (ast_el*)t1;
+                                while (root != nullptr) {
+                                    lst.push_back(root);
+                                    root = (ast_el*)root->get_nxt();
+                                } apush(ast_rule(t3, lst));
+                            } break;
                         }
                         
                         case Tokens::P_RULES: {
-                            auto x = (RuleList*)tail[0];
-                            if (x->isEmpty() || !x->curr_is_or_node()) {
-                                x->addChild(tail[1]);
-                                ast_push(tail[0]);
+                            cout << "wa dhinikum3\n";
+                            auto t0 = aget(tail[0]);
+                            auto t1 = aget(tail[1]);
+                            if (t0->get_type() == "or-stmt") {
+                                ast_or *myr = (ast_or*)((ast_el*)t0)->get_ast();
+                                myr->setleft(t1);
+                                arepush(tail[0]);
+                            }
+                            else
+                            if (t0->get_tok() == -1) {
+                                arepush(tail[1]);
                             }
                             else {
-                                auto b = (OrExpr*)x->last();
-                                b->addLeft(tail[1]);
-                                ast_push(tail[0]);
-                            }
-                            break;
+                                ast_el *myr = (ast_el*)t1;
+                                myr->addnext(t0);
+                                arepush(tail[1]);
+                            } break;
+                            cout << "wa dhinikum\n";
                         }
                         
                         case Tokens::P_RULES1: {
-                            if (len == 0) {
-                                ast_push(new RuleList());
-                            }
-                            else
-                            if (len == 2) {
-                                auto x = (RuleList*)tail[0];
-                                if (x->isEmpty() || !x->curr_is_or_node()) {
-                                    x->addChild(tail[1]);
-                                    ast_push(tail[0]);
-                                }
-                                else {
-                                    cout << "shogun rogun\n";
-                                    auto b = (OrExpr*)x->last();
-                                    b->addLeft(tail[1]);
-                                    ast_push(tail[0]);
-                                }
-                            }
+                            cout << "wa dhinikum4\n";
+                            auto t0 = aget(tail[0]);
+                            auto t1 = aget(tail[1]);
+                            cout << "wa dhinikum\n";
+                            if (len == 0)
+                               apush(ast());
                             else
                             if (len == 3) {
-                                auto x = (RuleList*)tail[0];
-                                if (x->isEmpty() || !x->curr_is_or_node()) {
-                                    x->addChild(tail[1]);
+                                cout << "wa dhinikum\n";
+                                if (t0->get_type() == "or-stmt") {
+                                    ast_or *myr = (ast_or*)((ast_el*)t0)->get_ast();
+                                    myr->setleft(t1);
+                                    auto x = apush(ast_or(t0));
+                                    apush(ast_el(new ast_or(myr)));
                                 }
                                 else {
-                                    auto b = (OrExpr*)x->last();
-                                    b->addLeft(tail[1]);
-                                } ast_push(new RuleList(new OrExpr(x)));
-                            }
-                            break;
+                                    ast_el *myr = (ast_el*)t1;
+                                    myr->addnext(t0);
+                                    apush(ast_el(new ast_or(myr)));
+                                }
+                            } 
+                            else 
+                            if (len == 2) {
+                                cout << "wa dhinikum\n";
+                                if (t0->get_type() == "or-stmt") {
+                                    ast_or *myr = (ast_or*)((ast_el*)t0)->get_ast();
+                                    myr->setleft(t1);
+                                    arepush(tail[0]);
+                                }
+                                else {
+                                    ast_el *myr = (ast_el*)t1;
+                                    myr->addnext(t0);
+                                    arepush(tail[1]);
+                                }
+                            } break;
                         }
                         
                         case Tokens::P_RULES_EL: {
+                            cout << "wa dhinikum5\n";
+                            auto t0 = aget(tail[0]);
+                            auto t1 = aget(tail[1]);
                             if (len == 1)
-                                ast_push(tail[0]);
+                                apush(ast_el(t0));
                             else {
-                                auto tok = ((Literal*)tail[0])->getToken();
-                                if (tok == Tokens::ROPT)
-                                    ast_push(new OptExpr((RuleList*)tail[1]));
-                                else
-                                    ast_push(new RepExpr((RuleList*)tail[1]));
-                            }
+                                ast_el *myop = (ast_el*)t1;
+                                auto x = apush(ast_in(myop, (Tokens)t0->get_tok()));
+                                apush(ast_el(aget(x)));
+                            } 
                             break;
                         }
-                        
-                        default:
+
+                        default: 
                             parse_err("invalid reduce symbol");
                     }
-
+                    
                     if (flags.PARSER_TRACE)
-                        ast_print();
+                        aprint();
                 }
 
                 else
@@ -245,10 +271,9 @@ class Parser {
                         auto x = dict[make_pair<Tokens, Tokens>((Tokens)tos->name(), (Tokens)cur)];
                         int len = x->size();
                         ppush(new ParserRed(tos->name(), len));
-                        if (len > 0) {
+                        if (len > 0)
                             for (int i = len - 1; i >= 0; i--)
                                 if (is_terminal((*x)[i])) ppush(new ParserTok((*x)[i])); else ppush(new ParserRule((*x)[i]));
-                        }
                         free(tos);         
                     }
                 }
@@ -258,10 +283,10 @@ class Parser {
                         tos = ppop();
                         if (cur != Tokens::ENDFILE) {
                             if (tos->type() == "empty")
-                                ast_push(new EmptyAST());
-                            else ast_push(new Literal(sc->getlexeme(), cur));
+                                apush(ast_empty());
+                            else apush(lit(cur, sc->getlexeme()));
                             if (flags.PARSER_TRACE)
-                                ast_print();
+                                aprint();
                         }
                         cur = sc->lex();
                         if (flags.SCANNER_TRACE)
@@ -273,7 +298,7 @@ class Parser {
                 }
             }
             
-            root = res_stack[0];
+            root = (ast_rt*)&true_res_stack[res_stack[0]];
             return EXIT_SUCCESS;
         }
 
@@ -281,10 +306,10 @@ class Parser {
     private:
         Scanner *sc;
         ParseDict dict;
-        vector<AST*> res_stack;
-        vector<AST> true_res_stack;
+        vector<int> res_stack;
+        vector<ast> true_res_stack;
         vector<ParserItem*> pred_stack;
-        AST* root;
+        ast_rt *root = nullptr;
 
 };
 

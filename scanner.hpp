@@ -91,6 +91,7 @@ class Scanner {
                         ch = get();
                         if (ch == '>') return Tokens::ARROW;
                         else scan_err("invalid token");
+                        break;
                     
                     case '\n':
                         lineno++;

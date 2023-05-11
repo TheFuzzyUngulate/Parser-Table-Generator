@@ -2,226 +2,176 @@
 #define AST_HPP
 #pragma once
 
-using std::cout, std::cerr, std::string, std::vector, std::make_pair;
+using std::cout, std::cerr, std::string, std::vector, std::make_pair, std::shared_ptr;
+//#define ASTPTR shared_ptr<AST>
+//#define RLISTPTR shared_ptr<RuleList>
+//#define LITPTR shared_ptr<Literal>
 
-class ast {
+
+class AST;
+class Literal;
+class StartAST;
+class RuleList;
+class Rule;
+class OrExpr;
+class ClosedExpr;
+    class OptExpr;
+    class RepExpr;
+class EmptyAST;
+
+class AST {
     public:
-        ast(string type = "ast", int t = -1) {
-            _type = type;
-            _tok = t;
+        AST() : _id("ast") {}
+        bool isEmpty() {return _id == "empty";}
+        string getId() {return _id;}
+        virtual void print(int INDENT = 0) {
+            cout << string(4*INDENT, ' ') << _id
+                 << (((int)_children.size() > 0) 
+                    ? ":" : "") << std::endl;
+            for (auto child : _children)
+                child->print(INDENT+1);
         }
+    protected:
+        string _id;
+        vector<AST*> _children;
+};
+
+class StartAST : public AST {
+    public:
+        StartAST() {_id = "start";}
+        void add(AST* a) {_children.push_back(a);}
+};
+
+class Literal : public AST {
+    public:
+        Literal(string name, int tok = -1) {
+            _id = "lit";
+            _name = name;
+            _tok = tok;
+        }
+        string getName() {return _name;}
+        int getToken() {return _tok;}
         virtual void print(int INDENT = 0) {
             cout << string(4*INDENT, ' ')
-                 << _type 
-                 << ((_tok != -1) 
-                    ? ", "+string(tokname(_tok)) 
-                    : "")
+                 << _id << ", \"" 
+                 << _name << "\""
                  << std::endl;
-            for (int i = _chlds.size()-1; i >= 0; --i)
-                _chlds[i]->print(INDENT+1);
         }
-        virtual string get_type() {return _type;}
-        int get_tok() {return _tok;}
-        virtual vector<ast*> getchlds() {return _chlds;}
-        virtual void setchlds(vector<ast*> ch) {_chlds = ch;}
-        virtual void add(ast* added) {_chlds.push_back(added);}
-
-    protected:
-        vector<ast*> _chlds;
-        string _type;
+    private:
+        string _name;
         int _tok;
 };
 
-class ast_empty : public ast {
+class RuleList : public AST {
     public:
-        ast_empty() : ast("empty", Tokens::EMPTY) {}
+        RuleList() {
+            _id = "list";
+        }
+        RuleList(AST* starter) {
+            _id = "list";
+            _children.push_back(starter);
+        }
+        vector<AST*> getChildren() {return _children;}
+        void addChild(AST* child) {
+            _children.push_back(child);
+        }
+        AST* at(int index) {return _children.at(index);}
+        AST* last() {return _children.back();}
+        AST* first() {return _children.at(0);}
+        bool isEmpty() {return _children.empty();}
+        bool curr_is_or_node() {return !isEmpty() && last()->getId() == "orstmt";}
+        virtual void print(int INDENT = 0) override {
+            for (auto child : _children)
+                child->print(INDENT);
+        }
 };
 
-class lit : public ast {
+class OrExpr : public AST {
     public:
-        lit(int t, string lex) : ast("lit", t) {
-            _lex = lex;
+        OrExpr(RuleList* arg1) {
+            _id = "orstmt";
+            _rhs = arg1;
+            _lhs = new RuleList();
         }
-
-        string get_lex() {return _lex;}
-
+        OrExpr(RuleList* arg1, RuleList* arg2) {
+            _id = "orstmt";
+            _lhs = arg1;
+            _rhs = arg2;
+        }
+        void addLeft(AST* a) {_lhs->addChild(a);}
+        void addRight(AST* a) {_rhs->addChild(a);}
         virtual void print(int INDENT = 0) override {
-            cout << string(4*INDENT, ' ')
-                 << _type 
-                 << ((_tok != -1) 
-                    ? ", "+string(tokname(_tok)) 
-                    : "")
-                 << ", [\"" << _lex << "\"]"
+            cout << string(4*INDENT, ' ') 
+                 << _id << ":" 
+                 << std::endl
+                 << string(4*(INDENT+1), ' ')
+                 << "left: "
                  << std::endl;
+            for (auto left : _lhs->getChildren())
+                left->print(INDENT+2);
+            cout << string(4*(INDENT+1), ' ')
+                 << "right: "
+                 << std::endl;
+            for (auto rght : _rhs->getChildren())
+                rght->print(INDENT+2);
         }
     private:
-        string _lex;
+        RuleList* _lhs;
+        RuleList* _rhs;
 };
 
-class ast_el : public ast {
+class Rule : public AST {
     public:
-        ast_el(ast *t) : ast("ast-el", Tokens::P_RULES_EL) {
-            _in = t;
+        Rule(Literal* ast1, RuleList* rlist1) {
+            _id = "rule";
+            _lhs = ast1;
+            _rhs = rlist1;
         }
-
-        virtual string get_type() override {
-            /*if (_in->get_type() == "ast-el") {
-                ast_el *k = (ast_el*)_in;
-                return _in->get_type();
-            } else*/ return _in->get_type();
-        }
-
-        ast* get_ast() {return _in;}
-        ast* get_nxt() {return _nxt;}
-
-        void addnext(ast* nxt) {
-            if (_nxt != nullptr) {
-                _nxt->addnext(nxt);
-                return;
-            }
-            
-            ast_el* x;
-            if (nxt->get_tok() != -1) {
-                if (nxt->get_tok() == Tokens::P_RULES_EL) {
-                    x = (ast_el*)nxt;
-                    add(nxt);
-                }
-                else {
-                    x = new ast_el(nxt);
-                    add(x);
-                }
-                _nxt = x;
-            }
-        }
-
         virtual void print(int INDENT = 0) override {
-            cout << string(4*(INDENT), ' ')
-                 << _type << std::endl;
+            cout << string(4*INDENT, ' ') 
+                 << "rule: "
+                 << _lhs->getName() << std::endl;
+            for (auto term : _rhs->getChildren())
+                term->print(INDENT+1);
+        }
+    private:
+        Literal* _lhs;
+        RuleList* _rhs;
+};
+
+class ClosedExpr : public AST {
+    public:
+        ClosedExpr(RuleList* inner) : _in(inner) {
+            _id = "closed-expr";
+        }
+        RuleList* getExpr() {return _in;}
+        virtual void print(int INDENT = 0) override {
+            cout << string(4*INDENT, ' ') 
+                 << _id << ":" 
+                 << std::endl;
             _in->print(INDENT+1);
-            for (int i = 0; i < _chlds.size(); ++i)
-                _chlds[i]->print(INDENT);
         }
-    private:
-        ast* _in = nullptr;
-        ast_el* _nxt = nullptr;
+    protected:
+        RuleList* _in;
 };
 
-class rulelist : public ast {
+class OptExpr : public ClosedExpr {
     public:
-        rulelist() : ast("rulelist") {}
-        void addnext(ast* next) {
-            add(next);
+        OptExpr(RuleList* inner) : ClosedExpr(inner) {
+            _id = "opt-expr";
         }
 };
 
-class ast_rt : public ast {
+class RepExpr : public ClosedExpr {
     public:
-        ast_rt() : ast("start", Tokens::P_START) {}
+        RepExpr(RuleList* inner) : ClosedExpr(inner) {
+            _id = "rep-expr";
+        }
 };
 
-class ast_or : public ast {
+class EmptyAST : public AST {
     public:
-        ast_or(ast* rhs, ast* lhs = nullptr) : ast("or-stmt", Tokens::BAR) {
-            _lhs = lhs;
-            _rhs = rhs;
-            add(_lhs);
-            add(_rhs);
-        }
-
-        void setleft(ast* lhs) {
-            if (_lhs == nullptr)
-                _chlds[0] = lhs;
-            else {
-                ast_el *myel = (ast_el*)lhs;
-                myel->addnext(_chlds[0]);
-                _chlds[0] = myel;
-            }
-            // ((ast_el*)_chlds[0])->addnext(lhs);
-            _lhs = _chlds[0];
-        }
-
-        virtual void print(int INDENT = 0) override {
-            cout << string(4*(INDENT++), ' ')
-                 << _type << ", " 
-                 << string(tokname(_tok))
-                 << std::endl;
-            cout << string(4*INDENT, ' ') 
-                 << "left: " << std::endl;
-            _chlds[0]->print(INDENT+1);
-            cout << string(4*INDENT, ' ') 
-                 << "right: " << std::endl;
-            _chlds[1]->print(INDENT+1);
-        }
-
-    private:
-        ast* _lhs;
-        ast* _rhs;
+        EmptyAST() {_id = "empty";}
 };
-
-class ast_rule : public ast {
-    public:
-        ast_rule(ast* lhs, vector<ast*> rhs) : ast("rule-stmt", Tokens::P_RULE) {
-            _lhs = lhs;
-            _rhs = rhs;
-        }
-
-        ast* get_lhs() {return _lhs;}
-        vector<ast*> get_rhs() {return _rhs;}
-
-        virtual void print(int INDENT = 0) override {
-            cout << string(4*(INDENT++), ' ')
-                 << _type << ", " 
-                 << string(tokname(_tok)) 
-                 << std::endl;
-            cout << string(4*INDENT, ' ') 
-                 << "left: " << std::endl;
-            _lhs->print(INDENT+1);
-            cout << string(4*INDENT, ' ') 
-                 << "right: " << std::endl;
-            for (auto x : _rhs) {
-                x->print(INDENT+1);
-            }
-        }
-
-    private:
-        ast* _lhs;
-        vector<ast*> _rhs;
-};
-
-/**
- * @brief Contains ast's of closed semi-expressions
- * 
- */
-class ast_in : public ast {
-    public:
-        ast_in(ast* in, Tokens op) : ast("closed-expr", op) {
-            add(in);
-        }
-
-        virtual void print(int INDENT = 0) {
-            cout << string(4*INDENT, ' ')
-                 << _type << ", " 
-                 << string(tokname(_tok))
-                 << std::endl;
-            for (int i = _chlds.size()-1; i >= 0; --i)
-                _chlds[i]->print(INDENT+1);
-        }
-};
-
-/**
- * @brief Helper function for comparing asts
- * 
- */
-bool is_eq(ast* n1, ast* n2) {
-    if (n1->get_type() != n2->get_type()) return false;
-    if (n1->get_tok() != n2->get_tok()) {cout << "token mismatch\n";return false;}
-    
-    auto x = n1->getchlds();
-    auto y = n2->getchlds();
-    if (x.size() != y.size()) {cout << "children size mismatch\n";return false;}
-    for (int i = 0; i < x.size(); ++i)
-        if (!is_eq(x[i], y[i])) {cout << "child mismatch, see above\n";return false;}
-    return true;
-}
 
 #endif 

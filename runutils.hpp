@@ -31,9 +31,9 @@ void run_error(const char* ch) {
 std::string handle_args(std::vector<std::string> args, int argcount) {
     std::string ret = "";
 
-    if (args.size() == 0)
+    if ((int)args.size() == 0)
         run_error("insufficient arguments");
-    if (args.size() > argcount + 1)
+    if ((int)args.size() > argcount + 1)
         run_error("too many arguments");
 
     std::string fname = args[0];
