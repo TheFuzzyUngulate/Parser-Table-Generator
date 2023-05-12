@@ -65,15 +65,20 @@ std::pair<bool, deque<AST*>> trans4(deque<AST*> start) {
                 not_changed = false;
                 deque<AST*> list1 = {};
                 list1.push_back(mynode);
-                list1.push_back(mylitr);
+                if (left.size() > 1 || right.size() > 1)
+                    list1.push_back(mylitr);
                 endlist.push_back(new Rule(litem, new RuleList(list1)));
 
                 deque<AST*> orleft = {};
                 deque<AST*> oright = {};
                 orleft.insert(orleft.begin(), left.begin()+1, left.end());
                 oright.insert(oright.begin(), right.begin()+1, right.end());
-                auto orexpr = new OrExpr(new RuleList(orleft), new RuleList(oright));
-                endlist.push_back(new Rule(mylitr, new RuleList(orexpr)));
+                if (!orleft.empty() || !oright.empty()) {
+                    if (orleft.empty()) orleft.push_back(new EmptyAST());
+                    if (oright.empty()) oright.push_back(new EmptyAST());
+                    auto orexpr = new OrExpr(new RuleList(orleft), new RuleList(oright));
+                    endlist.push_back(new Rule(mylitr, new RuleList(orexpr)));
+                }
             }
             else endlist.push_back(rule);    
         }
@@ -213,23 +218,29 @@ std::pair<bool, deque<AST*>> trans1(deque<AST*> start) {
                 auto innerlist = inner->getChildren();
 
                 // S => A B S'
-                deque<AST*> list1 = {};
-                list1.insert(list1.end(), nodes.begin(), nodes.begin()+i);
-                list1.insert(list1.end(), innerlist.begin(), innerlist.end());
-                list1.push_back(mylitr);
-                endlist.push_back(new Rule(litem, new RuleList(list1)));
+                if (nodes.size() > 1) {
+                    deque<AST*> list1 = {};
+                    list1.insert(list1.end(), nodes.begin(), nodes.begin()+i);
+                    list1.insert(list1.end(), innerlist.begin(), innerlist.end());
+                    list1.push_back(mylitr);
+                    endlist.push_back(new Rule(litem, new RuleList(list1)));
+                }
 
                 // S' => B S' | C
                 deque<AST*> orleft = {};
                 deque<AST*> oright = {};
                 orleft.insert(orleft.begin(), innerlist.begin(), innerlist.end());
-                orleft.push_back(mylitr);
+                if (nodes.size() > 1)
+                    orleft.push_back(mylitr);
+                else orleft.push_back(litem);
                 oright.insert(oright.begin(), nodes.begin()+i+1, nodes.end());
                 if (oright.empty())
                     oright.push_back(new EmptyAST());
                 
                 auto orexpr = new OrExpr(new RuleList(orleft), new RuleList(oright));
-                endlist.push_back(new Rule(mylitr, new RuleList(orexpr)));
+                if (nodes.size() > 1)
+                    endlist.push_back(new Rule(mylitr, new RuleList(orexpr)));
+                else endlist.push_back(new Rule(litem, new RuleList(orexpr)));
 
                 // break
                 break;
@@ -272,7 +283,6 @@ deque<AST*> process_ast(StartAST* start) {
         }
         if (no_change)
             break;
-        cout << "continuing...\n";
     }
     return res_holder;
 }
