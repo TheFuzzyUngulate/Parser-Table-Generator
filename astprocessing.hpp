@@ -5,13 +5,6 @@
 #include "ast.hpp"
 #include "parser.hpp"
 
-/**
- * Note that all lists are in reverse order; all except the righthandside of an
- * or statement, which is in the correct order. I COULD rectify that, but it's a
- * waste of time, honestly. If it gets too unbearable, I'll do it. 
- **/
-//sdsds
-
 void processing_error(string err) {
     cerr << err << std::endl;
     exit(-1);
