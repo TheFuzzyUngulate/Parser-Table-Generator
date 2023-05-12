@@ -2,7 +2,13 @@
 #define AST_HPP
 #pragma once
 
-using std::cout, std::cerr, std::string, std::vector, std::make_pair, std::shared_ptr;
+using   std::cout, 
+        std::cerr, 
+        std::string, 
+        std::vector, 
+        std::make_pair, 
+        std::shared_ptr, 
+        std::deque;
 //#define ASTPTR shared_ptr<AST>
 //#define RLISTPTR shared_ptr<RuleList>
 //#define LITPTR shared_ptr<Literal>
@@ -33,19 +39,22 @@ class AST {
         }
     protected:
         string _id;
-        vector<AST*> _children;
+        deque<AST*> _children;
 };
 
 class StartAST : public AST {
     public:
         StartAST() {_id = "start";}
-        void add(AST* a) {_children.push_back(a);}
+        void add(AST* a) {
+            _children.push_front(a);
+        }
+        deque<AST*> getChildren() {return _children;}
 };
 
 class Literal : public AST {
     public:
         Literal(string name, int tok = -1) {
-            _id = "lit";
+            _id = (tok == Tokens::TOK) ? "tok" : "lit";
             _name = name;
             _tok = tok;
         }
@@ -71,9 +80,13 @@ class RuleList : public AST {
             _id = "list";
             _children.push_back(starter);
         }
-        vector<AST*> getChildren() {return _children;}
+        RuleList(deque<AST*> list) {
+            _id = "list";
+            _children = list;
+        }
+        deque<AST*> getChildren() {return _children;}
         void addChild(AST* child) {
-            _children.push_back(child);
+            _children.push_front(child);
         }
         AST* at(int index) {return _children.at(index);}
         AST* last() {return _children.back();}
@@ -100,6 +113,8 @@ class OrExpr : public AST {
         }
         void addLeft(AST* a) {_lhs->addChild(a);}
         void addRight(AST* a) {_rhs->addChild(a);}
+        RuleList* getLeft() {return _lhs;}
+        RuleList* getRight() {return _rhs;}
         virtual void print(int INDENT = 0) override {
             cout << string(4*INDENT, ' ') 
                  << _id << ":" 
@@ -134,6 +149,9 @@ class Rule : public AST {
             for (auto term : _rhs->getChildren())
                 term->print(INDENT+1);
         }
+        RuleList* getRight() {return _rhs;}
+        Literal* getLeft() {return _lhs;}
+
     private:
         Literal* _lhs;
         RuleList* _rhs;

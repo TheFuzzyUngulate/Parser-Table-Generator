@@ -1,0 +1,2 @@
+True => [{FALSE FALSE}] [{TRUE}] | TRUE
+False => [{FALSE TRUE | TRUE FALSE}] [{FALSE}] | FALSE

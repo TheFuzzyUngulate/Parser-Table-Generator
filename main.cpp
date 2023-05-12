@@ -8,12 +8,14 @@
 #include <utility>
 #include <algorithm>
 #include <memory>
+#include <deque>
 
 #include "scanner.hpp"
 #include "parser.hpp"
 #include "ast.hpp"
 #include "parseritems.hpp"
 #include "runutils.hpp"
+#include "astprocessing.hpp"
 
 int main(int argc, char **argv) {
 
@@ -31,6 +33,11 @@ int main(int argc, char **argv) {
     par->parse();
     if (flags.PRINT_PARSE_TREE)
         par->print_root();
+
+    auto root = par->getroot();
+    auto res = process_ast(root);
+    for (auto x : res)
+        x->print();
 
     return EXIT_SUCCESS;
 }

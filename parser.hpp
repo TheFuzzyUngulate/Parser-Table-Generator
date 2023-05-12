@@ -8,7 +8,13 @@
 #include "ast.hpp"
 #include "runutils.hpp"
 
-using std::cout, std::cerr, std::string, std::vector, std::make_pair, std::make_shared;
+using   std::cout, 
+        std::cerr, 
+        std::string, 
+        std::vector, 
+        std::make_pair, 
+        std::make_shared, 
+        std::deque;
 
 class Parser {
     public:
@@ -74,7 +80,7 @@ class Parser {
                 parse_err("cannot view root before parsing\n");
             } else root->print();
         }
-        AST* getroot() {return root;}
+        StartAST* getroot() {return root;}
 
         int prime_table() {
             dict[make_pair<Tokens, Tokens>(P_START, ENDFILE)] = new vector<Tokens>({});
@@ -194,7 +200,6 @@ class Parser {
                                     ast_push(tail[0]);
                                 }
                                 else {
-                                    cout << "shogun rogun\n";
                                     auto b = (OrExpr*)x->last();
                                     b->addLeft(tail[1]);
                                     ast_push(tail[0]);
@@ -273,7 +278,7 @@ class Parser {
                 }
             }
             
-            root = res_stack[0];
+            root = (StartAST*)res_stack[0];
             return EXIT_SUCCESS;
         }
 
@@ -284,7 +289,7 @@ class Parser {
         vector<AST*> res_stack;
         vector<AST> true_res_stack;
         vector<ParserItem*> pred_stack;
-        AST* root;
+        StartAST* root;
 
 };
 

@@ -1,0 +1,9 @@
+S => {Decl} Expr "."
+Decl => "let" Var "be" Val "."
+Expr => Term { OpA Term }
+Term => Fact { OpB Fact }
+Fact => "("Expr ")" | "-" Fact | Val
+OpA => "+" | "-"
+OpB => "*" | "/"
+Var => ID
+Val => ID | NUM | STRING
