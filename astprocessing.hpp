@@ -48,10 +48,8 @@ deque<AST*> trans6(deque<AST*> start) {
         Rule* rx = (Rule*)start[i];
         bool is_found = false;
         for (int j = 0; j < (int)start.size(); j++) {
-            if (i == j)
-                continue;
             Rule* ry = (Rule*)start[j];
-            if (rule_eq(ry, rx)) {
+            if (rule_eq(ry, rx) && i > j) {
                 is_found = true;
                 break;
             }
@@ -249,8 +247,6 @@ std::pair<bool, deque<AST*>> trans1(deque<AST*> start) {
 
         int i = 0;
         for (; i < nodes.size(); i++) {
-            // if something is {} or [], get it
-            // then, replace accordingly. we start with "{}"
             // S => A {B} C becomes S => A B S', S' => B S' | C
             // S => {B} has to be S => B S' and S' => B S' | empty
 

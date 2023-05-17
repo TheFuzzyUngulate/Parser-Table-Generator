@@ -47,7 +47,6 @@ class ASTHandle {
         void print() {
             cout << "handle at pos " << _pos << std::endl;
             _rule->print();
-            cout << std::endl;
         }
     private:
         Rule* _rule;
@@ -67,9 +66,9 @@ class HandleFinder {
         
         void exec() {
             int i = 0;
+            expand_state(states[0]);
             while (1) {
                 auto state = states[i++];
-                expand_state(state);
                 for (auto e : alphabet) {
                     AST_State y = {};
 
@@ -91,6 +90,9 @@ class HandleFinder {
                             y.push_back(b);
                         }
                     }
+
+                    // expand y state
+                    expand_state(y);
                     
                     // state existence search
                     //cout << "checking if state already exists...\n";
@@ -109,7 +111,7 @@ class HandleFinder {
                         }
                         if (eq_state) {
                             state_exists = true;
-                            old_state = i;
+                            old_state = g;
                             break;
                         }
                     }
@@ -181,7 +183,7 @@ class HandleFinder {
             cout << "printing states\n";
             for (int i = 0; i < states.size(); i++) {
                 cout << "state " << i << std::endl;
-                expand_state(states[i]);
+                //expand_state(states[i]);
                 for (auto d : states[i]) d.print();
                 cout << std::endl;
             }
