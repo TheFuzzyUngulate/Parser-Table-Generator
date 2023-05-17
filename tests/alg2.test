@@ -1,4 +1,4 @@
-S => {Decl} Expr "."
+Start => {Decl} Expr "."
 Decl => "let" Var "be" Val "."
 Expr => Term { OpA Term }
 Term => Fact { OpB Fact }

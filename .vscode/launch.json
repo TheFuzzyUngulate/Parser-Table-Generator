@@ -8,8 +8,8 @@
       "args": [],
       "stopAtEntry": false,
       "externalConsole": true,
-      "cwd": "d:/Projects/Parser Table Generator",
-      "program": "d:/Projects/Parser Table Generator/build/Debug/outDebug",
+      "cwd": "d:/Projects/Parser-Table-Generator",
+      "program": "d:/Projects/Parser-Table-Generator/build/Debug/outDebug",
       "MIMode": "gdb",
       "miDebuggerPath": "gdb",
       "setupCommands": [

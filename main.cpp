@@ -16,6 +16,7 @@
 #include "parseritems.hpp"
 #include "runutils.hpp"
 #include "astprocessing.hpp"
+#include "asthandles.hpp"
 
 int main(int argc, char **argv) {
 
@@ -35,9 +36,14 @@ int main(int argc, char **argv) {
         par->print_root();
 
     auto root = par->getroot();
-    auto res = process_ast(root);
-    for (auto x : res)
-        x->print();
+    auto res = process_ast_lalr1(root);
+    for (auto i : res) i->print();
+
+    // new handlefinder stuff
+    HandleFinder hfind = HandleFinder(res);
+    hfind.exec();
+    hfind.print_states();
+    hfind.print_transitions();
 
     return EXIT_SUCCESS;
 }

@@ -1,8 +1,8 @@
 Start => [{Rule}]
-Rule => [RULE ARROW Rules] BREAK
-Rules => RulesEl | RulesEl [OR] Rules
-RulesEl => EMPTY
-RulesEl => RULE
-RulesEl => TOK
-RulesEl => LOPT Rules ROPT
-RulesEl => LREP Rules RREP
+Rule => ["rule" "arrow" Rules] "break"
+Rules => RulesEl | RulesEl ["or"] Rules
+RulesEl => empty
+RulesEl => "rule"
+RulesEl => "tok"
+RulesEl => "lopt" Rules "ropt"
+RulesEl => "lrep" Rules "rrep"

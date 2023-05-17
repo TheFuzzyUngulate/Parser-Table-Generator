@@ -1,5 +1,5 @@
 Type      => TypeName
-TypeName  => identifier
+TypeName  => "identifier"
 
 Block => "{" StatementList "}"
 
@@ -8,22 +8,22 @@ Declaration   => VarDecl
 TopLevelDecl  => Declaration | FunctionDecl
 
 VarDecl     => "var" VarSpec
-VarSpec     => identifier Type
+VarSpec     => "identifier" Type
 
 FunctionDecl => "func" FunctionName Signature FunctionBody
-FunctionName => identifier
+FunctionName => "identifier"
 FunctionBody => Block
 
 Signature      => Parameters [ Result ]
 Result         => Type
 Parameters     => "(" [ ParameterList [ "," ] ] ")"
 ParameterList  => ParameterDecl { "," ParameterDecl }
-ParameterDecl  => identifier Type
+ParameterDecl  => "identifier" Type
 
 Operand     => Literal | OperandName | "(" Expression ")"
 Literal     => BasicLit
 BasicLit    => "int_lit" | "string_lit"
-OperandName => identifier
+OperandName => "identifier"
 PrimaryExpr => Operand | PrimaryExpr Arguments
 
 Arguments      => "(" [ ExpressionList [ "," ] ] ")"
@@ -52,4 +52,4 @@ ReturnStmt => "return" [ Expression ]
 
 BreakStmt => "break"
 
-SourceFile       => { TopLevelDecl ";" }
+Start       => { TopLevelDecl ";" }

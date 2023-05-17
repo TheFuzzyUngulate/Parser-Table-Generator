@@ -262,7 +262,7 @@ class Parser {
                     if (tos->name() == cur) {
                         tos = ppop();
                         if (cur != Tokens::ENDFILE) {
-                            if (tos->type() == "empty")
+                            if (cur == Tokens::EMPTY)
                                 ast_push(new EmptyAST());
                             else ast_push(new Literal(sc->getlexeme(), cur));
                             if (flags.PARSER_TRACE)
