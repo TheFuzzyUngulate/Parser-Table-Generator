@@ -1,0 +1,6 @@
+Start  => E
+E      => T T1
+T1     => "+" T T1
+T1     => empty
+T      => "a"
+T      => "b"

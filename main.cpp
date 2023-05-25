@@ -41,8 +41,7 @@ int main(int argc, char **argv) {
     // new handlefinder stuff
     HandleFinder hfind = HandleFinder(res);
     hfind.exec();
-    hfind.print_states();
-    hfind.print_transitions();
+    hfind.alt_grammar();
 
     return EXIT_SUCCESS;
 }

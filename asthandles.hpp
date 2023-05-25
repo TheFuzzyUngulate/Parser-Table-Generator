@@ -19,16 +19,26 @@ using std::cerr,
       std::map,
       std::pair;
 
+
+void handlefindingerror(std::string err) {
+    cout << "handle finding error: " << err << std::endl;
+    exit(-1);
+}
+
 class ASTHandle {
     public:
         ASTHandle(Rule* rule, int pos = 0) {
             _rule = rule;
-            _pos = pos;
+            auto rright = _rule->getRight()->getChildren();
+            bool cond = rright.size() == 1 && rright[0]->getId() == "empty";
+            _pos = cond ? rright.size() : pos;
+            if (cond) _isempt = true;
         }
         void bump() {
             auto r = _rule->getRight()->getChildren();
             if (_pos < r.size()) ++_pos;
         }
+        bool empty() {return _isempt;}
         bool closed() {
             auto r = _rule->getRight()->getChildren();
             return (int)r.size() == _pos;
@@ -51,8 +61,49 @@ class ASTHandle {
     private:
         Rule* _rule;
         int _pos;
+        bool _isempt = false;
 };
 typedef std::deque<ASTHandle> AST_State;
+
+class AltAST : public AST {
+    public:
+        AltAST(AST* ref, int state) {
+            _ref = ref;
+            _state = state;
+            _id = ref->getId();
+        }
+        int getState() {return _state;}
+        AST* getAST() {return _ref;}
+        virtual void print(int INDENT = 0) override {
+            cout << string(INDENT*4, ' ') << "#" << _state << ", ";
+            _ref->print();
+        }
+    private:
+        AST* _ref;
+        int _state;
+};
+
+class AltRule : public AST {
+    public:
+        AltRule(AltAST* ast1, RuleList* rlist1) {
+            _id = "rule";
+            _lhs = ast1;
+            _rhs = rlist1;
+        }
+        RuleList* getRight() {return _rhs;}
+        AltAST* getLeft() {return _lhs;}
+        virtual void print(int INDENT = 0) override {
+            cout << string(4*INDENT, ' ') 
+                 << "rule: ";
+            _lhs->print();
+            for (auto term : _rhs->getChildren())
+                term->print(INDENT+1);
+        }
+    
+    private:
+        AltAST* _lhs;
+        RuleList* _rhs;
+};
 
 class HandleFinder {
     public:
@@ -190,7 +241,90 @@ class HandleFinder {
             cout << std::endl;
         }
 
+        vector<int> backtrack_state(int result_state, string trigger_lit) {
+            // find int "A" such that (A, trigger_lit) = result_state
+            // so first, find all things whose result is result_state
+            // note that this presumes trigger_lit has the "#" delimiter when suitable
+            vector<int> res = {};
+            for (auto trans : transitions) {
+                if (trans.second == result_state && trans.first.second == trigger_lit) {
+                    res.push_back(trans.first.first);
+                }
+            } 
+            if (res.empty())
+                handlefindingerror("unsuccessful backtrack on " + trigger_lit + "  in state " + std::to_string(result_state));
+            return res;
+        }
+
+        void alt_grammar() {
+            if (states.size() <= 0) return;
+            vector<AltRule*> alt_rules;
+
+            // handle non-empties, then empties ig..
+            for (int i = 0; i < states.size(); i++) {
+                for (auto handle : states[i]) {
+                    if (!handle.closed()) continue;
+                    auto rule = handle.getRule();
+
+                    if (rule->getLeft()->getName() == "S*") continue;
+                    auto rightlist = rule->getRight()->getChildren();
+
+                    int cur_state = i;
+                    if (handle.empty()) {
+                        auto left = new AltAST(rule->getLeft(), i);
+                        alt_rules.push_back(new AltRule(left, rule->getRight()));
+                    }
+                    else {
+                        auto reslist = get_altgram_rhs(rightlist, cur_state);
+                        for (auto r : reslist) {
+                            int first = r.first;
+                            auto left = new AltAST(rule->getLeft(), first);
+                            alt_rules.push_back(new AltRule(left, new RuleList(r.second)));
+                        }
+                    }
+                }
+            }
+
+            for (auto x : alt_rules) x->print();
+        }
+
     private:
+        vector<std::pair<int, deque<AST*>>> 
+        get_altgram_rhs(deque<AST*> rhs, int cur_state) {
+            // create returning vector
+            vector<std::pair<int, deque<AST*>>> res_vec = {};
+            // get last item in rhs (last)
+            if (rhs.empty()) {
+                std::deque<AST*> ro = {};
+                res_vec.push_back(std::make_pair(cur_state, ro));
+                return res_vec;
+            }
+            auto item_lst = (Literal*)rhs.back();
+            // create the string for it (curstr)
+            auto curstr = ((item_lst->getId() == "tok") ? "#" : "") + item_lst->getName();
+            // get all possible states "x" such that (x, curstr) => cur_state
+            auto state_lst = backtrack_state(cur_state, curstr);
+            // for each possible "x":
+            for (auto x : state_lst) {
+                // recurse on (rhs.pop(), x)
+                deque<AST*> popped_rhs(rhs.begin(), rhs.end()-1);
+                auto curret = get_altgram_rhs(popped_rhs, x);
+                // push back strings curstr + to_string(x)
+                if (curret.empty()) {
+                    std::deque<AST*> ro = {};
+                    res_vec.push_back(std::make_pair(x, ro));
+                }
+                else
+                for (auto y : curret) {
+                    //y.second.push_back(new Literal(item_lst->getName() + std::to_string(x), item_lst->getToken()));
+                    y.second.push_back(new AltAST(item_lst, x));
+                    res_vec.push_back(y);
+                }
+            }
+            // return value
+            return res_vec;
+        }
+
         deque<AST*> _lst;
         vector<AST_State> states;
         HandleDict transitions;
