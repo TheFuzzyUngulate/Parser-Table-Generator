@@ -63,6 +63,7 @@ class ASTHandle {
         int _pos;
         bool _isempt = false;
 };
+
 typedef std::deque<ASTHandle> AST_State;
 
 class AltAST : public AST {
@@ -183,6 +184,9 @@ class HandleFinder {
                 if (i == states.size())
                     break;
             }
+
+            print_states();
+            print_transitions();
         }
 
         void expand_state(AST_State &state) {
@@ -285,7 +289,7 @@ class HandleFinder {
                 }
             }
 
-            for (auto x : alt_rules) x->print();
+            alt_grammar_list = alt_rules;
         }
 
     private:
@@ -326,8 +330,9 @@ class HandleFinder {
         }
 
         deque<AST*> _lst;
-        vector<AST_State> states;
         HandleDict transitions;
+        vector<AST_State> states;
+        vector<AltRule*> alt_grammar_list;
 };
 
 

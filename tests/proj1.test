@@ -1,0 +1,12 @@
+Start => MathDecl [{"newline" MathDecl}] "eof"
+MathDecl => ["let" "ID" ":" "ID" "="] OptExpr
+OptExpr => BoolExpr [{"if" BoolExpr "else"}]
+BoolExpr => CompExpr {["&" CompExpr | "|" CompExpr]}
+CompExpr => Express1 {[">" Express1 | "<" Express1 | "=" Express1 | "<=" Express1 | ">=" Express1]}
+Express1 => Express2 [{"+" Express2 | "-" Express2}]
+Express2 => BotmExpr [{"*" BotmExpr | "/" BotmExpr}]
+BotmExpr => "(" BoolExpr ")" | "-" BotmExpr | "~" BotmExpr | ListExpr | TupleExpr | "NUM" | "ID" | "STRING"
+ListExpr => "[" LstComma "]"
+LstComma => BoolExpr [":" ListExpr | {"," BoolExpr}]
+TupleExpr => "(" TplComma ")"
+TplComma => BoolExpr [{"," BoolExpr}]
