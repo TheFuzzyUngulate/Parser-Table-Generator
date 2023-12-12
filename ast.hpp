@@ -37,6 +37,15 @@ class AST {
             for (auto child : _children)
                 child->print(INDENT+1);
         }
+        virtual deque<AST*> getChildren() {return _children;}
+        virtual bool operator==(AST* o) {
+            if (_id != o->getId()) return false;
+            auto o_children = o->getChildren();
+            if (_children.size() != o_children.size()) return false;
+            for (int i = 0; i < _children.size(); ++i)
+                if (!(_children[i] == o_children[i])) return false;
+            return true;
+        }
     protected:
         string _id;
         deque<AST*> _children;
@@ -60,6 +69,11 @@ class Literal : public AST {
         }
         string getName() {return _name;}
         int getToken() {return _tok;}
+        bool operator==(AST* o) override {
+            if (_id != o->getId()) return false;
+            auto t_o = (Literal*)o;
+            return (_id == o->getId() && _name == t_o->getName());
+        }
         virtual void print(int INDENT = 0) {
             cout << string(4*INDENT, ' ')
                  << _id << ", \"" 

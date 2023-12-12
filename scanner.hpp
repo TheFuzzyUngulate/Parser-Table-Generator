@@ -129,11 +129,11 @@ class Scanner {
         }
 
     private:
-        std::fstream *file;
-        string lexeme;
-        int lineno = 1;
-        bool reached_end = false;
-        vector<char> unget_list;
+        std::fstream *file;                         // A file containing rules
+        string lexeme;                              // String content ("lexeme") of tokens like TOK and RULE
+        int lineno = 1;                             // Current line number
+        bool reached_end = false;                   // Boolean used to ensure EOF has a break inside of it
+        vector<char> unget_list;                    // Vector storing unget characters for parser convenience
 };
 
 #endif

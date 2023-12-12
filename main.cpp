@@ -41,7 +41,7 @@ int main(int argc, char **argv) {
     // new handlefinder stuff
     HandleFinder hfind = HandleFinder(res);
     hfind.exec();
-    hfind.alt_grammar();
+    hfind.generate_table();
 
     return EXIT_SUCCESS;
 }

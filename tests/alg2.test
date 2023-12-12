@@ -5,5 +5,5 @@ Term => Fact { OpB Fact }
 Fact => "("Expr ")" | "-" Fact | Val
 OpA => "+" | "-"
 OpB => "*" | "/"
-Var => ID
-Val => ID | NUM | STRING
+Var => "ID"
+Val => "ID" | "NUM" | "STRING"

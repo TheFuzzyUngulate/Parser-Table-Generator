@@ -11,8 +11,14 @@ void processing_error(string err) {
     exit(-1);
 }
 
+/**
+ * A list containing terminals, non-terminals, and empty symbols. By its convention:
+ *  1. Terminals are prefixed with the symbol "#"
+ *  2. Non-terminals are capitalized, and
+ *  3. The empty symbol is "empty"
+ */
 std::set<std::string> alphabet;
-std::set<std::string> nontermlist;
+std::set<std::string> nontermlist;                  // this is only used ONCE here, so idk what the fuck it's doing.
 
 void astproc_err(std::string err, int lineno = -1) {
     std::cerr << "processing error: "
