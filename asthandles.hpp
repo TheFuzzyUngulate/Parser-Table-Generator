@@ -560,6 +560,59 @@ class HandleFinder {
             }
 
             {
+                // create file for handling lists
+                auto file = std::ofstream();
+                file.open("p_list_type.h");
+                file << "#ifndef P_LIST_TYPE_H\n#define P_LIST_TYPE_H\n\n";
+                file << "#include <stdio.h>\n#include <stdlib.h>\n#include <unistd.h>\n\n";
+                file << "typedef struct List {\n\tint o_size;\n\tint o_count;\n\tvoid **o_ptr;\n\tint o_capacity;\n} P_LIST_TYPE;\n";
+                file << "P_LIST_TYPE P_LIST_INIT(unsigned int size);\n";
+                file << "void P_LIST_PUSH(P_LIST_TYPE *list, void *i);\n";
+                file << "void P_LIST_POP(P_LIST_TYPE *list, unsigned int count, void **buffer);\n";
+                file << "void *P_LIST_TOP(P_LIST_TYPE *list);\n";
+                file << "void p_list_error(const char* msg);\n\n";
+                file << "#endif";
+                file.close();
+                // create file for handling lists
+                file.open("p_list_type.c");
+                file << "#include \"p_list_type.h\"\n\n";
+                // init function
+                file << "P_LIST_TYPE P_LIST_INIT(unsigned int size) {\n";
+                file << "\tvoid **ptr = malloc(10 * sizeof(void*));\n";
+                file << "\tmemset(ptr, 0, 10 * sizeof(void*));\n";
+                file << "\tP_LIST_TYPE retstr = {size, 0, ptr, 10};\n";
+                file << "\treturn retstr;\n";
+                file << "}\n\n";
+                // error function
+                file << "void p_list_error(const char* msg) {\n";
+                file << "\tfprintf(stderr, \"p_list_error: %s\", msg);\n";
+                file << "\texit(-1);\n";
+                file << "}\n\n";
+                // push function
+                file << "void P_LIST_PUSH(P_LIST_TYPE *list, void *i) {\n";
+                file << "\tif (list->o_count < list->o_capacity)\n";
+                file << "\t\tlist->o_ptr[list->o_count++] = i;\n";
+                file << "\telse if (list->o_count == list->o_capacity) {\n";
+                file << "\t\tvoid **new = malloc(list->o_capacity * 2 * list->o_size);\n";
+                file << "\t\tfor (int i = 0; i < list->o_count; ++i)\n\t\t\tnew[i] = list->o_ptr[i];\n";
+                file << "\t\tfree(list->o_ptr);\n";
+                file << "\t\tlist->o_ptr = new;\n";
+                file << "\t\tlist->o_count++;\n";
+                file << "\t\tlist->o_capacity = list->o_capacity * 2;\n";
+                file << "\t}\nelse p_list_error(\"error while pushing to P_LIST_TYPE.\");\n";
+                file << "}\n\n";
+                // pop function
+                file << "void P_LIST_POP(P_LIST_TYPE *list, unsigned int count, void **buffer) {\n";
+                file << "\tif (count > list->o_count)\n\t\tp_list_error(\"error while popping from P_LIST_TYPE.\");\n";
+                file << "\tfor (int i = 0; i < count; ++i)\n\t\tbuffer[(list->o_count-1) - i] = list->o_ptr[i];\n";
+                file << "\tlist->o_count -= count;\n";
+                file << "}\n\n";
+                // top function
+                file << "void *P_LIST_TOP(P_LIST_TYPE *list) {\n";
+                file << "\treturn list->o_ptr[list->o_count-1];\n}\n\n";
+            }
+
+            {
                 // create and open scanner header file
                 auto file_sc_h = std::ofstream();
                 file_sc_h.open("p_output_scanner.h");
@@ -684,12 +737,12 @@ class HandleFinder {
                 file.open("p_output_parser.h");
                 // add header information
                 file << "#ifndef P_OUTPUT_PARSER_H\n#define P_OUTPUT_PARSER_H\n#pragma once\n\n";
-                file << "#include <stdio.h>\n#include <unistd.h>\n#include <stdlib.h>\n\n";
+                file << "#include <stdio.h>\n#include <unistd.h>\n#include <stdlib.h>\n#include \"p_list_type.h\"\n\n";
                 file << "#define nullptr ((void*)0)\n\n";
                 // add macros for sizes
-                file << "#define RULE_COUNT " << _lst.size() << "\n";
-                file << "#define STATE_COUNT " << _states.size() << "\n";
-                file << "#define ELEMENT_COUNT " << elements.size() << "\n";
+                file << "#define P_RULE_COUNT " << _lst.size() << "\n";
+                file << "#define P_STATE_COUNT " << _states.size() << "\n";
+                file << "#define P_ELEMENT_COUNT " << elements.size() << "\n";
                 file << "typedef void (*p_callback)(struct P_PARSE_CLASS* lst);\n\n";
                 // add parser struct, to be implemented by the user
                 // however, the parser struct ought to have some default values (array of pointers to struct (so, pointer of pointers), name, child_count, etc)
@@ -697,13 +750,15 @@ class HandleFinder {
                 file << "\tP_ELEMENTS type;\n\tconst char* name;\n\tP_PARSE_CLASS **children;\n\tint child_count;\n";
                 file << "} P_PARSE_CLASS;\n\n";
                 // add function and struct information
-                file << "p_callback funclist[RULE_COUNT];\n";
+                file << "p_callback funclist[P_RULE_COUNT];\n";
                 file << "typedef enum P_PARSER_ACTIONS {\n\tERROR,\n\tSHIFT,\n\tGOTO,\n\tREDUCE,\n\tACCEPT,\n\tCONFLICT\n} P_PARSER_ACTIONS;\n";
                 file << "typedef struct P_TABLE_DATA {\n\tint name;\n\tint state;\n\tint funcindex;\n\tint size;\n} P_TABLE_DATA;\n";
+                file << "typedef struct P_ARRAY {\n\tint length;\n\tunsigned int i_size;\n\tvoid *ptr;\n} P_ARRAY;\n";
                 file << "P_TABLE_DATA **table;\n\n";
                 // add function signatures
                 file << "void INIT_TABLE();\n";
-                file << "P_TABLE_DATA ACTION(int state, P_ELEMENTS tok);\n\n";
+                file << "P_TABLE_DATA ACTION(int state, P_ELEMENTS tok);\n";
+                file << "void PARSE();\n";
                 // conclude and close file
                 file << "#endif";
                 file.close();
@@ -718,9 +773,9 @@ class HandleFinder {
                 file << "#include \"p_output_parser.h\"\n";
                 // create function to initialize table
                 file << "void INIT_TABLE() {\n";
-                file << "\ttable = malloc(STATE_COUNT * sizeof(P_TABLE_DATA*));\n";
-                file << "\tfor (int i = 0; i < STATE_COUNT; ++i) {\n";
-                file << "\t\ttable[i] = malloc(ELEMENT_COUNT * sizeof(P_TABLE_DATA));\n";
+                file << "\ttable = malloc(P_STATE_COUNT * sizeof(P_TABLE_DATA*));\n";
+                file << "\tfor (int i = 0; i < P_STATE_COUNT; ++i) {\n";
+                file << "\t\ttable[i] = malloc(P_ELEMENT_COUNT * sizeof(P_TABLE_DATA));\n";
                 file << "\t\tmemset(table[i], 0, sizeof(P_TABLE_DATA));\n\t}\n\n";
                 for (auto x : transitions) {
                     auto a = x.first.first;
@@ -793,6 +848,15 @@ class HandleFinder {
                 file << "}\n\n";
                 // add definition for PARSE function, which takes no arguments
                 file << "void PARSE () {\n";
+                file << "\tP_LIST_TYPE states = P_LIST_INIT(sizeof(int));\n";
+                file << "\tP_LIST_TYPE values = P_LIST_INIT(sizeof(P_PARSE_CLASS));\n\n";
+                file << "\tP_ELEMENTS tok = LEX();\n";
+                file << "\tint startstate = P_START_LIT;\n";
+                file << "\tP_LIST_PUSH(&states, &startstate);\n\n";
+                file << "\twhile (1) {\n";
+                file << "\t\tint *current = (int*)P_LIST_TOP(&states);\n";
+                file << "\t\tP_TABLE_DATA act = ACTION(*current, tok);\n";
+                file << "\t}\n";
                 file << "}\n\n";
                 // close output file
                 file.close();
