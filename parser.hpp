@@ -7,6 +7,7 @@
 #include "parseritems.hpp"
 #include "ast.hpp"
 #include "runutils.hpp"
+#include "general_utils.hpp"
 
 using   std::cout, 
         std::cerr, 
@@ -264,7 +265,7 @@ class Parser {
                         if (cur != Tokens::ENDFILE) {
                             if (cur == Tokens::EMPTY)
                                 ast_push(new EmptyAST());
-                            else ast_push(new Literal(sc->getlexeme(), cur));
+                            else ast_push(new Literal(upper(sc->getlexeme()), cur));
                             if (flags.PARSER_TRACE)
                                 ast_print();
                         }

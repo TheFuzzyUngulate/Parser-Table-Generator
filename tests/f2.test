@@ -1,1 +1,5 @@
-a => b
+Start => START
+START => A B
+A => B {"PLUS" B | "MINUS" B}
+B => "minus" F | F
+F => "NUM" | "STR" | "ID"

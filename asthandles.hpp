@@ -4,6 +4,7 @@
 
 #include "astprocessing.hpp"
 #include "ast.hpp"
+#include "general_utils.hpp"
 #include <vector>
 #include <algorithm>
 #include <string>
@@ -11,6 +12,7 @@
 #include <set>
 #include <map>
 #include <iomanip>
+#include <fstream>
 
 typedef std::pair<int, std::string> HandleDictPair;
 typedef std::map<HandleDictPair, int> HandleDict;
@@ -257,10 +259,10 @@ class HandleFinder {
          */
         HandleFinder(deque<AST*> lst) {
             _lst = lst;
-            Rule* strt = new Rule(new Literal("S*", Tokens::RULE), new RuleList({new Literal("Start", Tokens::RULE)}));
+            Rule* strt = new Rule(new Literal("S*", Tokens::RULE), new RuleList({new Literal("START", Tokens::RULE)}));
             AST_State frst = {};
             frst.push_back(strt);
-            states.push_back(frst);
+            _states.push_back(frst);
         }
         
         /**
@@ -269,9 +271,9 @@ class HandleFinder {
          */
         void exec() {
             int i = 0;
-            expand_state(states[0]);
+            expand_state(_states[0]);
             while (1) {
-                auto state = states[i++];
+                auto state = _states[i++];
 
                 // create transition states from all states for each symbol in the alphabet
                 for (auto e : alphabet) {
@@ -324,8 +326,8 @@ class HandleFinder {
                     */
                     bool state_exists = false;         // boolean indicating whether state exists
                     int old_state = -1;                // int preset to -1, changes to the state number of an identical state if it exists
-                    for (int g = 0; g < states.size(); g++) {
-                        auto s = states[g];
+                    for (int g = 0; g < _states.size(); g++) {
+                        auto s = _states[g];
                         if (s.size() != y.size())
                             continue;
                         bool eq_state = true;
@@ -347,22 +349,19 @@ class HandleFinder {
                     if ((int)y.size() > 0) {
                         int arg2 = (state_exists) 
                                 ? old_state 
-                                : (int)states.size();
+                                : (int)_states.size();
                         HandleDictPair arg1 = std::make_pair(i-1, e);
                         transitions.emplace(std::make_pair(arg1, arg2));
-                        if (!state_exists) states.push_back(y);
+                        if (!state_exists) _states.push_back(y);
                     }
                 }
                 
                 // break only if i passes the bounds
                 // since the loop actively adds to the size of the state list
                 // this is only true if a loop iteration goes without any new states being made, among other things...
-                if (i == states.size())
+                if (i == _states.size())
                     break;
             }
-
-            print_states();
-            print_transitions();
         }
 
         /**
@@ -426,9 +425,9 @@ class HandleFinder {
          */
         void print_states() {
             cout << "printing states\n";
-            for (int i = 0; i < states.size(); i++) {
+            for (int i = 0; i < _states.size(); i++) {
                 cout << "state " << i << std::endl;
-                for (auto d : states[i]) d.print();
+                for (auto d : _states[i]) d.print();
                 cout << std::endl;
             }
             cout << std::endl;
@@ -514,12 +513,353 @@ class HandleFinder {
             return res;
         }
 
+        void generate_table() {
+            // initialize alt_grammar
+            alt_grammar();
+            // load first and follow sets
+            for (int i = 0; i < alt_grammar_list.size(); ++i) {
+                auto item = alt_grammar_list[i]->getLeft();
+                auto str = ((Literal*)(item->getAST()))->getName() + "@" + std::to_string(item->getState());
+                if (first_set.find(str) == first_set.end())
+                    first_set[str] = std::set<std::string>{};
+                if (follow_set.find(str) == follow_set.end())
+                    follow_set[str] = std::set<std::string>{};
+            }
+            // finalize first and follow sets
+            while (!create_first_set() || !create_follow_set());
+
+            // get the tokens and non-terminals, convert to strings
+            auto elements = get_all_terms_and_nterms();
+            auto statelength = _states.size();
+            auto elementtotok = std::map<std::string, std::string>();
+            auto tokcount = 1, litcount = 1;
+            
+            for (auto x : elements) {
+                if (x == "$")
+                    elementtotok[x] = "P_TOK_END";
+                else
+                if (x == "S*")
+                    elementtotok[x] = "P_START_LIT";
+                else {
+                    if (x.at(0) == '#') {
+                        if (isalpha(x.substr(1)))
+                            elementtotok[x] = "P_TOK_" + x.substr(1);
+                        else elementtotok[x] = "P_TOK_" + std::to_string(tokcount++);
+                    }
+                    else {
+                        int barcount = 0;
+                        while (x.at((x.size()-1)-barcount) == '\'')
+                            ++barcount;
+                        auto true_x = x.substr(0, x.size()-barcount);
+                        std::string ret = "P_LIT_" + true_x;
+                        for (int i = 0; i < barcount; ++i)
+                            ret += "_BAR";
+                        elementtotok[x] = ret;
+                    }
+                }
+            }
+
+            {
+                // create and open scanner header file
+                auto file_sc_h = std::ofstream();
+                file_sc_h.open("p_output_scanner.h");
+                // define header information
+                file_sc_h << "#ifndef P_OUTPUT_SCANNER_H\n#define P_OUTPUT_SCANNER_H\n#pragma once\n\n";
+                file_sc_h << "#include <stdio.h>\n#include <unistd.h>\n#include <stdlib.h>\n\n";
+                file_sc_h << "#define nullptr ((void*)0)\n\n";
+                // add token enum declaration
+                file_sc_h << "typedef enum P_ELEMENTS {\n";
+                for (int i = 0; i < elements.size(); ++i)
+                    file_sc_h << "\t" << elementtotok[elements[i]] << ((i != elements.size()-1) ? "," : "") << "\n";
+                file_sc_h << "} P_ELEMENTS;\n\n";
+                // create unlex list type
+                file_sc_h << "typedef struct P_ELEMENT_LIST {\n";
+                file_sc_h << "\tP_ELEMENTS this;\n";
+                file_sc_h << "\tP_ELEMENT_LIST *next;\n} P_ELEMENT_LIST;\n\n";
+                // create ungetch list type
+                file_sc_h << "typedef struct P_CHAR_LIST {\n";
+                file_sc_h << "\tchar this;\n";
+                file_sc_h << "\tP_CHAR_LIST *next;\n} P_CHAR_LIST;\n\n";
+                // create lexer struct containing lexing info
+                file_sc_h << "typedef struct P_LEXER {\n";
+                file_sc_h << "\tint lineno;\n";
+                file_sc_h << "\tFILE* input_fd;\n";
+                file_sc_h << "\tconst char *lexeme;\n";
+                file_sc_h << "\tP_CHAR_LIST *ungetch_list;\n";
+                file_sc_h << "\tP_ELEMENT_LIST *unlex_list;\n} P_LEXER;\n\n";
+                // create functions "lex", "unlex", "getch", and "ungetch"; as well as "lex_init" that does bookkeeping
+                file_sc_h << "char GETCH();\n";
+                file_sc_h << "void UNGETCH(char ch);\n";
+                file_sc_h << "void UNLEX(P_ELEMENTS tok);\n";
+                file_sc_h << "P_ELEMENTS LEX();\n";
+                file_sc_h << "void LEX_INIT(const char *input);\n";
+                file_sc_h << "P_LEXER *GET_LEX_DATA();\n\n";
+                file_sc_h << "void P_LEX_ERROR(const char* message);\n\n";
+                // finalize and close file
+                file_sc_h << "#endif";
+                file_sc_h.close();
+            }
+
+            {
+                // create and open scanner c file
+                auto file_sc_c = std::ofstream();
+                file_sc_c.open("p_output_scanner.c");
+                // define header information
+                file_sc_c << "#include \"p_output_scanner.h\"\n\n";
+                // work on P_LEX_ERROR
+                file_sc_c << "void P_LEX_ERROR(const char* message) {\n";
+                file_sc_c << "\tprintf(\"p_lex_error: %s\\n\", message);\n";
+                file_sc_c << "\texit(-1);\n}\n\n";
+                // work on GET_LEX_DATA
+                file_sc_c << "P_LEXER *GET_LEX_DATA() {\n";
+                file_sc_c << "\tstatic P_LEXER *info;\n";
+                file_sc_c << "\treturn info;\n}\n\n";
+                // work on LEX_INIT
+                file_sc_c << "void LEX_INIT(const char *input) {\n";
+                file_sc_c << "\tP_LEXER *info = GET_LEX_DATA();\n";
+                file_sc_c << "\tinfo->lineno = 0;\n";
+                file_sc_c << "\tinfo->input_fd = fopen(input, \"r\");\n";
+                file_sc_c << "\tif (info->input_fd == NULL)\n\t\tP_LEX_ERROR(\"couldn't open file.\");\n";
+                file_sc_c << "\tinfo->lexeme = nullptr;\n";
+                file_sc_c << "\tinfo->unlex_list = nullptr;\n";
+                file_sc_c << "\tinfo->ungetch_list = nullptr;\n";
+                file_sc_c << "}\n\n";
+                // work on LEX
+                file_sc_c << "P_ELEMENTS LEX() {\n";
+                file_sc_c << "\tP_LEXER *info = GET_LEX_DATA();\n";
+                file_sc_c << "\twhile (0) {\n";
+                file_sc_c << "\t\tchar ch;\n";
+                file_sc_c << "\t\tdo ch = GETCH();\n";
+                file_sc_c << "\t\twhile (ch != 0 && isspace(ch) && ch != '\\n');\n\n";
+                file_sc_c << "\t\tswitch (ch) {\n";
+                file_sc_c << "\t\t\tcase 0:\n";
+                file_sc_c << "\t\t\t\treturn P_TOK_END;\n\n";
+                file_sc_c << "\t\t\tcase '\\n':\n";
+                file_sc_c << "\t\t\t\tinfo->lineno += 1;\n";
+                file_sc_c << "\t\t\t\tbreak;\n\n";
+                file_sc_c << "\t\t\t//Implement others here!!\n";
+                file_sc_c << "\t\t}\n";
+                file_sc_c << "\t}\n";
+                file_sc_c << "}\n\n";
+                // work on UNLEX
+                file_sc_c << "void UNLEX(P_ELEMENTS tok) {\n";
+                file_sc_c << "\tP_LEXER *info = GET_LEX_DATA();\n";
+                file_sc_c << "\tP_ELEMENT_LIST *old = info->unlex_list;\n";
+                file_sc_c << "\tP_ELEMENT_LIST *new = malloc(sizeof(P_ELEMENT_LIST));\n";
+                file_sc_c << "\tnew->this = tok;\n";
+                file_sc_c << "\tnew->next = old;\n";
+                file_sc_c << "\tinfo->unlex_list = new;\n";
+                file_sc_c << "}\n\n";
+                // work on GETCH
+                file_sc_c << "char GETCH() {\n";
+                file_sc_c << "\tP_LEXER *info = GET_LEX_DATA();\n";
+                file_sc_c << "\tif (info->ungetch_list != nullptr) {\n";
+                file_sc_c << "\t\tchar ch = info->ungetch_list->this;\n";
+                file_sc_c << "\t\tP_CHAR_LIST *new = info->ungetch_list->next;\n";
+                file_sc_c << "\t\tfree(info->ungetch_list);\n";
+                file_sc_c << "\t\tinfo->ungetch_list = new;\n";
+                file_sc_c << "\t\treturn ch;\n";
+                file_sc_c << "\t}\n\n";
+                file_sc_c << "\tif (feof(info->input_fd)) return 0;\n";
+                file_sc_c << "\tchar res = 0;\n";
+                file_sc_c << "\tres = fgetc(info->input_fd);\n";
+                file_sc_c << "\treturn res;\n";
+                file_sc_c << "}\n\n";
+                // work on UNGETCH
+                file_sc_c << "void UNGETCH(char ch) {\n";
+                file_sc_c << "\tP_LEXER *info = GET_LEX_DATA();\n";
+                file_sc_c << "\tP_CHAR_LIST *old = info->ungetch_list;\n";
+                file_sc_c << "\tP_CHAR_LIST *new = malloc(sizeof(P_CHAR_LIST));\n";
+                file_sc_c << "\tnew->this = ch;\n";
+                file_sc_c << "\tnew->next = old;\n";
+                file_sc_c << "\tinfo->unlex_list = new;\n";
+                file_sc_c << "}\n\n";
+                // finalize and close file
+                file_sc_c.close();
+            }
+
+            {
+                // create and open parser header file
+                auto file = std::ofstream();
+                file.open("p_output_parser.h");
+                // add header information
+                file << "#ifndef P_OUTPUT_PARSER_H\n#define P_OUTPUT_PARSER_H\n#pragma once\n\n";
+                file << "#include <stdio.h>\n#include <unistd.h>\n#include <stdlib.h>\n\n";
+                file << "#define nullptr ((void*)0)\n\n";
+                // add macros for sizes
+                file << "#define RULE_COUNT " << _lst.size() << "\n";
+                file << "#define STATE_COUNT " << _states.size() << "\n";
+                file << "#define ELEMENT_COUNT " << elements.size() << "\n";
+                file << "typedef void (*p_callback)(struct P_PARSE_CLASS* lst);\n\n";
+                // add parser struct, to be implemented by the user
+                // however, the parser struct ought to have some default values (array of pointers to struct (so, pointer of pointers), name, child_count, etc)
+                file << "typedef struct P_PARSE_CLASS {\n";
+                file << "\tP_ELEMENTS type;\n\tconst char* name;\n\tP_PARSE_CLASS **children;\n\tint child_count;\n";
+                file << "} P_PARSE_CLASS;\n\n";
+                // add function and struct information
+                file << "p_callback funclist[RULE_COUNT];\n";
+                file << "typedef enum P_PARSER_ACTIONS {\n\tERROR,\n\tSHIFT,\n\tGOTO,\n\tREDUCE,\n\tACCEPT,\n\tCONFLICT\n} P_PARSER_ACTIONS;\n";
+                file << "typedef struct P_TABLE_DATA {\n\tint name;\n\tint state;\n\tint funcindex;\n\tint size;\n} P_TABLE_DATA;\n";
+                file << "P_TABLE_DATA **table;\n\n";
+                // add function signatures
+                file << "void INIT_TABLE();\n";
+                file << "P_TABLE_DATA ACTION(int state, P_ELEMENTS tok);\n\n";
+                // conclude and close file
+                file << "#endif";
+                file.close();
+            }
+
+            {
+                // create and open parser output file
+                auto file = std::ofstream();
+                file.open("p_output_parser.c");
+                // add dependencies, libraries, and header files
+                file << "#include \"p_output_scanner.h\"\n";
+                file << "#include \"p_output_parser.h\"\n";
+                // create function to initialize table
+                file << "void INIT_TABLE() {\n";
+                file << "\ttable = malloc(STATE_COUNT * sizeof(P_TABLE_DATA*));\n";
+                file << "\tfor (int i = 0; i < STATE_COUNT; ++i) {\n";
+                file << "\t\ttable[i] = malloc(ELEMENT_COUNT * sizeof(P_TABLE_DATA));\n";
+                file << "\t\tmemset(table[i], 0, sizeof(P_TABLE_DATA));\n\t}\n\n";
+                for (auto x : transitions) {
+                    auto a = x.first.first;
+                    auto b = x.first.second;
+                    auto c = x.second;
+                    if (b.at(0) == '#') {
+                        file << "\ttable[" << a << "][" << elementtotok[b] << "].name = SHIFT;\n";
+                        file << "\ttable[" << a << "][" << elementtotok[b] << "].state = " << c << ";\n";
+                        file << "\ttable[" << a << "][" << elementtotok[b] << "].funcindex = -1;\n";
+                        file << "\ttable[" << a << "][" << elementtotok[b] << "].size = 0;\n\n";
+                    }
+                    else {
+                        file << "\ttable[" << a << "][" << elementtotok[b] << "].name = GOTO;\n";
+                        file << "\ttable[" << a << "][" << elementtotok[b] << "].state = " << c << ";\n";
+                        file << "\ttable[" << a << "][" << elementtotok[b] << "].funcindex = -1;\n";
+                        file << "\ttable[" << a << "][" << elementtotok[b] << "].size = 0;\n\n";
+                    }
+                }
+                for (int i = 0; i < _states.size(); ++i) {
+                    for (int j = 0; j < _states[i].size(); ++j) {
+                        auto handle = _states[i][j];
+                        if (handle.closed()) {
+                            auto rule = handle.getRule();
+                            auto rule_lhs = rule->getLeft();
+                            auto lhs_name = rule_lhs->getName();
+                            auto reduce_triggers = follow_set[lhs_name + "@" + std::to_string(i)];
+
+                            if (lhs_name == "S*") {
+                                file << "\ttable[" << i << "][" << elementtotok["$"] << "].name = ACCEPT;\n";
+                                file << "\ttable[" << i << "][" << elementtotok["$"] << "].state = 0;\n";
+                                file << "\ttable[" << i << "][" << elementtotok["$"] << "].funcindex = -1;\n";
+                                file << "\ttable[" << i << "][" << elementtotok["$"] << "].size = 0;\n\n";
+                                continue;
+                            }
+                            
+                            std::set<std::string> found;
+                            for (auto follow : follow_set) {
+                                auto head = follow.first;
+                                auto tagloc = std::find(head.rbegin(), head.rend(), '@');
+                                auto index = std::distance(tagloc, head.rend()) -1;
+                                auto content = head.substr(0, index);
+
+                                if (content == lhs_name) {
+                                    for (auto dest : follow.second) {
+                                        if (dest == "$") 
+                                            content = dest;
+                                        else {
+                                            tagloc = std::find(dest.rbegin(), dest.rend(), '@');
+                                            index = std::distance(tagloc, dest.rend()) -1;
+                                            content = "#" + dest.substr(1, index-2);
+                                        }
+
+                                        if (found.find(content) == found.end()) 
+                                            found.insert(content); else continue;
+
+                                        file << "\ttable[" << i << "][" << elementtotok[content] << "].name = REDUCE;\n";
+                                        file << "\ttable[" << i << "][" << elementtotok[content] << "].state = " << transitions[HandleDictPair(i, lhs_name)] << ";\n";
+                                        file << "\ttable[" << i << "][" << elementtotok[content] << "].funcindex = " << j << ";\n";
+                                        file << "\ttable[" << i << "][" << elementtotok[content] << "].size = " << rule->getRight()->getChildren().size() << ";\n\n";
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }   
+                file << "}\n\n";
+                // add definition for ACTION function, which uses table
+                file << "P_TABLE_DATA ACTION (int state, P_ELEMENTS tok) {\n";
+                file << "\treturn table[state][tok];\n";
+                file << "}\n\n";
+                // add definition for PARSE function, which takes no arguments
+                file << "void PARSE () {\n";
+                file << "}\n\n";
+                // close output file
+                file.close();
+            }
+
+            /**
+             * Shift and Goto transition from state to state
+             * Here, state refers to the handle set thingy (stored in _states)
+             * Reduce contains the thing to reduce to the initial, non-handle states (stored in _lst)
+             */
+
+            // the result should be an "ACTION" struct or class, who cares (in this case, perhaps a struct?)
+            // also a dictionary called ACTION that takes as input a STATE and a TOKEN (state stored in _states)
+            // the types of actions are SHIFT, REDUCE, ACCEPT, GOTO, ERROR; each having separate data
+            // SHIFT pushes tok to the result stack and consumes the symbol (use lex()), then pushes GOTO(state, tok) as next state
+            // GOTO just pushes GOTO(state, tok) as next state
+            // REDUCE searches up RULE, consumes the number of its children on both stacks, does FUNCTION on the ones from the output stack and push to output stack, then does GOTO(state, RULE.left), also stored
+            // ERROR causes an error message
+            // ACCEPT terminates the program
+
+
+
+            // In this model, you don't really need to store any info in the actual table about line numbers and shit, just have GOTO do that
+            // though, to be fair, it is a bit faster to have all the information in one table... the solution would obviously to have the entries have a nextstate entry
+        }
+
+    private:
+
+        std::vector<string>
+        get_all_terms_and_nterms() {
+            std::vector<string> ret = {"S*", "$"};
+            for (auto x : _lst) {
+                Rule* kx = (Rule*)x;
+                bool found = false;
+                for (auto y : ret) {
+                    if (kx->getLeft()->getName() == y) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (found == false)
+                    ret.push_back(kx->getLeft()->getName());
+                for (auto k : kx->getRight()->getChildren()) {
+                    if (k->getId() == "empty") 
+                        continue;
+                    bool found2 = false;
+                    Literal* l = (Literal*)k;
+                    string name = ((l->getId() == "tok") ? "#" : "") + l->getName();
+                    for (auto y : ret) {
+                        if (name == y) {
+                            found2 = true;
+                            break;
+                        }
+                    }
+                    if (found2 == false)
+                        ret.push_back(name);
+                }
+            }
+            return ret;
+        }
+
         void alt_grammar() {
-            if (states.size() <= 0) 
+            if (_states.size() <= 0) 
                 return;
 
-            for (int state = 0; state < states.size(); state++) {
-                for (auto handle : states[state]) {
+            for (int state = 0; state < _states.size(); state++) {
+                for (auto handle : _states[state]) {
                     auto handlerule = handle.getRule();
                     // don't handle start states
                     if (handlerule->getLeft()->getName() == "S*") continue;
@@ -546,8 +886,6 @@ class HandleFinder {
                     alt_grammar_list.push_back(new AltRule(altlhs, altrhs));
                 }
             }
-
-            print_alt_grammar();
         }
 
         bool create_first_set() {
@@ -631,28 +969,9 @@ class HandleFinder {
             return no_change;
         }
 
-        void generate_table() {
-            // initialize alt_grammar
-            alt_grammar();
-            // load first and follow sets
-            for (int i = 0; i < alt_grammar_list.size(); ++i) {
-                auto item = alt_grammar_list[i]->getLeft();
-                auto str = ((Literal*)(item->getAST()))->getName() + "@" + std::to_string(item->getState());
-                if (first_set.find(str) == first_set.end())
-                    first_set[str] = std::set<std::string>{};
-                if (follow_set.find(str) == follow_set.end())
-                    follow_set[str] = std::set<std::string>{};
-            }
-            // finalize first and follow sets
-            while (!create_first_set() || !create_follow_set());
-            // i kind of want to see the first and follow sets
-            print_first_and_follow_sets();
-        }
-
-    private:
         deque<AST*> _lst;
         HandleDict transitions;
-        vector<AST_State> states;
+        vector<AST_State> _states;
         vector<AltRule*> alt_grammar_list;
         std::map<std::string, std::set<std::string>> first_set;
         std::map<std::string, std::set<std::string>> follow_set;

@@ -48,6 +48,9 @@ bool rule_eq(Rule* r1, Rule* r2) {
     return true;
 }
 
+/**
+ * Search for and remove duplicate rules
+*/
 deque<AST*> trans6(deque<AST*> start) {
     deque<AST*> endlist = {};
     for (int i = 0; i < (int)start.size(); i++) {
@@ -62,7 +65,8 @@ deque<AST*> trans6(deque<AST*> start) {
         }
         if (!is_found)
             endlist.push_back(rx);
-    } return endlist;
+    }
+    return endlist;
 }
 
 std::pair<bool, deque<AST*>> trans5(deque<AST*> start) {
@@ -74,7 +78,35 @@ std::pair<bool, deque<AST*>> trans5(deque<AST*> start) {
         auto rlist = rule->getRight();
         deque<AST*> nodes = rlist->getChildren();
 
-        if (nodes[0]->getId() == "orstmt") {
+        std::vector<RuleList*> newrules = {new RuleList()};
+        for (auto n : nodes) {
+            if (n->getId() == "orstmt") {
+                not_changed = false;
+                OrExpr* mynode = (OrExpr*)n;
+                auto left = mynode->getLeft()->getChildren();
+                auto right = mynode->getRight()->getChildren();
+
+                auto old_size = newrules.size();
+                for (int i = 0; i < old_size; ++i) {
+                    auto init = newrules[i];
+                    auto clone = new RuleList(*init);
+                    for (auto ch : left)
+                        init->addChild(ch);
+                    for (auto ch : right)
+                        clone->addChild(ch);
+                    newrules.push_back(clone);
+                }
+            }
+            else { 
+                for (auto z : newrules)
+                    z->addChild(n);
+            }
+        }
+
+        for (auto z : newrules)
+            endlist.push_back(new Rule(litem, z));
+
+        /* if (nodes[0]->getId() == "orstmt") {
             not_changed = false;
             OrExpr* mynode = (OrExpr*)nodes[0];
             auto left = mynode->getLeft();
@@ -82,7 +114,7 @@ std::pair<bool, deque<AST*>> trans5(deque<AST*> start) {
             endlist.push_back(new Rule(litem, left));
             endlist.push_back(new Rule(litem, right));
         }
-        else endlist.push_back(rule);
+        else endlist.push_back(rule); */
     }
     return make_pair(not_changed, endlist);
 }
@@ -303,7 +335,7 @@ bool semcheck1(deque<AST*> start) {
     for (auto x : start) {
         Rule* rule = (Rule*)x;
         auto litem = rule->getLeft();
-        if (litem->getName() == "Start")
+        if (litem->getName() == "START")
             return true;
     } return false;
 }
@@ -399,11 +431,11 @@ deque<AST*> process_ast_lalr1(StartAST* start) {
             res1 = trans1(res_holder);
             no_change = no_change && res1.first;
             res_holder = res1.second;
-
+            
             res1 = trans2(res_holder);
             no_change = no_change && res1.first;
             res_holder = res1.second;
-
+            
             res1 = trans5(res_holder);
             no_change = no_change && res1.first;
             res_holder = res1.second;
@@ -411,6 +443,7 @@ deque<AST*> process_ast_lalr1(StartAST* start) {
         if (no_change)
             break;
     }
+
     auto q = trans6(res_holder);
     setsymbs(q);
     if (!semcheck1(q))
