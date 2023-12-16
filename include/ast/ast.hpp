@@ -2,12 +2,18 @@
 #define AST_HPP
 #pragma once
 
+#include <iostream>
+#include <string>
+#include <vector>
+#include <deque>
+
+#include "../scanner/scanner.hpp"
+
 using   std::cout, 
         std::cerr, 
         std::string, 
         std::vector, 
         std::make_pair, 
-        std::shared_ptr, 
         std::deque;
 //#define ASTPTR shared_ptr<AST>
 //#define RLISTPTR shared_ptr<RuleList>

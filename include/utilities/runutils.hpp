@@ -16,20 +16,18 @@ struct flags {
     bool PARSER_TRACE = false;
     bool SCANNER_TRACE = false;
     bool PRINT_PARSE_TREE = false;
-} flags;
+    std::string input_file;
+};
 
-void run_error(const char* ch) {
-    std::cerr << ch << std::endl;
-    exit(-1);
-}
+void run_error(const char* ch);
 
 /**
  * @brief Handles flags. Currently supports parser tree syntax flag, scanner token flag, and debugger flag
  * 
  * @param args Argument list
  */
-std::string handle_args(std::vector<std::string> args, int argcount) {
-    std::string ret = "";
+inline struct flags handle_args(std::vector<std::string> args, int argcount) {
+    struct flags flags;
 
     if ((int)args.size() == 0)
         run_error("insufficient arguments");
@@ -64,16 +62,16 @@ std::string handle_args(std::vector<std::string> args, int argcount) {
         if (str[0] == '-') 
             run_error("invalid flag provided.\nuse the \"-h\" (help) command to view options");
         else
-        if (str != "" && ret != "")
+        if (str != "" && flags.input_file != "")
             run_error("more than 1 file name provided");
         else
-            ret = str;
+            flags.input_file = str;
     }
 
-    if (ret == "")
+    if (flags.input_file == "")
         run_error("no file provided");
     
-    return ret;
+    return flags;
 }
 
 #endif

@@ -1,64 +1,29 @@
-#ifndef ASTPROCESSING_HPP
-#define ASTPROCESSING_HPP
-#pragma once
+#include "../include/ast/astprocessing.hpp"
+#include <deque>
 
-#include "ast.hpp"
-#include "parser.hpp"
-#include <set>
+using std::deque;
+
+void astproc_err(std::string err, int lineno = -1) {
+    std::cerr << "processing error: "
+            << err
+            << ((lineno > -1) ? " at line " + std::to_string(lineno) : "") 
+            << std::endl;
+    exit(-1);
+}
 
 void processing_error(string err) {
     cerr << err << std::endl;
     exit(-1);
 }
 
-/**
- * A list containing terminals, non-terminals, and empty symbols. By its convention:
- *  1. Terminals are prefixed with the symbol "#"
- *  2. Non-terminals are capitalized, and
- *  3. The empty symbol is "empty"
- */
-std::set<std::string> alphabet;
-std::set<std::string> nontermlist;                  // this is only used ONCE here, so idk what the fuck it's doing.
-
-void astproc_err(std::string err, int lineno = -1) {
-    std::cerr << "processing error: "
-              << err
-              << ((lineno > -1) ? " at line " + std::to_string(lineno) : "") 
-              << std::endl;
-    exit(-1);
-}
-
-bool rule_eq(Rule* r1, Rule* r2) {
-    if (r1->getLeft()->getName() != r2->getLeft()->getName())
-        return false;
-    auto r1_ch = r1->getRight()->getChildren();
-    auto r2_ch = r2->getRight()->getChildren();
-    if (r1_ch.size() != r2_ch.size())
-        return false;
-    for (int i = 0; i < (int)r1_ch.size(); i++) {
-        if (r1_ch[i]->getId() != r2_ch[i]->getId())
-            return false;
-        if (r1_ch[i]->getId() == "empty")
-            break;
-        Literal* lit1 = (Literal*)r1_ch[i];
-        Literal* lit2 = (Literal*)r2_ch[i];
-        if (lit1->getName() != lit2->getName())
-            return false;
-    }
-    return true;
-}
-
-/**
- * Search for and remove duplicate rules
-*/
-deque<AST*> trans6(deque<AST*> start) {
+deque<AST*> ASTProcessor::trans6(deque<AST*> start) {
     deque<AST*> endlist = {};
     for (int i = 0; i < (int)start.size(); i++) {
         Rule* rx = (Rule*)start[i];
         bool is_found = false;
         for (int j = 0; j < (int)start.size(); j++) {
             Rule* ry = (Rule*)start[j];
-            if (rule_eq(ry, rx) && i > j) {
+            if (ry == rx && i > j) {
                 is_found = true;
                 break;
             }
@@ -69,7 +34,7 @@ deque<AST*> trans6(deque<AST*> start) {
     return endlist;
 }
 
-std::pair<bool, deque<AST*>> trans5(deque<AST*> start) {
+std::pair<bool, deque<AST*>> ASTProcessor::trans5(deque<AST*> start) {
     deque<AST*> endlist = {};
     bool not_changed = true;
     for (auto x : start) {
@@ -105,22 +70,11 @@ std::pair<bool, deque<AST*>> trans5(deque<AST*> start) {
 
         for (auto z : newrules)
             endlist.push_back(new Rule(litem, z));
-
-        /* if (nodes[0]->getId() == "orstmt") {
-            not_changed = false;
-            OrExpr* mynode = (OrExpr*)nodes[0];
-            auto left = mynode->getLeft();
-            auto right = mynode->getRight();
-            endlist.push_back(new Rule(litem, left));
-            endlist.push_back(new Rule(litem, right));
-        }
-        else endlist.push_back(rule); */
     }
     return make_pair(not_changed, endlist);
 }
 
-
-std::pair<bool, deque<AST*>> trans4(deque<AST*> start) {
+std::pair<bool, deque<AST*>> ASTProcessor::trans4(deque<AST*> start) {
     deque<AST*> endlist = {};
     bool not_changed = true;
     for (auto x : start) {
@@ -168,8 +122,7 @@ std::pair<bool, deque<AST*>> trans4(deque<AST*> start) {
     return make_pair(not_changed, endlist);
 }
 
-
-std::pair<bool, deque<AST*>> trans3(deque<AST*> start) {
+std::pair<bool, deque<AST*>> ASTProcessor::trans3(deque<AST*> start) {
     deque<AST*> endlist = {};
     bool not_changed = true;
     for (auto x : start) {
@@ -223,8 +176,7 @@ std::pair<bool, deque<AST*>> trans3(deque<AST*> start) {
     return make_pair(not_changed, endlist);
 }
 
-
-std::pair<bool, deque<AST*>> trans2(deque<AST*> start) {
+std::pair<bool, deque<AST*>> ASTProcessor::trans2(deque<AST*> start) {
     deque<AST*> endlist = {};
     bool not_changed = true;
     for (auto x : start) {
@@ -273,8 +225,7 @@ std::pair<bool, deque<AST*>> trans2(deque<AST*> start) {
     return make_pair(not_changed, endlist);
 }
 
-
-std::pair<bool, deque<AST*>> trans1(deque<AST*> start) {
+std::pair<bool, deque<AST*>> ASTProcessor::trans1(deque<AST*> start) {
     deque<AST*> endlist = {};
     bool not_changed = true;
     for (auto x : start) {
@@ -330,8 +281,14 @@ std::pair<bool, deque<AST*>> trans1(deque<AST*> start) {
     return make_pair(not_changed, endlist);
 }
 
-// a "start" non-terminal must be present
-bool semcheck1(deque<AST*> start) {
+/**
+ * @brief Check whether a start non-terminal is present in the ruleset
+ * 
+ * @param start Ruleset being tested
+ * @return true if present, and
+ * @return false otherwise
+ */
+bool ASTProcessor::semcheck1(deque<AST*> start) {
     for (auto x : start) {
         Rule* rule = (Rule*)x;
         auto litem = rule->getLeft();
@@ -340,9 +297,14 @@ bool semcheck1(deque<AST*> start) {
     } return false;
 }
 
-// all non-terminals found in RHS must be declared in LHS somewhere
-// in essence, if the RHS is NOT in the nonterminal list, error
-bool semcheck2(deque<AST*> start) {
+/**
+ * @brief Check whether all non-terminals are defined somewhere in the ruleset
+ * 
+ * @param start Ruleset being tested
+ * @return true, if all non-terminals are indeed defined in the ruleset, and
+ * @return false otherwise.
+ */
+bool ASTProcessor::semcheck2(deque<AST*> start) {
     for (auto x : start) {
         Rule* rule = (Rule*)x;
         auto rchilds = rule->getRight()->getChildren();
@@ -359,7 +321,7 @@ bool semcheck2(deque<AST*> start) {
     } return true;
 }
 
-void setsymbs(deque<AST*> lst) {
+void ASTProcessor::setsymbs(deque<AST*> lst) {
     for (auto r : lst) {
         Rule* rule = (Rule*)r;
         
@@ -382,9 +344,9 @@ void setsymbs(deque<AST*> lst) {
     }
 }
 
-deque<AST*> process_ast_ll1(StartAST* start) {
-    auto children = start->getChildren();
-    deque<AST*> res_holder = start->getChildren();
+deque<AST*> ASTProcessor::process_ast_ll1() {
+    auto children = _start->getChildren();
+    deque<AST*> res_holder = _start->getChildren();
     while (1) {
         bool no_change = true;
         for (auto child : children) {
@@ -419,9 +381,9 @@ deque<AST*> process_ast_ll1(StartAST* start) {
     return q;
 }
 
-deque<AST*> process_ast_lalr1(StartAST* start) {
-    auto children = start->getChildren();
-    deque<AST*> res_holder = start->getChildren();
+deque<AST*> ASTProcessor::process_ast_lalr1() {
+    auto children = _start->getChildren();
+    deque<AST*> res_holder = _start->getChildren();
     while (1) {
         bool no_change = true;
         for (auto child : children) {
@@ -453,4 +415,6 @@ deque<AST*> process_ast_lalr1(StartAST* start) {
     return q;
 }
 
-#endif
+std::set<std::string> ASTProcessor::get_alphabet() {
+    return alphabet;
+}

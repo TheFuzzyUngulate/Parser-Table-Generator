@@ -3,6 +3,9 @@
 #pragma once
 
 #include <map>
+#include "parser.hpp"
+#include "../scanner/scanner.hpp"
+
 using std::cout, std::cerr, std::string, std::vector, std::make_pair;
 
 class ParserItem {

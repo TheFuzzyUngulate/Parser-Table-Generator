@@ -1,0 +1,21 @@
+# ninja log v5
+42	4311	7244215413529102	CMakeFiles/PTG.dir/src/astprocessing.cpp.obj	9d7f858c7ae700da
+77	4927	7244215416071865	CMakeFiles/PTG.dir/src/scanner.cpp.obj	31c5c6506fd4bedd
+52	4929	7244215418683586	CMakeFiles/PTG.dir/src/codegen.cpp.obj	8eacc16d71e27fa7
+16	5000	7244215419412779	CMakeFiles/PTG.dir/src/main.cpp.obj	5a8f4afa4429e5bb
+69	5039	7244215420940555	CMakeFiles/PTG.dir/src/parser.cpp.obj	875d3b4a9a342414
+29	5345	7244215423938644	CMakeFiles/PTG.dir/src/asthandles.cpp.obj	bc4d9ee71f263f1b
+5346	6412	7244215433323541	PTG.exe	f8bfff3f075a8be0
+39	2227	7244217213414365	CMakeFiles/PTG.dir/src/main.cpp.obj	5a8f4afa4429e5bb
+2229	3346	7244217224741084	PTG.exe	f8bfff3f075a8be0
+38	2534	7244218940012663	CMakeFiles/PTG.dir/src/codegen.cpp.obj	8eacc16d71e27fa7
+29	2854	7244218941982506	CMakeFiles/PTG.dir/src/main.cpp.obj	5a8f4afa4429e5bb
+2896	4173	7244218955403222	PTG.exe	f8bfff3f075a8be0
+33	2179	7244220883804008	CMakeFiles/PTG.dir/src/codegen.cpp.obj	8eacc16d71e27fa7
+2180	3324	7244220895189112	PTG.exe	f8bfff3f075a8be0
+28	2008	7244221733771215	CMakeFiles/PTG.dir/src/codegen.cpp.obj	8eacc16d71e27fa7
+2009	3138	7244221743863408	PTG.exe	f8bfff3f075a8be0
+29	2493	7244221919198893	CMakeFiles/PTG.dir/src/codegen.cpp.obj	8eacc16d71e27fa7
+2494	3628	7244221931249087	PTG.exe	f8bfff3f075a8be0
+30	2198	7244223407551299	CMakeFiles/PTG.dir/src/codegen.cpp.obj	8eacc16d71e27fa7
+2199	3345	7244223417884575	PTG.exe	f8bfff3f075a8be0
