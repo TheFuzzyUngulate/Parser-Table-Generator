@@ -25,6 +25,7 @@ class Literal;
 class StartAST;
 class RuleList;
 class Rule;
+class RegRule;
 class OrExpr;
 class ClosedExpr;
     class OptExpr;
@@ -89,6 +90,35 @@ class Literal : public AST {
     private:
         string _name;
         int _tok;
+};
+
+class RegRule : public AST {
+    public:
+        RegRule(string name, string regex) {
+            _id = "regex";
+            _name = name;
+            _regex = regex;
+        }
+
+        RegRule(string name) {
+            _id = "regex";
+            _name = name;
+            _regex = "";
+        }
+
+        void setRegex(string reg) {_regex = reg;}
+        string getName() {return _name;}
+        string getRegex() {return _regex;}
+
+        virtual void print(int INDENT = 0) {
+            cout << string(4 * INDENT, ' ')
+                 << _name << " -> "
+                 << _regex << std::endl;
+        }
+
+    private:
+        string _name;
+        string _regex;
 };
 
 class RuleList : public AST {

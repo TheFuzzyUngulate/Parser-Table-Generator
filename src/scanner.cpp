@@ -28,64 +28,117 @@ void Scanner::unget(int ch) {
     unget_list.push_back(ch);
 }
 
-int Scanner::lex() {
+Tokens Scanner::lex() {
     while(1) {
         char ch;
         //lexeme.clear();
 
-        do ch = get(); 
+        do ch = get();
         while (ch != 0 && isspace(ch) && ch != '\n');
 
-        switch(ch) {
-            case 0:
-                if (!reached_end) {
-                    reached_end = true;
-                    unget(ch);
-                    return Tokens::BREAK;
-                } else return Tokens::ENDFILE;
+        if (state == 0) {
+            switch(ch) {
+                case 0:
+                    return Tokens::ENDFILE;
 
-            case '[': return Tokens::LOPT;
-            case ']': return Tokens::ROPT;
-            case '{': return Tokens::LREP;
-            case '}': return Tokens::RREP;
-            case '|': return Tokens::BAR;
-            case '=':
-                ch = get();
-                if (ch == '>') return Tokens::ARROW;
-                else scan_err("invalid token");
-                break;
-            
-            case '\n':
-                lineno++;
-                return Tokens::BREAK;
-            
-            case '\"':
-                lexeme.clear();
-                do {
+                case ':':
                     ch = get();
-                    lexeme += ch;
-                } while (isascii(ch) && ch != '\"');
-                lexeme.pop_back();
-                if (ch == '\"') return Tokens::TOK;
-                else scan_err("open quotation mark");
-                break;
+                    if (ch == '=') return Tokens::S_TRANSIT;
+                    else scan_err("invalid token");
+                    break;
+                
+                case '%':
+                    ch = get();
+                    if (ch == '%') {
+                        state = 1;
+                        return Tokens::S_DELIM;
+                    } else scan_err("illegal symbol");
+                    break;
 
-            default:
-                lexeme.clear();
-                if (isalpha(ch)) {
-                    lexeme += ch;
-                    
+                case '\n':
+                    lineno++;
+                    return Tokens::S_NEWLINE;
+                
+                case '\"':
+                    lexeme.clear();
                     do {
                         ch = get();
                         lexeme += ch;
-                    } while (isalnum(ch));
-                    
+                    } while (isascii(ch) && ch != '\"');
                     lexeme.pop_back();
-                    unget(ch);
-                    
-                    if (lexeme == "empty") return Tokens::EMPTY;
-                    else return Tokens::RULE;
-                } else scan_err("invalid token");
+                    if (ch == '\"') return Tokens::S_CONTENT;
+                    else scan_err("open quotation mark");
+                    break;
+
+                default:
+                    lexeme.clear();
+                    if (isalpha(ch)) {
+                        lexeme += ch;
+                        
+                        do {
+                            ch = get();
+                            lexeme += ch;
+                        } while (isalnum(ch));
+                        
+                        lexeme.pop_back();
+                        unget(ch);
+                        return Tokens::S_STRING;
+                    } else scan_err("invalid token");
+            }
+        }
+        else
+        if (state == 1) {
+            switch(ch) {
+                case 0:
+                    if (!reached_end) {
+                        reached_end = true;
+                        unget(ch);
+                        return Tokens::BREAK;
+                    } else return Tokens::ENDFILE;
+
+                case '[': return Tokens::LOPT;
+                case ']': return Tokens::ROPT;
+                case '{': return Tokens::LREP;
+                case '}': return Tokens::RREP;
+                case '|': return Tokens::BAR;
+                case '=':
+                    ch = get();
+                    if (ch == '>') return Tokens::ARROW;
+                    else scan_err("invalid token");
+                    break;
+                
+                case '\n':
+                    lineno++;
+                    return Tokens::BREAK;
+                
+                case '\"':
+                    lexeme.clear();
+                    do {
+                        ch = get();
+                        lexeme += ch;
+                    } while (isascii(ch) && ch != '\"');
+                    lexeme.pop_back();
+                    if (ch == '\"') return Tokens::TOK;
+                    else scan_err("open quotation mark");
+                    break;
+
+                default:
+                    lexeme.clear();
+                    if (isalpha(ch)) {
+                        lexeme += ch;
+                        
+                        do {
+                            ch = get();
+                            lexeme += ch;
+                        } while (isalnum(ch));
+                        
+                        lexeme.pop_back();
+                        unget(ch);
+                        
+                        if (lexeme == "empty") return Tokens::EMPTY;
+                        else return Tokens::RULE;
+                    } else scan_err("invalid token");
+            }
         }
     }
 }

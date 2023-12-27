@@ -58,8 +58,12 @@ void CodeGenerator::genScannerFiles() {
     file.open("out/p_output_scanner.h");
     // define header information
     file << "#ifndef P_OUTPUT_SCANNER_H\n#define P_OUTPUT_SCANNER_H\n#pragma once\n\n";
-    file << "#include <stdio.h>\n#include <unistd.h>\n#include <stdlib.h>\n\n";
+    file << "#include <stdio.h>\n#include <unistd.h>\n#include <stdlib.h>\n#include <ctype.h>\n#include <string.h>\n\n";
     file << "#define nullptr ((void*)0)\n\n";
+    // add error function definition
+    file << "static inline void P_LEX_ERROR(const char* message) {\n";
+    file << "\tprintf(\"p_lex_error: %s\\n\", message);\n";
+    file << "\texit(-1);\n}\n\n";
     // add token enum declaration
     file << "typedef enum P_ELEMENTS {\n";
     for (int i = 0; i < _elements.size(); ++i)
@@ -68,57 +72,59 @@ void CodeGenerator::genScannerFiles() {
     // create unlex list type
     file << "typedef struct P_ELEMENT_LIST {\n";
     file << "\tP_ELEMENTS value;\n";
-    file << "\tP_ELEMENT_LIST *next;\n} P_ELEMENT_LIST;\n\n";
+    file << "\tstruct P_ELEMENT_LIST *next;\n} P_ELEMENT_LIST;\n\n";
     // create ungetch list type
     file << "typedef struct P_CHAR_LIST {\n";
     file << "\tchar value;\n";
-    file << "\tP_CHAR_LIST *next;\n} P_CHAR_LIST;\n\n";
+    file << "\tstruct P_CHAR_LIST *next;\n} P_CHAR_LIST;\n\n";
     // create lexer struct containing lexing info
     file << "typedef struct P_LEXER {\n";
     file << "\tint lineno;\n";
     file << "\tFILE* input_fd;\n";
-    file << "\tconst char *lexeme;\n";
+    file << "\tchar *lexeme;\n";
     file << "\tP_CHAR_LIST *ungetch_list;\n";
     file << "\tP_ELEMENT_LIST *unlex_list;\n} P_LEXER;\n\n";
+    // create inline function to convert enum values to strings
+    file << "static inline char * P_ELEMENT_STR(P_ELEMENTS tok) {\n";
+    file << "\tswitch (tok) {\n";
+    for (int i = 0; i < _elements.size(); ++i)
+        file << "\t\tcase " << _elementtoks[_elements[i]] << ": return \"" << _elements[i] << "\"; \n";
+    file << "\t\tdefault: P_LEX_ERROR(\"invalid token.\");\n";
+    file << "\t}\n";
+    file << "}\n\n";
     // create functions "lex", "unlex", "getch", and "ungetch"; as well as "lex_init" that does bookkeeping
-    file << "char GETCH();\n";
-    file << "void UNGETCH(char ch);\n";
-    file << "void UNLEX(P_ELEMENTS tok);\n";
-    file << "P_ELEMENTS LEX();\n";
-    file << "void LEX_INIT(const char *input);\n";
-    file << "P_LEXER *GET_LEX_DATA();\n\n";
-    file << "void P_LEX_ERROR(const char* message);\n\n";
+    file << "char GETCH(P_LEXER *info);\n";
+    file << "void UNGETCH(P_LEXER *info, char ch);\n";
+    file << "void UNLEX(P_LEXER *info, P_ELEMENTS tok);\n";
+    file << "P_ELEMENTS LEX(P_LEXER *info);\n";
+    file << "P_LEXER LEX_INIT(const char *input);\n\n";
     // finalize and close file
     file << "#endif";
     file.close();
     file.open("out/p_output_scanner.c");
     // define header information
     file << "#include \"p_output_scanner.h\"\n\n";
-    // work on P_LEX_ERROR
-    file << "void P_LEX_ERROR(const char* message) {\n";
-    file << "\tprintf(\"p_lex_error: %s\\n\", message);\n";
-    file << "\texit(-1);\n}\n\n";
-    // work on GET_LEX_DATA
-    file << "P_LEXER *GET_LEX_DATA() {\n";
-    file << "\tstatic P_LEXER *info;\n";
-    file << "\treturn info;\n}\n\n";
     // work on LEX_INIT
-    file << "void LEX_INIT(const char *input) {\n";
-    file << "\tP_LEXER *info = GET_LEX_DATA();\n";
-    file << "\tinfo->lineno = 0;\n";
-    file << "\tinfo->input_fd = fopen(input, \"r\");\n";
-    file << "\tif (info->input_fd == NULL)\n\t\tP_LEX_ERROR(\"couldn't open file.\");\n";
-    file << "\tinfo->lexeme = nullptr;\n";
-    file << "\tinfo->unlex_list = nullptr;\n";
-    file << "\tinfo->ungetch_list = nullptr;\n";
+    file << "P_LEXER LEX_INIT(const char *input) {\n";
+    file << "\tP_LEXER info;\n";
+    file << "\tinfo.lineno = 0;\n";
+    file << "\tinfo.input_fd = fopen(input, \"r\");\n";
+    file << "\tif (info.input_fd == NULL)\n\t\tP_LEX_ERROR(\"couldn't open file.\");\n";
+    file << "\tinfo.lexeme = malloc(sizeof(char));\n";
+    file << "\tmemset(info.lexeme, 0, sizeof(char));\n";
+    file << "\tinfo.unlex_list = nullptr;\n";
+    file << "\tinfo.ungetch_list = nullptr;\n";
+    file << "\treturn info;\n";
     file << "}\n\n";
     // work on LEX
-    file << "P_ELEMENTS LEX() {\n";
-    file << "\tP_LEXER *info = GET_LEX_DATA();\n";
-    file << "\twhile (0) {\n";
+    file << "P_ELEMENTS LEX(P_LEXER *info) {\n";
+    file << "\twhile (1) {\n";
     file << "\t\tchar ch;\n";
-    file << "\t\tdo ch = GETCH();\n";
+    file << "\t\tdo ch = GETCH(info);\n";
     file << "\t\twhile (ch != 0 && isspace(ch) && ch != '\\n');\n\n";
+    file << "\t\tfree(info->lexeme);\n";
+    file << "\t\tinfo->lexeme = malloc(sizeof(char));\n";
+    file << "\t\tmemset(info->lexeme, 0, sizeof(char));\n\n";
     file << "\t\tswitch (ch) {\n";
     file << "\t\t\tcase 0:\n";
     file << "\t\t\t\treturn P_TOK_END;\n\n";
@@ -130,8 +136,7 @@ void CodeGenerator::genScannerFiles() {
     file << "\t}\n";
     file << "}\n\n";
     // work on UNLEX
-    file << "void UNLEX(P_ELEMENTS tok) {\n";
-    file << "\tP_LEXER *info = GET_LEX_DATA();\n";
+    file << "void UNLEX(P_LEXER *info, P_ELEMENTS tok) {\n";
     file << "\tP_ELEMENT_LIST *old = info->unlex_list;\n";
     file << "\tP_ELEMENT_LIST *new = malloc(sizeof(P_ELEMENT_LIST));\n";
     file << "\tnew->value = tok;\n";
@@ -139,8 +144,7 @@ void CodeGenerator::genScannerFiles() {
     file << "\tinfo->unlex_list = new;\n";
     file << "}\n\n";
     // work on GETCH
-    file << "char GETCH() {\n";
-    file << "\tP_LEXER *info = GET_LEX_DATA();\n";
+    file << "char GETCH(P_LEXER *info) {\n";
     file << "\tif (info->ungetch_list != nullptr) {\n";
     file << "\t\tchar ch = info->ungetch_list->value;\n";
     file << "\t\tP_CHAR_LIST *new = info->ungetch_list->next;\n";
@@ -148,19 +152,16 @@ void CodeGenerator::genScannerFiles() {
     file << "\t\tinfo->ungetch_list = new;\n";
     file << "\t\treturn ch;\n";
     file << "\t}\n\n";
-    file << "\tif (feof(info->input_fd)) return 0;\n";
-    file << "\tchar res = 0;\n";
-    file << "\tres = fgetc(info->input_fd);\n";
-    file << "\treturn res;\n";
+    file << "\tchar res = getc(info->input_fd);\n";
+    file << "\treturn res == EOF ? 0 : res;\n";
     file << "}\n\n";
     // work on UNGETCH
-    file << "void UNGETCH(char ch) {\n";
-    file << "\tP_LEXER *info = GET_LEX_DATA();\n";
+    file << "void UNGETCH(P_LEXER *info, char ch) {\n";
     file << "\tP_CHAR_LIST *old = info->ungetch_list;\n";
     file << "\tP_CHAR_LIST *new = malloc(sizeof(P_CHAR_LIST));\n";
     file << "\tnew->value = ch;\n";
     file << "\tnew->next = old;\n";
-    file << "\tinfo->unlex_list = new;\n";
+    file << "\tinfo->ungetch_list = new;\n";
     file << "}\n\n";
     // finalize and close file
     file.close();
@@ -177,22 +178,19 @@ void CodeGenerator::genParserFiles() {
     file << "#define P_RULE_COUNT " << _hf->getRuleCount() << "\n";
     file << "#define P_STATE_COUNT " << _hf->getStateCount() << "\n";
     file << "#define P_ELEMENT_COUNT " << _elements.size() << "\n";
-    file << "typedef void (*p_callback)(struct P_PARSE_CLASS* lst);\n\n";
     // add parser struct, to be implemented by the user
     // however, the parser struct ought to have some default values (array of pointers to struct (so, pointer of pointers), name, child_count, etc)
     file << "typedef struct P_PARSE_CLASS {\n";
-    file << "\tP_ELEMENTS type;\n\tconst char* name;\n\tP_PARSE_CLASS **children;\n\tint child_count;\n";
+    file << "\tP_ELEMENTS type;\n\tconst char* name;\n\tstruct P_PARSE_CLASS **children;\n\tint child_count;\n";
     file << "} P_PARSE_CLASS;\n\n";
     // add function and struct information
-    file << "p_callback funclist[P_RULE_COUNT];\n";
     file << "typedef enum P_PARSER_ACTIONS {\n\tERROR,\n\tSHIFT,\n\tGOTO,\n\tREDUCE,\n\tACCEPT,\n\tCONFLICT\n} P_PARSER_ACTIONS;\n";
     file << "typedef struct P_TABLE_DATA {\n\tint name;\n\tint state;\n\tint funcindex;\n\tint size;\n} P_TABLE_DATA;\n";
     file << "typedef struct P_ARRAY {\n\tint length;\n\tunsigned int i_size;\n\tvoid *ptr;\n} P_ARRAY;\n";
-    file << "P_TABLE_DATA **table;\n\n";
     // add function signatures
-    file << "void INIT_TABLE();\n";
-    file << "P_TABLE_DATA ACTION(int state, P_ELEMENTS tok);\n";
-    file << "void PARSE();\n";
+    file << "P_TABLE_DATA** INIT_TABLE();\n";
+    file << "P_TABLE_DATA ACTION(P_TABLE_DATA **table, int state, P_ELEMENTS tok);\n";
+    file << "void PARSE(const char* filename);\n";
     // conclude and close file
     file << "#endif";
     file.close();
@@ -202,8 +200,8 @@ void CodeGenerator::genParserFiles() {
     file << "#include \"p_output_scanner.h\"\n";
     file << "#include \"p_output_parser.h\"\n";
     // create function to initialize table
-    file << "void INIT_TABLE() {\n";
-    file << "\ttable = malloc(P_STATE_COUNT * sizeof(P_TABLE_DATA*));\n";
+    file << "P_TABLE_DATA **INIT_TABLE() {\n";
+    file << "\tP_TABLE_DATA **table = malloc(P_STATE_COUNT * sizeof(P_TABLE_DATA*));\n";
     file << "\tfor (int i = 0; i < P_STATE_COUNT; ++i) {\n";
     file << "\t\ttable[i] = malloc(P_ELEMENT_COUNT * sizeof(P_TABLE_DATA));\n";
     file << "\t\tmemset(table[i], 0, sizeof(P_TABLE_DATA));\n\t}\n\n";
@@ -276,21 +274,23 @@ void CodeGenerator::genParserFiles() {
             }
         }
     }   
-    file << "}\n\n";
+    file << "\treturn table;\n}\n\n";
     // add definition for ACTION function, which uses table
-    file << "P_TABLE_DATA ACTION (int state, P_ELEMENTS tok) {\n";
+    file << "P_TABLE_DATA ACTION (P_TABLE_DATA **table, int state, P_ELEMENTS tok) {\n";
     file << "\treturn table[state][tok];\n";
     file << "}\n\n";
     // add definition for PARSE function, which takes no arguments
-    file << "void PARSE () {\n";
+    file << "void PARSE (const char *filename) {\n";
+    file << "\tP_LEXER info = LEX_INIT(filename);\n";
     file << "\tP_LIST_TYPE states = P_LIST_INIT(sizeof(int));\n";
-    file << "\tP_LIST_TYPE values = P_LIST_INIT(sizeof(P_PARSE_CLASS));\n\n";
-    file << "\tP_ELEMENTS tok = LEX();\n";
+    file << "\tP_LIST_TYPE values = P_LIST_INIT(sizeof(P_PARSE_CLASS));\n";
+	file << "P_TABLE_DATA **table = INIT_TABLE();\n\n";
+    file << "\tP_ELEMENTS tok = LEX(&info);\n";
     file << "\tint startstate = P_START_LIT;\n";
     file << "\tP_LIST_PUSH(&states, &startstate);\n\n";
     file << "\twhile (1) {\n";
     file << "\t\tint *current = (int*)P_LIST_TOP(&states);\n";
-    file << "\t\tP_TABLE_DATA act = ACTION(*current, tok);\n";
+    file << "\t\tP_TABLE_DATA act = ACTION(table, *current, tok);\n";
     file << "\t}\n";
     file << "}\n\n";
     // close output file

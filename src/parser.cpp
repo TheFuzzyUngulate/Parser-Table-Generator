@@ -23,6 +23,29 @@ void Parser::pprint() {
     }
 }
 
+// RegEx operators
+
+void Parser::reg_push(string a) {
+    reg_stack.push_back(a);
+}
+
+string Parser::reg_pop() {
+    string a = reg_stack.back();
+    reg_stack.pop_back();
+    return a;
+}
+
+void Parser::reg_print() {
+    /* if (!res_stack.empty()) {
+        for (int k = (int)res_stack.size() - 1; k >= 0; --k) {
+            cout << "val[" << k << "]: " 
+                    << res_stack[k]->getId()
+                    << std::endl;
+        }
+        cout << std::endl;
+    } */
+}
+
 // AST operators
 
 void Parser::ast_push(AST* a) {
@@ -85,6 +108,18 @@ void Parser::print_dict() {
 }
 
 int Parser::prime_table() {
+    dict[make_pair<Tokens, Tokens>(M_START, S_STRING)] = new vector<Tokens>({S_START, M_START1});
+    dict[make_pair<Tokens, Tokens>(M_START, S_NEWLINE)] = new vector<Tokens>({S_START, M_START1});
+    dict[make_pair<Tokens, Tokens>(M_START, S_DELIM)] = new vector<Tokens>({S_START, M_START1});
+    dict[make_pair<Tokens, Tokens>(M_START, ENDFILE)] = new vector<Tokens>({S_START, M_START1});
+    dict[make_pair<Tokens, Tokens>(M_START1, S_DELIM)] = new vector<Tokens>({S_DELIM, P_START});
+    dict[make_pair<Tokens, Tokens>(M_START1, ENDFILE)] = new vector<Tokens>({});
+    dict[make_pair<Tokens, Tokens>(S_START, S_STRING)] = new vector<Tokens>({S_RULE, S_START});
+    dict[make_pair<Tokens, Tokens>(S_START, S_NEWLINE)] = new vector<Tokens>({S_RULE, S_START});
+    dict[make_pair<Tokens, Tokens>(S_START, S_DELIM)] = new vector<Tokens>({});
+    dict[make_pair<Tokens, Tokens>(S_START, ENDFILE)] = new vector<Tokens>({});
+    dict[make_pair<Tokens, Tokens>(S_RULE, S_STRING)] = new vector<Tokens>({S_STRING, S_TRANSIT, S_CONTENT, S_NEWLINE});
+    dict[make_pair<Tokens, Tokens>(S_RULE, S_NEWLINE)] = new vector<Tokens>({S_NEWLINE});
     dict[make_pair<Tokens, Tokens>(P_START, ENDFILE)] = new vector<Tokens>({});
     dict[make_pair<Tokens, Tokens>(P_START, RULE)] = new vector<Tokens>({P_RULE, P_START});
     dict[make_pair<Tokens, Tokens>(P_START, BREAK)] = new vector<Tokens>({P_RULE, P_START});
@@ -114,10 +149,10 @@ int Parser::prime_table() {
 
 int Parser::parse() {
     ppush(new ParserTok(ENDFILE));
-    ppush(new ParserRule(P_START));
+    ppush(new ParserRule(M_START));
 
     ParserItem *tos;
-    int cur = sc->lex();
+    Tokens cur = sc->lex();
     if (_flags.SCANNER_TRACE)
         cout << "first symbol: " 
                 << tokname(cur) 
@@ -151,6 +186,7 @@ int Parser::parse() {
                         StartAST *start = (StartAST*)tail[0];
                         if (tail[1]->getId() != "empty")
                             start->add(tail[1]);
+                        else delete tail[1];
                         ast_push(tail[0]);
                     }
                     break;
@@ -222,9 +258,48 @@ int Parser::parse() {
                     }
                     break;
                 }
+
+                case Tokens::M_START: {
+                    ast_push(tail[1]);
+                    ast_push(tail[0]);
+                    break;
+                }
+
+                case Tokens::M_START1: {
+                    if (len == 2) {
+                        delete tail[1];
+                        ast_push(tail[0]);
+                    } else ast_push(new EmptyAST());
+                    break;
+                }
+
+                case Tokens::S_RULE: {
+                    if (len == 4) {
+                        auto str = (Literal*)tail[3];
+                        auto regex = (Literal*)tail[1];
+                        delete tail[2];
+                        delete tail[0];
+                        ast_push(new RegRule(str->getName(), regex->getName()));
+                    } else ast_push(new EmptyAST());
+                    break;
+                }
+
+                case Tokens::S_START: {
+                    if (len == 2) {
+                        StartAST *start = (StartAST*)tail[0];
+                        if (tail[1]->getId() != "empty")
+                            start->add(tail[1]);
+                        else delete tail[1];
+                        ast_push(tail[0]);
+                    } else ast_push(new StartAST());
+                    break;
+                }
                 
-                default:
-                    parse_err("invalid reduce symbol");
+                default: {
+                    std::string err = "invalid reduce symbol ";
+                    err += tokname(mytos->name());
+                    parse_err(err.c_str());
+                }
             }
 
             if (_flags.PARSER_TRACE)
@@ -255,7 +330,13 @@ int Parser::parse() {
                 if (cur != Tokens::ENDFILE) {
                     if (cur == Tokens::EMPTY)
                         ast_push(new EmptyAST());
-                    else ast_push(new Literal(upper(sc->getlexeme()), cur));
+                    else 
+                    if (is_scanner_enum(cur)) {
+                        if (cur == Tokens::S_STRING || cur == Tokens::S_CONTENT)
+                            reg_push(sc->getlexeme());
+                    }
+                    string name = (is_scanner_enum(cur)) ? sc->getlexeme() : upper(sc->getlexeme());
+                    ast_push(new Literal(name, cur));
                     if (_flags.PARSER_TRACE)
                         ast_print();
                 }
@@ -268,7 +349,9 @@ int Parser::parse() {
             } else parse_unexpected_terminal_err((Tokens)tos->name(), (Tokens)cur);
         }
     }
+
+    res_stack[0]->print();
     
-    root = (StartAST*)res_stack[0];
+    root = (StartAST*)res_stack[1];
     return EXIT_SUCCESS;
 }

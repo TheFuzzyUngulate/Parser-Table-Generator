@@ -1,4 +1,14 @@
+MINUS := "abc"
+PLUS := "+"
+MUL := "*"
+DIV := "/"
+LPAR := "("
+RPAR := ")"
+NUM := "{[0-9]}+"
+
+%%
+
 Start => { E }
-E => T ["-" T | "+" T]
-T => F ["*" F | "/" F]
-F => "(" E ")" | "-" F | "num"
+E => T {"MINUS" T | "PLUS" T}
+T => F {"MUL" F | "DIV" F}
+F => "LPAR" E "RPAR" | "MINUS" F | "NUM"

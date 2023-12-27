@@ -32,4 +32,26 @@ inline std::string upper(std::string str) {
     return res;
 }
 
+inline std::string ltrim(std::string src, std::string delim) {
+    std::string res = src;
+    for (int i = 0; i < src.size(); i += delim.size()) {
+        if (src.substr(0, delim.size()) == delim)
+            res = res.substr(delim.size());
+        else break;
+    } return res;
+}
+
+inline std::string rtrim(std::string src, std::string delim) {
+    std::string res = src;
+    for (int i = src.size()-1; i > -1; i -= delim.size()) {
+        if (src.substr(src.size() - 1 - delim.size(), delim.size()) == delim)
+            res = res.substr(0, src.size() - delim.size());
+        else break;
+    } return res;
+}
+
+inline std::string trim(std::string src, std::string delim) {
+    return ltrim(rtrim(src, delim), delim);
+}
+
 #endif

@@ -17,6 +17,7 @@
 #include "../include/ast/astprocessing.hpp"
 #include "../include/ast/asthandles.hpp"
 #include "../include/utilities/runutils.hpp"
+#include "../include/utilities/general_utils.hpp"
 #include "../include/gen/codegen.hpp"
 
 void run_error(const char* ch) {
@@ -30,10 +31,33 @@ int main(int argc, char **argv) {
     struct flags flags = handle_args(arguments, 4);
 
     std::ifstream myfile;
+    std::ofstream scfile, prfile;
     myfile.open(flags.input_file);
     if (!myfile.is_open()) {
         run_error("unable to open file");
     }
+
+    /* {
+        scfile.open("../build/temp/sc.txt");
+        std::string str = "";
+        while (str != "%%" && !myfile.eof()) {
+            std::getline(myfile, str);
+            trim(str, " ");
+            scfile << str << "\n";
+        }
+        scfile.close();
+    }
+
+    {
+        prfile.open("../build/temp/pr.txt");
+        std::string str = "";
+        while (!myfile.eof()) {
+            std::getline(myfile, str);
+            trim(str, " ");
+            prfile << str << "\n";
+        }
+        prfile.close();
+    } */
 
     Scanner *sc = new Scanner((std::fstream*)&myfile);
     Parser *par = new Parser(sc, flags);

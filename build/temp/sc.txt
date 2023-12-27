@@ -1,0 +1,4 @@
+Start => { E }
+E => T {"MINUS" T | "PLUS" T}
+T => F {"MUL" F | "DIV" F}
+F => "LPAR" E "RPAR" | "MINUS" F | "NUM"

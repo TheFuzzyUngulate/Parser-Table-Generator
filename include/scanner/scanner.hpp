@@ -26,15 +26,26 @@ enum Tokens {
     EMPTY,
     RULE,
     BAR,
+    S_TRANSIT,
+    S_NEWLINE,
+    S_DELIM,
+    S_CONTENT,
+    S_STRING,
+    M_START,
+    M_START1,
     P_START,
     P_RULE,
     P_RULES,
     P_RULES1,
-    P_RULES_EL
+    P_RULES_EL,
+    S_RULE,
+    S_START
 };
 
 inline const char* tokname(int tok) {
     switch(tok) {
+        case Tokens::M_START: return "main_start";
+        case Tokens::M_START1: return "main_start1";
         case Tokens::RULE: return "rule";
         case Tokens::TOK: return "token";
         case Tokens::LOPT: return "[";
@@ -51,6 +62,13 @@ inline const char* tokname(int tok) {
         case Tokens::P_RULES: return "$rules";
         case Tokens::P_RULES1: return "$rules\'";
         case Tokens::P_RULES_EL: return "$rule_element";
+        case Tokens::S_TRANSIT: return ":=";
+        case Tokens::S_NEWLINE: return "linebreak";
+        case Tokens::S_DELIM: return "%%";
+        case Tokens::S_CONTENT: return "content";
+        case Tokens::S_STRING: return "string";
+        case Tokens::S_RULE: return "$scan_rule";
+        case Tokens::S_START: return "$scan_start";
         default:
             std::cerr << "Unknown token\n";
             exit(-1);
@@ -63,7 +81,7 @@ class Scanner {
             file = fptr;
         }
 
-        int lex();
+        Tokens lex();
         int get();
         void unget(int ch);
         void scan_err(const char* ch);
@@ -72,6 +90,7 @@ class Scanner {
         string getlexeme() {return lexeme;}
 
     private:
+        int state = 0;                              // Scanner's current state
         std::fstream *file;                         // A file containing rules
         string lexeme;                              // String content ("lexeme") of tokens like TOK and RULE
         int lineno = 1;                             // Current line number
