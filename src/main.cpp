@@ -37,28 +37,6 @@ int main(int argc, char **argv) {
         run_error("unable to open file");
     }
 
-    /* {
-        scfile.open("../build/temp/sc.txt");
-        std::string str = "";
-        while (str != "%%" && !myfile.eof()) {
-            std::getline(myfile, str);
-            trim(str, " ");
-            scfile << str << "\n";
-        }
-        scfile.close();
-    }
-
-    {
-        prfile.open("../build/temp/pr.txt");
-        std::string str = "";
-        while (!myfile.eof()) {
-            std::getline(myfile, str);
-            trim(str, " ");
-            prfile << str << "\n";
-        }
-        prfile.close();
-    } */
-
     Scanner *sc = new Scanner((std::fstream*)&myfile);
     Parser *par = new Parser(sc, flags);
     par->parse();
@@ -67,10 +45,10 @@ int main(int argc, char **argv) {
 
     auto root = par->getroot();
     ASTProcessor proc = ASTProcessor(root);
-    auto res = proc.process_ast_lalr1();
+    auto res = proc.process_ast_lalr1(sc->getstartstate());
     
     // new handlefinder stuff
-    HandleFinder hfind = HandleFinder(res, proc.get_alphabet());
+    HandleFinder hfind = HandleFinder(res, proc.get_alphabet(), sc->getstartstate());
     hfind.exec();
 
     CodeGenerator cgen = CodeGenerator(&hfind);

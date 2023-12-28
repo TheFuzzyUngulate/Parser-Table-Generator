@@ -36,6 +36,32 @@ Tokens Scanner::lex() {
         do ch = get();
         while (ch != 0 && isspace(ch) && ch != '\n');
 
+        // directives
+        if (ch == '%') {
+            string str;
+            while ((ch = get()) == '%' || isalpha(ch)) str += ch; 
+            unget(ch);
+
+            if (str == "%") {
+                state++;
+                return Tokens::S_DELIM;
+            }
+            else
+            if (str == "start") {
+                if (start_state != "")
+                    scan_err("multiple start states specified");
+                do ch = get();
+                while (ch != 0 && isspace(ch) && ch != '\n');
+                string ddr;
+                while (isalpha(ch)) {
+                    ddr += ch;
+                    ch = get();
+                } unget(ch);
+                start_state = ddr;
+            }
+            else scan_err("illegal symbol");
+        }
+
         if (state == 0) {
             switch(ch) {
                 case 0:
@@ -44,16 +70,16 @@ Tokens Scanner::lex() {
                 case ':':
                     ch = get();
                     if (ch == '=') return Tokens::S_TRANSIT;
-                    else scan_err("invalid token");
+                    else scan_err("invalid token \':\'");
                     break;
                 
-                case '%':
+                /*case '%':
                     ch = get();
                     if (ch == '%') {
                         state = 1;
                         return Tokens::S_DELIM;
                     } else scan_err("illegal symbol");
-                    break;
+                    break;*/
 
                 case '\n':
                     lineno++;
@@ -83,7 +109,11 @@ Tokens Scanner::lex() {
                         lexeme.pop_back();
                         unget(ch);
                         return Tokens::S_STRING;
-                    } else scan_err("invalid token");
+                    } else {
+                        string err = "invalid char ";
+                        err += ch;
+                        scan_err(err.c_str());
+                    }
             }
         }
         else
@@ -111,7 +141,7 @@ Tokens Scanner::lex() {
                     lineno++;
                     return Tokens::BREAK;
                 
-                case '\"':
+                /*case '\"':
                     lexeme.clear();
                     do {
                         ch = get();
@@ -120,7 +150,7 @@ Tokens Scanner::lex() {
                     lexeme.pop_back();
                     if (ch == '\"') return Tokens::TOK;
                     else scan_err("open quotation mark");
-                    break;
+                    break;*/
 
                 default:
                     lexeme.clear();
@@ -137,7 +167,11 @@ Tokens Scanner::lex() {
                         
                         if (lexeme == "empty") return Tokens::EMPTY;
                         else return Tokens::RULE;
-                    } else scan_err("invalid token");
+                    } else {
+                        string err = "invalid char ";
+                        err += ch;
+                        scan_err(err.c_str());
+                    }
             }
         }
     }

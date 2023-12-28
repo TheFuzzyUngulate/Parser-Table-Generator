@@ -127,12 +127,12 @@ int Parser::prime_table() {
     dict[make_pair<Tokens, Tokens>(P_RULE, BREAK)] = new vector<Tokens>({BREAK});
     dict[make_pair<Tokens, Tokens>(P_RULES, EMPTY)] = new vector<Tokens>({P_RULES_EL, P_RULES1});
     dict[make_pair<Tokens, Tokens>(P_RULES, RULE)] = new vector<Tokens>({P_RULES_EL, P_RULES1});
-    dict[make_pair<Tokens, Tokens>(P_RULES, TOK)] = new vector<Tokens>({P_RULES_EL, P_RULES1});
+    //dict[make_pair<Tokens, Tokens>(P_RULES, TOK)] = new vector<Tokens>({P_RULES_EL, P_RULES1});
     dict[make_pair<Tokens, Tokens>(P_RULES, LOPT)] = new vector<Tokens>({P_RULES_EL, P_RULES1});
     dict[make_pair<Tokens, Tokens>(P_RULES, LREP)] = new vector<Tokens>({P_RULES_EL, P_RULES1});
     dict[make_pair<Tokens, Tokens>(P_RULES1, EMPTY)] = new vector<Tokens>({P_RULES_EL, P_RULES1});
     dict[make_pair<Tokens, Tokens>(P_RULES1, RULE)] = new vector<Tokens>({P_RULES_EL, P_RULES1});
-    dict[make_pair<Tokens, Tokens>(P_RULES1, TOK)] = new vector<Tokens>({P_RULES_EL, P_RULES1});
+    //dict[make_pair<Tokens, Tokens>(P_RULES1, TOK)] = new vector<Tokens>({P_RULES_EL, P_RULES1});
     dict[make_pair<Tokens, Tokens>(P_RULES1, LOPT)] = new vector<Tokens>({P_RULES_EL, P_RULES1});
     dict[make_pair<Tokens, Tokens>(P_RULES1, LREP)] = new vector<Tokens>({P_RULES_EL, P_RULES1});
     dict[make_pair<Tokens, Tokens>(P_RULES1, BAR)] = new vector<Tokens>({BAR, P_RULES_EL, P_RULES1});
@@ -141,7 +141,7 @@ int Parser::prime_table() {
     dict[make_pair<Tokens, Tokens>(P_RULES1, BREAK)] = new vector<Tokens>({});
     dict[make_pair<Tokens, Tokens>(P_RULES_EL, EMPTY)] = new vector<Tokens>({EMPTY});
     dict[make_pair<Tokens, Tokens>(P_RULES_EL, RULE)] = new vector<Tokens>({RULE});
-    dict[make_pair<Tokens, Tokens>(P_RULES_EL, TOK)] = new vector<Tokens>({TOK});
+    //dict[make_pair<Tokens, Tokens>(P_RULES_EL, TOK)] = new vector<Tokens>({TOK});
     dict[make_pair<Tokens, Tokens>(P_RULES_EL, LOPT)] = new vector<Tokens>({LOPT, P_RULES, ROPT});
     dict[make_pair<Tokens, Tokens>(P_RULES_EL, LREP)] = new vector<Tokens>({LREP, P_RULES, RREP});
     return EXIT_SUCCESS;
@@ -331,12 +331,25 @@ int Parser::parse() {
                     if (cur == Tokens::EMPTY)
                         ast_push(new EmptyAST());
                     else 
-                    if (is_scanner_enum(cur)) {
-                        if (cur == Tokens::S_STRING || cur == Tokens::S_CONTENT)
-                            reg_push(sc->getlexeme());
+                    if (!is_parser_enum(cur)) {
+                        ast_push(new Literal(sc->getlexeme(), cur));
                     }
-                    string name = (is_scanner_enum(cur)) ? sc->getlexeme() : upper(sc->getlexeme());
-                    ast_push(new Literal(name, cur));
+                    else
+                    {
+                        auto toks = ((StartAST*)res_stack[0])->getChildren();
+                        bool _f = false;
+                        for (auto x : toks) {
+                            auto r = (RegRule*)x;
+                            if (r->getName() == sc->getlexeme()) {
+                                _f = true;
+                                break;
+                            }
+                        }
+                        if (_f)
+                            ast_push(new Literal(sc->getlexeme(), Tokens::TOK));
+                        else ast_push(new Literal(sc->getlexeme(), Tokens::RULE));
+                    }
+
                     if (_flags.PARSER_TRACE)
                         ast_print();
                 }

@@ -288,11 +288,13 @@ std::pair<bool, deque<AST*>> ASTProcessor::trans1(deque<AST*> start) {
  * @return true if present, and
  * @return false otherwise
  */
-bool ASTProcessor::semcheck1(deque<AST*> start) {
+bool ASTProcessor::semcheck1(deque<AST*> start, string start_state) {
+    if (start_state == "")
+        processing_error("no start state specified");
     for (auto x : start) {
         Rule* rule = (Rule*)x;
         auto litem = rule->getLeft();
-        if (litem->getName() == "START")
+        if (litem->getName() == start_state)
             return true;
     } return false;
 }
@@ -381,7 +383,7 @@ deque<AST*> ASTProcessor::process_ast_ll1() {
     return q;
 }
 
-deque<AST*> ASTProcessor::process_ast_lalr1() {
+deque<AST*> ASTProcessor::process_ast_lalr1(string start_state) {
     auto children = _start->getChildren();
     deque<AST*> res_holder = _start->getChildren();
     while (1) {
@@ -408,7 +410,7 @@ deque<AST*> ASTProcessor::process_ast_lalr1() {
 
     auto q = trans6(res_holder);
     setsymbs(q);
-    if (!semcheck1(q))
+    if (!semcheck1(q, start_state))
         astproc_err("no start state found");
     if (!semcheck2(q))
         astproc_err("undefined rule used");

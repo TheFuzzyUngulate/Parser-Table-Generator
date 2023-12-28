@@ -10,9 +10,9 @@
 
 #define nullptr ((void*)0)
 
-#define P_RULE_COUNT 15
-#define P_STATE_COUNT 33
-#define P_ELEMENT_COUNT 15
+#define P_RULE_COUNT 13
+#define P_STATE_COUNT 1
+#define P_ELEMENT_COUNT 14
 typedef struct P_PARSE_CLASS {
 	P_ELEMENTS type;
 	const char* name;

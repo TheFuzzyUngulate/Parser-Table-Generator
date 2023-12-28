@@ -41,12 +41,12 @@ class ASTProcessor {
         std::pair<bool, deque<AST*>> trans2(deque<AST*> start);
         std::pair<bool, deque<AST*>> trans1(deque<AST*> start);
 
-        bool semcheck1(deque<AST*> start);
+        bool semcheck1(deque<AST*> start, string start_state);
         bool semcheck2(deque<AST*> start);
         void setsymbs(deque<AST*> lst);
 
         deque<AST*> process_ast_ll1();
-        deque<AST*> process_ast_lalr1();
+        deque<AST*> process_ast_lalr1(string start_state);
         std::set<std::string> get_alphabet();
 
     private:

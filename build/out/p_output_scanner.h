@@ -18,19 +18,18 @@ static inline void P_LEX_ERROR(const char* message) {
 typedef enum P_ELEMENTS {
 	P_START_LIT,
 	P_TOK_END,
-	P_LIT_START,
-	P_LIT_E,
-	P_LIT_T,
-	P_TOK_MINUS,
-	P_LIT_E_BAR,
+	P_LIT_Decl,
+	P_LIT_Expr,
 	P_TOK_PLUS,
-	P_LIT_F,
+	P_LIT_Decl_BAR,
+	P_TOK_MINUS,
+	P_LIT_Fact,
 	P_TOK_MUL,
-	P_LIT_T_BAR,
+	P_LIT_Expr_BAR,
 	P_TOK_DIV,
-	P_TOK_LPAR,
-	P_TOK_RPAR,
-	P_TOK_NUM
+	P_TOK_NUM,
+	P_TOK_RIGHT,
+	P_TOK_LEFT
 } P_ELEMENTS;
 
 typedef struct P_ELEMENT_LIST {
@@ -55,19 +54,18 @@ static inline char * P_ELEMENT_STR(P_ELEMENTS tok) {
 	switch (tok) {
 		case P_START_LIT: return "S*"; 
 		case P_TOK_END: return "$"; 
-		case P_LIT_START: return "START"; 
-		case P_LIT_E: return "E"; 
-		case P_LIT_T: return "T"; 
-		case P_TOK_MINUS: return "#MINUS"; 
-		case P_LIT_E_BAR: return "E'"; 
+		case P_LIT_Decl: return "Decl"; 
+		case P_LIT_Expr: return "Expr"; 
 		case P_TOK_PLUS: return "#PLUS"; 
-		case P_LIT_F: return "F"; 
+		case P_LIT_Decl_BAR: return "Decl'"; 
+		case P_TOK_MINUS: return "#MINUS"; 
+		case P_LIT_Fact: return "Fact"; 
 		case P_TOK_MUL: return "#MUL"; 
-		case P_LIT_T_BAR: return "T'"; 
+		case P_LIT_Expr_BAR: return "Expr'"; 
 		case P_TOK_DIV: return "#DIV"; 
-		case P_TOK_LPAR: return "#LPAR"; 
-		case P_TOK_RPAR: return "#RPAR"; 
 		case P_TOK_NUM: return "#NUM"; 
+		case P_TOK_RIGHT: return "#RIGHT"; 
+		case P_TOK_LEFT: return "#LEFT"; 
 		default: P_LEX_ERROR("invalid token.");
 	}
 }

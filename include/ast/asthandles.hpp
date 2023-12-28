@@ -259,13 +259,14 @@ class HandleFinder {
          * 
          * @param lst List of Rule objects from which to form ASTHandle objects
          */
-        HandleFinder(deque<AST*> lst, std::set<std::string> _alph) {
+        HandleFinder(deque<AST*> lst, std::set<std::string> _alph, string start_state) {
             _lst = lst;
             Rule* strt = new Rule(new Literal("S*", Tokens::RULE), new RuleList({new Literal("START", Tokens::RULE)}));
             AST_State frst = {};
             frst.push_back(strt);
             _states.push_back(frst);
             alphabet = _alph;
+            _start_state = start_state;
         }
         
         /**
@@ -328,6 +329,7 @@ class HandleFinder {
 
     private:
         deque<AST*> _lst;
+        string _start_state;
         HandleDict transitions;
         vector<AST_State> _states;
         vector<AltRule*> alt_grammar_list;

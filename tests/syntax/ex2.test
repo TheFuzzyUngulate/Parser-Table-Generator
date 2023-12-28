@@ -1,6 +1,14 @@
-Start  => E
-E      => T T1
-T1     => "+" T T1
-T1     => empty
-T      => "a"
-T      => "b"
+PLUS := "+"
+MINUS := "-"
+MUL := "*"
+DIV := "/"
+LEFT := "("
+RIGHT := ")"
+NUM := "{[0-9]}+"
+
+%%
+%start Decl
+
+Decl => Expr {PLUS Expr | MINUS Expr}
+Expr => Fact {MUL Fact | DIV Fact}
+Fact => NUM | LEFT Decl RIGHT | MINUS Fact

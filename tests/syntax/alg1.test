@@ -8,7 +8,9 @@ NUM := "{[0-9]}+"
 
 %%
 
+%start Start
+
 Start => { E }
-E => T {"MINUS" T | "PLUS" T}
-T => F {"MUL" F | "DIV" F}
-F => "LPAR" E "RPAR" | "MINUS" F | "NUM"
+E => T {MINUS T | PLUS T}
+T => F {MUL F | DIV F}
+F => LPAR E RPAR | MINUS F | NUM

@@ -88,6 +88,7 @@ class Scanner {
         void scan_warn(const char* ch);
         int getlineno() {return lineno;}
         string getlexeme() {return lexeme;}
+        string getstartstate() {return start_state;}
 
     private:
         int state = 0;                              // Scanner's current state
@@ -96,6 +97,7 @@ class Scanner {
         int lineno = 1;                             // Current line number
         bool reached_end = false;                   // Boolean used to ensure EOF has a break inside of it
         vector<char> unget_list;                    // Vector storing unget characters for parser convenience
+        string start_state;                         // Start state value found by scanner
 };
 
 #endif

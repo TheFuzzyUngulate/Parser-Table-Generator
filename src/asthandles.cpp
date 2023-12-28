@@ -193,7 +193,8 @@ bool HandleFinder::create_follow_set() {
     for (int i = 0; i < alt_grammar_list.size(); ++i) {
         auto item = alt_grammar_list[i]->getLeft()->getName();
         auto initsize = follow_set[item].size();
-        if (item == "Start@0") follow_set[item].insert("$");
+        string start = _start_state + "@0";
+        if (item == start) follow_set[item].insert("$");
 
         for (auto x : alt_grammar_list) {
             auto rhs_items = x->getRight()->getAltChildren();
