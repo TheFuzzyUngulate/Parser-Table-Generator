@@ -396,10 +396,6 @@ deque<AST*> ASTProcessor::process_ast_ll1() {
 deque<AST*> ASTProcessor::process_ast_lalr1(string start_state) {
     auto children = _start->getChildren();
     deque<AST*> res_holder = _start->getChildren();
-    
-    printf("initial:\n");
-    for (auto item : res_holder) 
-        item->print();
 
     while (1) {
         bool no_change = true;
@@ -411,25 +407,13 @@ deque<AST*> ASTProcessor::process_ast_lalr1(string start_state) {
             no_change = no_change && res1.first;
             res_holder = res1.second;
             
-            printf("after resolving rep-expr\n");
-            for (auto item : res_holder) 
-                item->print();
-            
             res1 = trans2(res_holder);
             no_change = no_change && res1.first;
             res_holder = res1.second;
 
-            printf("after resolving opt-expr\n");
-            for (auto item : res_holder) 
-                item->print();
-
             res1 = trans5(res_holder);
             no_change = no_change && res1.first;
             res_holder = res1.second;
-
-            printf("after resolving or-stmt\n");
-            for (auto item : res_holder) 
-                item->print();
         }
         if (no_change)
             break;
