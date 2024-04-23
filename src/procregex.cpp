@@ -152,7 +152,7 @@ NonPrimitive *RegExChecker::load() {
                 break;
             }
             case '\\': {
-                char x = _str[i++];
+                x = _str[i++];
                 std::string str = "\\";
                 str += x;
                 top->addChild(new Primitive(str));

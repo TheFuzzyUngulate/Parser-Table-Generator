@@ -331,9 +331,8 @@ int Parser::parse() {
                     if (cur == Tokens::EMPTY)
                         ast_push(new EmptyAST());
                     else 
-                    if (!is_parser_enum(cur)) {
+                    if (!is_parser_enum(cur) || cur != Tokens::RULE)
                         ast_push(new Literal(sc->getlexeme(), cur));
-                    }
                     else
                     {
                         auto toks = ((StartAST*)res_stack[0])->getChildren();
@@ -362,8 +361,6 @@ int Parser::parse() {
             } else parse_unexpected_terminal_err((Tokens)tos->name(), (Tokens)cur);
         }
     }
-
-    res_stack[0]->print();
     
     root = (StartAST*)res_stack[1];
     return EXIT_SUCCESS;

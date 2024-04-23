@@ -46,10 +46,16 @@ int main(int argc, char **argv) {
     auto root = par->getroot();
     ASTProcessor proc = ASTProcessor(root);
     auto res = proc.process_ast_lalr1(sc->getstartstate());
+    if (flags.PRINT_RULES) {
+        for (auto step : res)
+            step->print();
+    }
     
     // new handlefinder stuff
     HandleFinder hfind = HandleFinder(res, proc.get_alphabet(), sc->getstartstate());
     hfind.exec();
+    if (flags.PRINT_GRAMMAR)
+        hfind.print_alt_grammar();
 
     CodeGenerator cgen = CodeGenerator(&hfind);
     cgen.genPrereqs();

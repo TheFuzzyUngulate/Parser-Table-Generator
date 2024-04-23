@@ -1,8 +1,8 @@
-# Install script for directory: D:/Personal Projects/Parser-Table-Generator
+# Install script for directory: C:/Users/torch/Documents/Parser-Table-Generator
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
-  set(CMAKE_INSTALL_PREFIX "C:/Program Files (x86)/Project")
+  set(CMAKE_INSTALL_PREFIX "C:/Program Files (x86)/PTG")
 endif()
 string(REGEX REPLACE "/$" "" CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 
@@ -45,5 +45,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "D:/Personal Projects/Parser-Table-Generator/build/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "C:/Users/torch/Documents/Parser-Table-Generator/build/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

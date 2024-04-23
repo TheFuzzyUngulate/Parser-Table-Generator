@@ -1,9 +1,26 @@
-Start => {Decl} Expr "."
-Decl => "let" Var "be" Val "."
+DOT := "."
+LET := "let"
+BE := "be"
+LPAR := "("
+RPAR := ")"
+DIV := "/"
+MULT := "*"
+PLUS := "+"
+MINUS := "-"
+ID := "[a-zA-z]*"
+NUM := "[0-9]*"
+STRING := "\"[a-zA-z]*\""
+
+%%
+
+%start Start
+
+Start => {Decl} Expr DOT
+Decl => LET Var BE Val DOT
 Expr => Term { OpA Term }
 Term => Fact { OpB Fact }
-Fact => "("Expr ")" | "-" Fact | Val
-OpA => "+" | "-"
-OpB => "*" | "/"
-Var => "ID"
-Val => "ID" | "NUM" | "STRING"
+Fact => LPAR Expr RPAR | MINUS Fact | Val
+OpA => PLUS | MINUS
+OpB => MULT | DIV
+Var => ID
+Val => ID | NUM | STRING

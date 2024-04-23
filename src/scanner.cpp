@@ -87,11 +87,21 @@ Tokens Scanner::lex() {
                 
                 case '\"':
                     lexeme.clear();
-                    do {
+
+                    while (true) {
                         ch = get();
-                        lexeme += ch;
-                    } while (isascii(ch) && ch != '\"');
-                    lexeme.pop_back();
+                        while (ch == '\\') {
+                            lexeme += ch;
+                            if ((ch = get()) == 0)
+                                scan_err("broken quotations");
+                            lexeme += ch;
+                            ch = get();
+                        }
+                        if (ch == '\"' || !isascii(ch)) 
+                            break;
+                        else lexeme += ch;
+                    }
+
                     if (ch == '\"') return Tokens::S_CONTENT;
                     else scan_err("open quotation mark");
                     break;

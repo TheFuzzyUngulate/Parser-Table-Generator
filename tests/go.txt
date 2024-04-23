@@ -1,0 +1,25 @@
+ELEMENT := "{[A-Z]}+"
+STRING := "\"[^\"]+|\\\"\""
+COLON := ":"
+ATTRIBUTE := "{[a-z]}+"
+ADDRESS := "@{[0-9]}+"
+LBRACK := "{|[|("
+RBRACK := "}|]|)"
+COMMA := ","
+DIRECTIVE := "#{[A-Za-z]}+"
+ELLIPSIS := "..."
+
+%%
+
+%start start
+
+start     => { item }
+item      => struct | directive
+struct    => ELEMENT COLON { attribute }
+attribute => ATTRIBUTE COLON litlist
+litlist   => ELLIPSIS | { literal }
+literal   => feature | STRING | ADDRESS
+feature   => ELEMENT [ featlist ]
+featlist  => LBRACK ELEMENT { COMMA ELEMENT } RBRACK
+directive => DIRECTIVE diritem { COMMA diritem }
+diritem   => STRING | ELEMENT

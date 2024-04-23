@@ -16,6 +16,8 @@ struct flags {
     bool PARSER_TRACE = false;
     bool SCANNER_TRACE = false;
     bool PRINT_PARSE_TREE = false;
+    bool PRINT_RULES = false;
+    bool PRINT_GRAMMAR = false;
     std::string input_file;
 };
 
@@ -43,7 +45,10 @@ inline struct flags handle_args(std::vector<std::string> args, int argcount) {
                       << "    infile:\tthe input file\n"
                       << "    -t:\t\tturn on parser trace\n"
                       << "    -s:\t\tturn on scanner trace\n"
-                      << "    -d:\t\tdisplay syntax tree after parse\n";
+                      << "    -d:\t\tdisplay syntax tree after parse\n"
+                      << "    -r:\t\tdisplay rules extracted from syntax tree\n"
+                      << "    -g:\t\tdisplay generated grammar with handles\n"
+                      << "    -a:\t\tactivate all flags\n";
             exit(-1);
         }
         else
@@ -56,6 +61,22 @@ inline struct flags handle_args(std::vector<std::string> args, int argcount) {
         }
         else
         if (str == "-s") {
+            flags.SCANNER_TRACE = true;
+        }
+        else
+        if (str == "-r") {
+            flags.PRINT_RULES = true;
+        }
+        else
+        if (str == "-g") {
+            flags.PRINT_GRAMMAR = true;
+        }
+        else
+        if (str == "-a") {
+            flags.PARSER_TRACE = true;
+            flags.PRINT_GRAMMAR = true;
+            flags.PRINT_PARSE_TREE = true;
+            flags.PRINT_RULES = true;
             flags.SCANNER_TRACE = true;
         }
         else
