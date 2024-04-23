@@ -43,7 +43,25 @@ std::pair<bool, deque<AST*>> ASTProcessor::trans5(deque<AST*> start) {
         auto rlist = rule->getRight();
         deque<AST*> nodes = rlist->getChildren();
 
-        std::vector<RuleList*> newrules = {new RuleList()};
+        if (nodes[0]->getId() == "orstmt") {
+            // S => A | B yields S => A and S => B
+            not_changed    = false;
+            OrExpr* mynode = (OrExpr*)nodes[0];
+            auto left      = mynode->getLeft()->getChildren();
+            auto right     = mynode->getRight()->getChildren();
+
+            deque<AST*> newA = {};
+            deque<AST*> newB = {};
+
+            newA.insert(newA.begin(), left.begin(), left.end());
+            newB.insert(newB.begin(), right.begin(), right.end());
+            endlist.push_back(new Rule(litem, new RuleList(newA)));
+            endlist.push_back(new Rule(litem, new RuleList(newB)));
+        }
+
+        else endlist.push_back(rule);
+
+        /**std::vector<RuleList*> newrules = {new RuleList()};
         for (auto n : nodes) {
             if (n->getId() == "orstmt") {
                 not_changed = false;
@@ -55,10 +73,10 @@ std::pair<bool, deque<AST*>> ASTProcessor::trans5(deque<AST*> start) {
                 for (int i = 0; i < old_size; ++i) {
                     auto init = newrules[i];
                     auto clone = new RuleList(*init);
-                    for (auto ch : left)
-                        init->addChild(ch);
-                    for (auto ch : right)
-                        clone->addChild(ch);
+                    for (int k = 0; k < left.size(); ++k)
+                        init->addChild(left[k]);
+                    for (int k = 0; k < right.size(); ++k)
+                        clone->addChild(right[k]);
                     newrules.push_back(clone);
                 }
             }
@@ -69,7 +87,7 @@ std::pair<bool, deque<AST*>> ASTProcessor::trans5(deque<AST*> start) {
         }
 
         for (auto z : newrules)
-            endlist.push_back(new Rule(litem, z));
+            endlist.push_back(new Rule(litem, z));**/
     }
     return make_pair(not_changed, endlist);
 }
@@ -378,23 +396,40 @@ deque<AST*> ASTProcessor::process_ast_ll1() {
 deque<AST*> ASTProcessor::process_ast_lalr1(string start_state) {
     auto children = _start->getChildren();
     deque<AST*> res_holder = _start->getChildren();
+    
+    printf("initial:\n");
+    for (auto item : res_holder) 
+        item->print();
+
     while (1) {
         bool no_change = true;
         for (auto child : children) {
             Rule* myrule = (Rule*)child;
             std::pair<bool, deque<AST*>> res1;
-            
+
             res1 = trans1(res_holder);
             no_change = no_change && res1.first;
             res_holder = res1.second;
             
+            printf("after resolving rep-expr\n");
+            for (auto item : res_holder) 
+                item->print();
+            
             res1 = trans2(res_holder);
             no_change = no_change && res1.first;
             res_holder = res1.second;
-            
+
+            printf("after resolving opt-expr\n");
+            for (auto item : res_holder) 
+                item->print();
+
             res1 = trans5(res_holder);
             no_change = no_change && res1.first;
             res_holder = res1.second;
+
+            printf("after resolving or-stmt\n");
+            for (auto item : res_holder) 
+                item->print();
         }
         if (no_change)
             break;

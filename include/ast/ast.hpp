@@ -148,11 +148,8 @@ class RuleList : public AST {
         bool isEmpty() {return _children.empty();}
         bool curr_is_or_node() {return !isEmpty() && last()->getId() == "orstmt";}
         virtual void print(int INDENT = 0) override {
-            std::cout << string(4*INDENT, ' ')
-                      << _id << ":"
-                      << std::endl;
             for (auto child : _children)
-                child->print(INDENT+1);
+                child->print(INDENT);
         }
 };
 
