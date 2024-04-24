@@ -1,5 +1,207 @@
 #include "../include/gen/codegen.hpp"
 
+void CodeGenerator::generate()
+{
+    int i;
+    int state;
+    std::string line;
+    std::string name;
+    std::string regex;
+    std::string delim;
+    std::ifstream templ;
+    std::ofstream ofile;
+
+    state = 0;
+    delim = "/* stop */";
+    ofile = std::ofstream();
+    ofile.open("out/" + _fname);
+    templ = std::ifstream();
+    templ.open("res/template.txt");
+
+    while (std::getline(templ, line))
+    {
+        /* if we aren't signalled to insert, leave it */
+        if (line != delim) {
+            ofile << line << "\n";
+            continue;
+        }
+
+        /* otherwise... depends on state */
+        switch (state)
+        {
+            case 0:
+            {
+                /* add scanner token enum */
+                ofile << "typedef enum ptg_enum {\n";
+                for (i = 0; i < _elements.size(); ++i) {
+                    ofile << "\t" 
+                            << _elementtoks[_elements[i]]
+                            << ((i != _elements.size()-1) ? "," : "")
+                            << "\n";
+                } ofile << "} ptg_enum;\n\n";
+
+                /* add string representations of tokens */
+                ofile << "static inline char*\n"
+                            "ptg_enum_string(ptg_enum tok) {\n"
+                            "\tswitch (tok) {\n";
+                for (i = 0; i < _elements.size(); ++i) {
+                    ofile << "\t\tcase " 
+                            << _elementtoks[_elements[i]]
+                            << ": return \""
+                            << _elements[i] << "\";\n";
+                } ofile << "\t\tdefault: return \"unknown\";\n\t}\n}\n";
+
+                /* break state */
+                break;
+            }
+
+            case 1:
+            {
+                /* use regular expression */
+                for (auto item : _regexes)
+                {
+                    /* get items and values */
+                    name  = item.first;
+                    regex = item.second;
+
+                    /* declare regcomp, wooweee!! */
+                    ofile << "\t\tif (regcomp(&re, \""
+                          << regex << "\", 0) != 0) exit(-1);\n";
+                    
+                    /* attempt to evaluate the pattern */
+                    ofile << "\t\tstat = regexec(&re, ptg_lexeme, (size_t)0, NULL, 0);\n";
+                    ofile << "\t\tregfree(&re);\n";
+                    ofile << "\t\tif (stat == 0) return " << _elementtoks["#" + name] << ";\n\n";
+                }
+
+                /* break state */
+                break;
+            }
+
+            case 2:
+            {
+                /* add rule count */
+                ofile << "#define P_RULE_COUNT "
+                      << _hf->getRuleCount() << "\n";
+
+                /* add rule count */
+                ofile << "#define P_STATE_COUNT "
+                      << _hf->getStateCount() << "\n";
+                      
+                /* add rule count */
+                ofile << "#define P_ELEMENT_COUNT "
+                      << _elements.size() << "\n";
+
+                /* break state */
+                break;
+            }
+
+            case 3:
+            {
+                /* declare transitions */
+
+                for (auto x : _hf->getTransitions()) 
+                {
+                    auto a = x.first.first;
+                    auto b = x.first.second;
+                    auto c = x.second;
+                    
+                    ofile << "\tptg_table_next(" 
+                          << a << ", " << _elementtoks[b] 
+                          << ") = (ptg_pdata_t){"
+                          << (b.at(0) == '#' ? "PTG_SHIFT" : "PTG_GOTO")
+                          << ", " << c << ", -1, 0};\n";
+                }
+
+                /* get states, transitions, and follow-sets */
+                auto states      = _hf->getStates();
+                auto transitions = _hf->getTransitions();
+                auto follow_set  = _hf->getFollowSet();
+
+                for (int i = 0; i < _hf->getStateCount(); ++i) 
+                {
+                    for (int j = 0; j < states[i].size(); ++j) 
+                    {
+                        /* get handle fron state */
+                        auto handle = states[i][j];
+
+                        /* closed handles either ACCEPT or REDUCE */
+                        if (handle.closed()) 
+                        {
+                            /* get lhs name */
+                            auto rule     = handle.getRule();
+                            auto rule_lhs = rule->getLeft();
+                            auto lhs_name = rule_lhs->getName();
+
+                            /* if lhs is starting state, this is ACCEPT */
+                            if (lhs_name == "S*") {
+                                ofile << "\tptg_table_next(" 
+                                      << i << ", " << _elementtoks["$"] 
+                                      << ") = (ptg_pdata_t){"
+                                      << "PTG_ACCEPT, 0, -1, 0};\n";
+                                continue;
+                            }
+                            
+                            /* otherwise, do something else */
+                            std::set<std::string> found;
+
+                            /* loop through follow sets to find that of lhs */
+                            for (auto follow : follow_set) 
+                            {
+                                /* this is all to get the unadulterated name, btw. */
+                                auto head    = follow.first;
+                                auto tagloc  = std::find(head.rbegin(), head.rend(), '@');
+                                auto index   = std::distance(tagloc, head.rend()) - 1;
+                                auto content = head.substr(0, index);
+
+                                /* if you found the follow set of the handle */
+                                if (content == lhs_name) 
+                                {
+                                    /* loop through all follow set items */
+                                    for (auto dest : follow.second) 
+                                    {
+                                        if (dest == "$") 
+                                            content = dest;
+                                        else {
+                                            tagloc  = std::find(dest.rbegin(), dest.rend(), '@');
+                                            index   = std::distance(tagloc, dest.rend()) -1;
+                                            content = "#" + dest.substr(1, index-2);
+                                        }
+
+                                        /* only add it if its not already in */
+                                        if (found.find(content) == found.end()) 
+                                            found.insert(content); else continue;
+
+                                        /* represent in file */
+                                        ofile << "\tptg_table_next(" 
+                                              << i << ", " << _elementtoks["$"] 
+                                              << ") = (ptg_pdata_t){"
+                                              << "PTG_REDUCE"
+                                              << ", " << transitions[HandleDictPair(i, lhs_name)]
+                                              << ", " << j 
+                                              << ", " << rule->getRight()->getChildren().size()
+                                              << "};\n";
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                /* break state */
+                break;
+            }
+
+            
+        }
+
+        /* we always increment state, baby!!! */
+        state++;
+    }
+
+    ofile.close();
+}
+
 void CodeGenerator::genPrereqs() {
     auto file = std::ofstream();
     file.open("out/p_list_type.h");
@@ -273,7 +475,7 @@ void CodeGenerator::genParserFiles() {
                 }
             }
         }
-    }   
+    }
     file << "\treturn table;\n}\n\n";
     // add definition for ACTION function, which uses table
     file << "P_TABLE_DATA ACTION (P_TABLE_DATA **table, int state, P_ELEMENTS tok) {\n";

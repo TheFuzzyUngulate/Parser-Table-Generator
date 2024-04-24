@@ -19,6 +19,7 @@ struct flags {
     bool PRINT_RULES = false;
     bool PRINT_GRAMMAR = false;
     std::string input_file;
+    std::string output_file;
 };
 
 void run_error(const char* ch);
@@ -28,13 +29,11 @@ void run_error(const char* ch);
  * 
  * @param args Argument list
  */
-inline struct flags handle_args(std::vector<std::string> args, int argcount) {
+inline struct flags handle_args(std::vector<std::string> args) {
     struct flags flags;
 
     if ((int)args.size() == 0)
         run_error("insufficient arguments");
-    if ((int)args.size() > argcount + 1)
-        run_error("too many arguments");
 
     std::string fname = args[0];
     args.erase(args.begin());
@@ -83,14 +82,23 @@ inline struct flags handle_args(std::vector<std::string> args, int argcount) {
         if (str[0] == '-') 
             run_error("invalid flag provided.\nuse the \"-h\" (help) command to view options");
         else
-        if (str != "" && flags.input_file != "")
-            run_error("more than 1 file name provided");
-        else
-            flags.input_file = str;
+        {
+            if (flags.input_file == "")
+                flags.input_file = str;
+            else
+            if (flags.output_file == "")
+                flags.output_file = str;
+            else run_error("too many file names provided");
+        }
     }
 
     if (flags.input_file == "")
-        run_error("no file provided");
+        run_error("no input file provided");
+    if (flags.output_file == "")
+        flags.output_file = "ptgparse.h";
+    else
+    if (flags.output_file.back() != 'h' || flags.output_file[flags.output_file.size() - 2] != '.')
+        flags.output_file = flags.output_file + ".h";
     
     return flags;
 }

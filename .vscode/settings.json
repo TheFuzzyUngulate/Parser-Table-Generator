@@ -108,6 +108,8 @@
     "stdexcept": "cpp",
     "streambuf": "cpp",
     "cinttypes": "cpp",
-    "typeinfo": "cpp"
+    "typeinfo": "cpp",
+    "p_output_scanner.h": "c",
+    "p_output_parser.h": "c"
   }
 }

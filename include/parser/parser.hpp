@@ -50,6 +50,7 @@ class Parser {
         
         void print_root();
         StartAST* getroot() {return root;}
+        StartAST* getregexes() {return regexes;}
 
         int prime_table();
         void print_dict();
@@ -63,6 +64,7 @@ class Parser {
         vector<AST> true_res_stack;
         vector<ParserItem*> pred_stack;
         StartAST* root;
+        StartAST* regexes;
         struct flags _flags;
 };
 

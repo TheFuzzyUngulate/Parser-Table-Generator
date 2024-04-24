@@ -261,7 +261,7 @@ class HandleFinder {
          */
         HandleFinder(deque<AST*> lst, std::set<std::string> _alph, string start_state) {
             _lst = lst;
-            Rule* strt = new Rule(new Literal("S*", Tokens::RULE), new RuleList({new Literal("START", Tokens::RULE)}));
+            Rule* strt = new Rule(new Literal("S*", Tokens::RULE), new RuleList({new Literal(start_state, Tokens::RULE)}));
             AST_State frst = {};
             frst.push_back(strt);
             _states.push_back(frst);

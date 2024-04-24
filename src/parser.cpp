@@ -361,7 +361,8 @@ int Parser::parse() {
             } else parse_unexpected_terminal_err((Tokens)tos->name(), (Tokens)cur);
         }
     }
-    
-    root = (StartAST*)res_stack[1];
+
+    root    = (StartAST*)res_stack[1];
+    regexes = (StartAST*)res_stack[0];
     return EXIT_SUCCESS;
 }

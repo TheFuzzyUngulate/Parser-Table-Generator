@@ -7,10 +7,14 @@
 
 #include "../ast/asthandles.hpp"
 
+typedef std::vector<std::pair<std::string, std::string>> regexlib;
+
 class CodeGenerator {
     public:
-        CodeGenerator(HandleFinder *h) {
-            _hf = h;
+        CodeGenerator(HandleFinder *h, regexlib regexes, std::string filename) {
+            _hf       = h;
+            _fname    = filename;
+            _regexes  = regexes;
             _elements = h->get_all_terms_and_nterms();
 
             auto tokcount = 1;
@@ -43,9 +47,12 @@ class CodeGenerator {
         void genPrereqs();
         void genScannerFiles();
         void genParserFiles();
+        void generate();
 
     private:
         HandleFinder *_hf;
+        std::string _fname;
+        regexlib _regexes;
         std::vector<std::string> _elements;
         std::map<std::string, std::string> _elementtoks;
 };

@@ -28,7 +28,7 @@ void run_error(const char* ch) {
 int main(int argc, char **argv) {
 
     vector<string> arguments(argv, argv+argc);
-    struct flags flags = handle_args(arguments, 4);
+    struct flags flags = handle_args(arguments);
 
     std::ifstream myfile;
     std::ofstream scfile, prfile;
@@ -54,13 +54,24 @@ int main(int argc, char **argv) {
     // new handlefinder stuff
     HandleFinder hfind = HandleFinder(res, proc.get_alphabet(), sc->getstartstate());
     hfind.exec();
-    if (flags.PRINT_GRAMMAR)
+    if (flags.PRINT_GRAMMAR) {
+        hfind.print_transitions();
         hfind.print_alt_grammar();
+    }
 
-    CodeGenerator cgen = CodeGenerator(&hfind);
-    cgen.genPrereqs();
-    cgen.genParserFiles();
-    cgen.genScannerFiles();
+    // change regexes to tuple list
+    regexlib regexes;
+    auto fake = par->getregexes()->getChildren();
+    for (auto item : fake) {
+        if (item->getId() == "regex") {
+            RegRule* re = (RegRule*)item;
+            std::pair<std::string, std::string> pear = {re->getName(), re->getRegex()};
+            regexes.push_back(pear);
+        }
+    }
+    
+    CodeGenerator cgen = CodeGenerator(&hfind, regexes, flags.output_file);
+    cgen.generate();
 
     return EXIT_SUCCESS;
 }

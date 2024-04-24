@@ -1,0 +1,118 @@
+#ifndef PTGPARSE_H
+#define PTGPARSE_H
+#pragma once
+
+#include <ctype.h>
+#include <stdio.h>
+#include <regex.h>
+#include <stdlib.h>
+#include <string.h>
+
+/* stop */
+
+static FILE* ptg_in            = stdin;
+static int ptg_line            = 0;
+static FILE* ptg_out           = stdout;
+static int ptg_column          = 0;
+static int ptg_unlex_count     = 0;
+static ptg_enum* ptg_unlex_buf = NULL;
+static int ptg_ungetch_count   = 0;
+static char* ptg_ungetch_buf   = NULL;
+static char* ptg_lexeme        = NULL;
+static char ptg_lexeme_count   = NULL;
+
+char
+ptg_getch()
+{
+    char ch;
+
+    if (ptg_ungetch_buf && ptg_ungetch_count > 0)
+    {
+        --ptg_ungetch_count;
+        ch = ptg_ungetch_buf[ptg_ungetch_count];
+        ptg_ungetch_buf = (char*)realloc(ptg_ungetch_buf, ptg_ungetch_count * sizeof(char));
+        return ch;
+    }
+
+    return getc(ptg_in);
+}
+
+void
+ptg_ungetch(char ch)
+{
+    ++ptg_ungetch_count;
+    ptg_ungetch_buf = (char*)realloc(ptg_ungetch_buf, ptg_ungetch_count * sizeof(char));
+    ptg_ungetch_buf[ptg_ungetch_count-1] = ch;
+}
+
+void
+ptg_unlex(ptg_enum tok)
+{
+    ++ptg_unlex_count;
+    ptg_unlex_buf = (ptg_enum*)realloc(ptg_unlex_buf, ptg_unlex_count * sizeof(ptg_enum));
+    ptg_unlex_buf[ptg_unlex_count-1] = tok;
+}
+
+ptg_enum
+ptg_lex()
+{
+    int stat;
+    regex_t re;
+
+    stat = 0;
+
+    if (ptg_lexeme) 
+        free(ptg_lexeme);
+    ptg_lexeme_count = 1;
+    ptg_lexeme = (char*)malloc(2 * sizeof(char));
+    ptg_lexeme[0] = ptg_getch();
+    ptg_lexeme[1] = '\0';
+
+    while (1)
+    {
+/* stop */
+        ptg_lexeme_count++;
+        ptg_lexeme = (char*)realloc(ptg_lexeme, (ptg_lexeme_count + 1) * sizeof(char));
+        ptg_lexeme[ptg_lexeme_count]   = '\0';
+        ptg_lexeme[ptg_lexeme_count-1] = ptg_getch();
+    }
+}
+
+/* stop */
+
+typedef struct 
+ptg_pdata
+{
+    int name;
+    int state;
+    int funcindex;
+    int size;
+}
+ptg_pdata_t;
+
+#define PTG_GOTO   0
+#define PTG_SHIFT  1
+#define PTG_REDUCE 2
+#define PTG_ACCEPT 3
+
+static ptg_pdata_t *ptg_ptable = NULL;
+
+#define ptg_table_next(state, token) (*(ptg_ptable + ((state) * P_ELEMENT_COUNT) + (token)))
+
+static inline void
+ptg_ptable_init()
+{
+    ptg_ptable = (ptg_pdata_t*)calloc(P_STATE_COUNT * P_ELEMENT_COUNT, sizeof(ptg_pdata_t));
+
+/* stop */
+}
+
+void ptg_parse()
+{
+    ptg_ptable_init();
+    
+}
+
+#undef ptg_table_next
+
+#endif
