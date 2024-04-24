@@ -70,7 +70,7 @@ int main(int argc, char **argv) {
         }
     }
     
-    CodeGenerator cgen = CodeGenerator(&hfind, regexes, flags.output_file);
+    CodeGenerator cgen = CodeGenerator(&hfind, res, regexes, flags.output_file);
     cgen.generate();
 
     return EXIT_SUCCESS;

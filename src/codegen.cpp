@@ -192,10 +192,84 @@ void CodeGenerator::generate()
                 break;
             }
 
-            
+            case 4:
+            {
+                std::vector<std::pair<std::string, int>> seen;
+                std::set<std::tuple<std::string, std::deque<AST*>, std::string>> data;
+
+                /* initialize tree substructs */
+                for (auto item : _rules)
+                {
+                    int i = 0;
+                    Rule* rule       = (Rule*)item;
+                    std::string orig = _elementtoks[rule->getLeft()->getName()];
+                    std::string name = orig;
+
+                    {
+                        auto right = rule->getRight()->getChildren();
+                        if (right.size() == 1 && right[0]->isEmpty()) continue;
+                    }
+
+                    for (i = 0; i < seen.size(); ++i) {
+                        if (name == seen[i].first) {
+                            if (seen[i].second == 1)
+                                ofile << "struct ptg_tree_" << name << "__1;\n";
+                            seen[i].second++;
+                            name = name + "__" + std::to_string(seen[i].second);
+                            break;
+                        }
+                    }
+
+                    if (i == seen.size())
+                        seen.push_back({name, 1});
+                    ofile << "struct ptg_tree_" << name << ";\n";
+
+                    data.insert({
+                        name,
+                        rule->getRight()->getChildren(),
+                        (orig == name ? "" : orig)
+                    });
+                }
+
+                /* space for funsies */
+                ofile << "\n";
+
+                /* actually do the tree specifying */
+                for (auto pear : data)
+                {
+                    int i      = 0;
+                    auto list  = std::get<1>(pear);
+                    auto name  = std::get<0>(pear);
+                    auto super = std::get<2>(pear);
+
+                    ofile << "struct ptg_tree_" 
+                          << name << " {\n"
+                          << "\tptg_tree_" 
+                          << (super == "" ? "_base_t" : super)
+                          << " base;\n";
+                    
+                    for (i = 0; i < list.size(); ++i)
+                    {
+                        auto item = list[i];
+                        if (item->getId() == "lit") {
+                            Literal* lit = (Literal*)item;
+                            name = _elementtoks[lit->getName()];
+                            ofile << "\tstruct ptg_tree_" << name << "* item" << i << ";\n";
+                        } else {
+                            ofile << "\tchar* item" << i << ";\n";
+                        }
+                    }
+                    ofile << "};\n\n";
+                }
+
+                /* break state */
+                break;
+            }
+
+
         }
 
-        /* we always increment state, baby!!! */
+        /* we always increment state */
         state++;
     }
 

@@ -107,10 +107,107 @@ ptg_ptable_init()
 /* stop */
 }
 
+typedef struct
+ptg_tree__base
+{
+    char* name;
+    char* type;
+    int   childCount;
+    struct ptg_tree_base* children;
+}
+ptg_tree__base_t;
+
+/* stop */
+typedef struct
+ptg_pstack_item
+{
+    ptg_enum token;
+    ptg_tree__base* data;
+}
+ptg_pstack_item_t;
+
+static int ptg_pstack_count = 0;
+static ptg_pstack_item_t* ptg_pstack = NULL;
+#define ptg_pstack_tos() ptg_pstack[ptg_pstack_count-1]
+
+static inline void
+ptg_pstack_push(ptg_pstack_item item)
+{
+    if (ptg_pstack_count == 0) {
+        ptg_pstack_count++;
+        ptg_pstack = (ptg_pstack_item_t*)malloc(sizeof(ptg_pstack_item_t));
+        ptg_pstack[0] = item;
+    }
+    else {
+        ptg_pstack_count++;
+        ptg_pstack = (ptg_pstack_item_t*)realloc(ptg_pstack, ptg_pstack_count * sizeof(ptg_pstack_item_t));
+        ptg_pstack[ptg_pstack_count - 1] = item;
+    }
+}
+
+static inline ptg_pstack_item
+ptg_pstack_pop()
+{
+    if (ptg_pstack_count > 0) {
+        ptg_pstack_count--;
+        ptg_pstack = (ptg_pstack_item_t*)realloc(ptg_pstack, ptg_pstack_count * sizeof(ptg_pstack_item_t));
+    }
+}
+
+static int ptg_sstack_count = 0;
+static ptg_enum* ptg_sstack = NULL;
+#define ptg_sstack_tos() ptg_sstack[ptg_sstack_count-1]
+
+static inline void
+ptg_sstack_push(ptg_enum item)
+{
+    if (ptg_sstack_count == 0) {
+        ptg_sstack_count++;
+        ptg_sstack = (ptg_enum*)malloc(sizeof(ptg_enum));
+        ptg_sstack[0] = item;
+    }
+    else {
+        ptg_sstack_count++;
+        ptg_sstack = (ptg_enum*)realloc(ptg_sstack, ptg_sstack_count * sizeof(ptg_enum));
+        ptg_sstack[ptg_sstack_count - 1] = item;
+    }
+}
+
+static inline int
+ptg_sstack_pop()
+{
+    if (ptg_pstack_count > 0) {
+        ptg_enum a = ptg_sstack[--ptg_pstack_count];
+        ptg_pstack = (ptg_pstack_item_t*)realloc(ptg_pstack, ptg_pstack_count * sizeof(ptg_pstack_item_t));
+        return a;
+    }
+
+    return -1;
+}
+
 void ptg_parse()
 {
+    int state = 0;
+    ptg_enum tos;
+    ptg_pdata_t next;
+
     ptg_ptable_init();
-    
+    ptg_pstack_push((ptg_pstack_item_t){P_TOK_END, NULL});
+    ptg_pstack_push((ptg_pstack_item_t){P_START_LIT, NULL});
+
+    while (1)
+    {
+        tos  = ptg_sstack_tos();
+        next = ptg_table_next(state, tos);
+
+        switch (next.name)
+        {
+            case PTG_SHIFT:
+            case PTG_REDUCE:
+            case PTG_GOTO:
+            case PTG_ACCEPT:
+        }
+    }
 }
 
 #undef ptg_table_next
