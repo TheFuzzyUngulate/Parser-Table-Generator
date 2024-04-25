@@ -55,23 +55,27 @@ int main(int argc, char **argv) {
     HandleFinder hfind = HandleFinder(res, proc.get_alphabet(), sc->getstartstate());
     hfind.exec();
     if (flags.PRINT_GRAMMAR) {
+        hfind.print_states();
         hfind.print_transitions();
-        hfind.print_alt_grammar();
     }
 
-    // change regexes to tuple list
-    regexlib regexes;
-    auto fake = par->getregexes()->getChildren();
-    for (auto item : fake) {
-        if (item->getId() == "regex") {
-            RegRule* re = (RegRule*)item;
-            std::pair<std::string, std::string> pear = {re->getName(), re->getRegex()};
-            regexes.push_back(pear);
+    // code generation
+    if (flags.PRODUCE_GENERATOR) 
+    {
+        // change regexes to tuple list    
+        regexlib regexes;
+        auto fake = par->getregexes()->getChildren();
+        for (auto item : fake) {
+            if (item->getId() == "regex") {
+                RegRule* re = (RegRule*)item;
+                std::pair<std::string, std::string> pear = {re->getName(), re->getRegex()};
+                regexes.push_back(pear);
+            }
         }
+        
+        CodeGenerator cgen = CodeGenerator(&hfind, res, regexes, flags.output_file);
+        cgen.generate();
     }
-    
-    CodeGenerator cgen = CodeGenerator(&hfind, res, regexes, flags.output_file);
-    cgen.generate();
 
     return EXIT_SUCCESS;
 }

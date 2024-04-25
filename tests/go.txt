@@ -13,13 +13,13 @@ ELLIPSIS := "..."
 
 %start start
 
-start     => { item }
-item      => struct | directive
-struct    => ELEMENT COLON { attribute }
-attribute => ATTRIBUTE COLON litlist
-litlist   => ELLIPSIS | { literal }
-literal   => feature | STRING | ADDRESS
-feature   => ELEMENT [ featlist ]
-featlist  => LBRACK ELEMENT { COMMA ELEMENT } RBRACK
-directive => DIRECTIVE diritem { COMMA diritem }
-diritem   => STRING | ELEMENT
+start     => { item };
+item      => struct | directive;
+struct    => ELEMENT COLON { attribute };
+attribute => ATTRIBUTE COLON litlist;
+litlist   => ELLIPSIS | { literal };
+literal   => feature | STRING | ADDRESS;
+feature   => ELEMENT [ featlist ];
+featlist  => LBRACK ELEMENT { COMMA ELEMENT } RBRACK;
+directive => DIRECTIVE diritem { COMMA diritem };
+diritem   => STRING | ELEMENT;

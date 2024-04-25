@@ -130,17 +130,18 @@ Tokens Scanner::lex() {
         if (state == 1) {
             switch(ch) {
                 case 0:
-                    if (!reached_end) {
+                    /**if (!reached_end) {
                         reached_end = true;
                         unget(ch);
                         return Tokens::BREAK;
-                    } else return Tokens::ENDFILE;
+                    } else**/ return Tokens::ENDFILE;
 
                 case '[': return Tokens::LOPT;
                 case ']': return Tokens::ROPT;
                 case '{': return Tokens::LREP;
                 case '}': return Tokens::RREP;
                 case '|': return Tokens::BAR;
+                case ';': return Tokens::BREAK;
                 case '=':
                     ch = get();
                     if (ch == '>') return Tokens::ARROW;
@@ -149,7 +150,7 @@ Tokens Scanner::lex() {
                 
                 case '\n':
                     lineno++;
-                    return Tokens::BREAK;
+                    break;
                 
                 /*case '\"':
                     lexeme.clear();

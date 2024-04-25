@@ -8,18 +8,63 @@
 #include <stdlib.h>
 #include <string.h>
 
+typedef struct
+m_stack
+{
+    int    count;
+    size_t size;
+    void*  content;
+    int    capacity;
+}
+m_stack;
+#define m_stack_tos(stack) (stack.content + (stack.size * (stack.count - 1)))
+
+m_stack
+_m_stack_init(size_t size)
+{
+    m_stack m;
+
+    m.count    = 0;
+    m.size     = size;
+    m.capacity = 2;
+    m.content  = malloc(m.capacity * m.size);
+
+    return m;
+}
+
+#define m_stack_init(t) (_m_stack_init(sizeof(t)))
+
+void m_stack_push(m_stack* m, void* item)
+{
+    if (m->count == m->capacity) {
+        m->capacity = m->capacity * 3 / 2;
+        m->content  = realloc(m->content, m->capacity * m->size);
+    }
+    memcpy(m->content + m->count, item, m->size);
+    m->count++;
+}
+
+void* m_stack_pop(m_stack* m)
+{
+    if (m->count > 0) {
+        void* item = malloc(m->size);
+        memcpy(item, m->content + (m->count - 1), m->size);
+        return item;
+    } else return NULL;
+}
+
 /* stop */
 
-static FILE* ptg_in            = stdin;
+static FILE* ptg_in            = NULL;
 static int ptg_line            = 0;
-static FILE* ptg_out           = stdout;
+static FILE* ptg_out           = NULL;
 static int ptg_column          = 0;
 static int ptg_unlex_count     = 0;
 static ptg_enum* ptg_unlex_buf = NULL;
 static int ptg_ungetch_count   = 0;
 static char* ptg_ungetch_buf   = NULL;
 static char* ptg_lexeme        = NULL;
-static char ptg_lexeme_count   = NULL;
+static char ptg_lexeme_count   = 0;
 
 char
 ptg_getch()
@@ -53,16 +98,32 @@ ptg_unlex(ptg_enum tok)
     ptg_unlex_buf[ptg_unlex_count-1] = tok;
 }
 
+char*
+ptg_getlexeme()
+{
+    int len   = strlen(ptg_lexeme);
+    char* res = (char*)malloc((len + 1) * sizeof(char));
+    memcpy(res, ptg_lexeme, (len + 1) * sizeof(char));
+    return res;
+}
+
 ptg_enum
 ptg_lex()
 {
+    int ch;
     int stat;
     regex_t re;
 
     stat = 0;
 
+    if (!ptg_in) 
+        ptg_in = stdin;
+    if (!ptg_out) 
+        ptg_out = stdout;
+    
     if (ptg_lexeme) 
         free(ptg_lexeme);
+    
     ptg_lexeme_count = 1;
     ptg_lexeme = (char*)malloc(2 * sizeof(char));
     ptg_lexeme[0] = ptg_getch();
@@ -71,6 +132,9 @@ ptg_lex()
     while (1)
     {
 /* stop */
+        ch = ptg_getch();
+        if (ch == EOF) return P_TOK_END;
+        
         ptg_lexeme_count++;
         ptg_lexeme = (char*)realloc(ptg_lexeme, (ptg_lexeme_count + 1) * sizeof(char));
         ptg_lexeme[ptg_lexeme_count]   = '\0';
@@ -90,10 +154,11 @@ ptg_pdata
 }
 ptg_pdata_t;
 
-#define PTG_GOTO   0
-#define PTG_SHIFT  1
-#define PTG_REDUCE 2
-#define PTG_ACCEPT 3
+#define PTG_GOTO   1
+#define PTG_ERROR  0
+#define PTG_SHIFT  2
+#define PTG_REDUCE 3
+#define PTG_ACCEPT 4
 
 static ptg_pdata_t *ptg_ptable = NULL;
 
@@ -108,104 +173,102 @@ ptg_ptable_init()
 }
 
 typedef struct
-ptg_tree__base
+ptg_node
 {
     char* name;
-    char* type;
-    int   childCount;
-    struct ptg_tree_base* children;
+    ptg_enum tok;
+    int ccount;
+    int ccapacity;
+    struct ptg_node **children;
 }
-ptg_tree__base_t;
+ptg_node_t;
 
-/* stop */
-typedef struct
-ptg_pstack_item
+ptg_node_t*
+ptg_node_new(char* name, ptg_enum tok)
 {
-    ptg_enum token;
-    ptg_tree__base* data;
-}
-ptg_pstack_item_t;
+    ptg_node_t* node = (ptg_node_t*)malloc(sizeof(ptg_node_t));
 
-static int ptg_pstack_count = 0;
-static ptg_pstack_item_t* ptg_pstack = NULL;
-#define ptg_pstack_tos() ptg_pstack[ptg_pstack_count-1]
+    node->name      = name;
+    node->ccount    = 0;
+    node->tok       = tok;
+    node->ccapacity = 2;
+    node->children  = (ptg_node_t**)malloc(node->ccapacity * sizeof(ptg_node_t*));
 
-static inline void
-ptg_pstack_push(ptg_pstack_item item)
-{
-    if (ptg_pstack_count == 0) {
-        ptg_pstack_count++;
-        ptg_pstack = (ptg_pstack_item_t*)malloc(sizeof(ptg_pstack_item_t));
-        ptg_pstack[0] = item;
-    }
-    else {
-        ptg_pstack_count++;
-        ptg_pstack = (ptg_pstack_item_t*)realloc(ptg_pstack, ptg_pstack_count * sizeof(ptg_pstack_item_t));
-        ptg_pstack[ptg_pstack_count - 1] = item;
-    }
+    return node;
 }
 
-static inline ptg_pstack_item
-ptg_pstack_pop()
+void ptg_node_addchild(ptg_node_t* node, ptg_node_t* child)
 {
-    if (ptg_pstack_count > 0) {
-        ptg_pstack_count--;
-        ptg_pstack = (ptg_pstack_item_t*)realloc(ptg_pstack, ptg_pstack_count * sizeof(ptg_pstack_item_t));
+    if (node->ccount == node->ccapacity) {
+        node->ccapacity = node->ccapacity * 3 / 2;
+        node->children  = (ptg_node_t**)realloc(node->children, node->ccapacity * sizeof(ptg_node_t*));
     }
+
+    node->children[node->ccount] = child;
+    node->ccount++;
 }
 
-static int ptg_sstack_count = 0;
-static ptg_enum* ptg_sstack = NULL;
-#define ptg_sstack_tos() ptg_sstack[ptg_sstack_count-1]
-
-static inline void
-ptg_sstack_push(ptg_enum item)
+ptg_node_t* ptg_parse()
 {
-    if (ptg_sstack_count == 0) {
-        ptg_sstack_count++;
-        ptg_sstack = (ptg_enum*)malloc(sizeof(ptg_enum));
-        ptg_sstack[0] = item;
-    }
-    else {
-        ptg_sstack_count++;
-        ptg_sstack = (ptg_enum*)realloc(ptg_sstack, ptg_sstack_count * sizeof(ptg_enum));
-        ptg_sstack[ptg_sstack_count - 1] = item;
-    }
-}
-
-static inline int
-ptg_sstack_pop()
-{
-    if (ptg_pstack_count > 0) {
-        ptg_enum a = ptg_sstack[--ptg_pstack_count];
-        ptg_pstack = (ptg_pstack_item_t*)realloc(ptg_pstack, ptg_pstack_count * sizeof(ptg_pstack_item_t));
-        return a;
-    }
-
-    return -1;
-}
-
-void ptg_parse()
-{
-    int state = 0;
+    char a;
+    int state;
     ptg_enum tos;
+    m_stack nodes;
+    m_stack states;
+    m_stack symbols;
     ptg_pdata_t next;
+    ptg_node_t *leaf;
 
     ptg_ptable_init();
-    ptg_pstack_push((ptg_pstack_item_t){P_TOK_END, NULL});
-    ptg_pstack_push((ptg_pstack_item_t){P_START_LIT, NULL});
+
+    state   = 0;
+    states  = m_stack_init(int);
+    symbols = m_stack_init(ptg_enum);
+    nodes   = m_stack_init(ptg_node_t*);
+    
+    m_stack_push(&states, &state);
 
     while (1)
     {
-        tos  = ptg_sstack_tos();
-        next = ptg_table_next(state, tos);
+        tos   = ptg_lex();
+        state = *(int*)m_stack_tos(states);
+        next  = ptg_table_next(state, tos);
 
         switch (next.name)
         {
             case PTG_SHIFT:
+                m_stack_push(&symbols, &tos);
+                m_stack_push(&states, &(next.state));
+                leaf = ptg_node_new(ptg_getlexeme(), tos);
+                m_stack_push(&nodes, &leaf);
+                break;
+
             case PTG_REDUCE:
+                m_stack_pop(&states);
+                leaf = ptg_node_new(NULL, tos);
+                for (int i = 0; i < next.size; ++i) {
+                    ptg_node_t** sub = (ptg_node_t**)m_stack_pop(&nodes);
+                    if (sub == NULL) {
+                        fprintf(stderr, "stack out of nodes.\n");
+                        exit(EXIT_FAILURE);
+                    }
+                    ptg_node_addchild(leaf, *sub);
+                }
+                m_stack_push(&nodes, &leaf);
+                m_stack_push(&states, &(next.state));
+                break;
+
             case PTG_GOTO:
+                m_stack_push(&states, &(next.state));
+                break;
+
             case PTG_ACCEPT:
+                leaf = *(ptg_node_t**)m_stack_pop(&nodes);
+                return leaf;
+
+            case PTG_ERROR:
+                fprintf(stderr, "invalid token \"%s\".\n", ptg_enum_string(tos));
+                exit(EXIT_FAILURE);
         }
     }
 }

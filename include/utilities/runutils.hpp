@@ -18,6 +18,7 @@ struct flags {
     bool PRINT_PARSE_TREE = false;
     bool PRINT_RULES = false;
     bool PRINT_GRAMMAR = false;
+    bool PRODUCE_GENERATOR = false;
     std::string input_file;
     std::string output_file;
 };
@@ -47,6 +48,7 @@ inline struct flags handle_args(std::vector<std::string> args) {
                       << "    -d:\t\tdisplay syntax tree after parse\n"
                       << "    -r:\t\tdisplay rules extracted from syntax tree\n"
                       << "    -g:\t\tdisplay generated grammar with handles\n"
+                      << "    -o:\t\tproduce parser tree generator\n"
                       << "    -a:\t\tactivate all flags\n";
             exit(-1);
         }
@@ -71,12 +73,18 @@ inline struct flags handle_args(std::vector<std::string> args) {
             flags.PRINT_GRAMMAR = true;
         }
         else
+        if (str == "-o") {
+            flags.PRODUCE_GENERATOR = true;
+        }
+        else
         if (str == "-a") {
             flags.PARSER_TRACE = true;
             flags.PRINT_GRAMMAR = true;
             flags.PRINT_PARSE_TREE = true;
             flags.PRINT_RULES = true;
+            flags.PRODUCE_GENERATOR = true;
             flags.SCANNER_TRACE = true;
+
         }
         else
         if (str[0] == '-') 
