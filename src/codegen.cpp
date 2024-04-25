@@ -153,9 +153,10 @@ void CodeGenerator::generate()
                                 auto tagloc  = std::find(head.rbegin(), head.rend(), '@');
                                 auto index   = std::distance(tagloc, head.rend()) - 1;
                                 auto content = head.substr(0, index);
+                                auto stateno = std::stoi(head.substr(index+1));
 
-                                /* if you found the follow set of the handle */
-                                if (content == lhs_name) 
+                                /* if you found the follow set of the handle and the states match*/
+                                if (content == lhs_name && i == stateno) 
                                 {
                                     /* loop through all follow set items */
                                     for (auto dest : follow.second) 
