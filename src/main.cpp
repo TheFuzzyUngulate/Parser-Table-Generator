@@ -57,6 +57,7 @@ int main(int argc, char **argv) {
     if (flags.PRINT_GRAMMAR) {
         hfind.print_states();
         hfind.print_transitions();
+        hfind.print_first_and_follow_sets();
     }
 
     // code generation
