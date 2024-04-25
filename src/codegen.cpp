@@ -174,7 +174,7 @@ void CodeGenerator::generate()
 
                                         /* represent in file */
                                         ofile << "\tptg_table_next(" 
-                                              << i << ", " << _elementtoks["$"] 
+                                              << i << ", " << _elementtoks[content] 
                                               << ") = (ptg_pdata_t){"
                                               << "PTG_REDUCE"
                                               << ", " << transitions[HandleDictPair(i, lhs_name)]
