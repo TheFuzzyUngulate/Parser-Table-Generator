@@ -3,12 +3,14 @@
 #pragma once
 
 #include "ast.hpp"
+#include "../utilities/general_utils.hpp"
 #include <set>
 
 class ASTProcessor {
     public:
-        ASTProcessor(StartAST* start) {
+        ASTProcessor(StartAST* start, bool show) {
             _start = start;
+            _showProc = show;
         }
 
         /*bool rule_eq(Rule* r1, Rule* r2) {
@@ -50,6 +52,7 @@ class ASTProcessor {
         std::set<std::string> get_alphabet();
 
     private:
+        bool _showProc;
         StartAST* _start;
         std::set<std::string> alphabet;
         std::set<std::string> nontermlist;

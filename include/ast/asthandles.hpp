@@ -147,6 +147,7 @@ class ASTHandle {
         Rule* _rule;                            // Rule in which handle is stored
         int _pos;                               // Position of handle within the rule
         bool _isempt = false;                   // Boolean checking whether rule is empty
+        std::vector<std::string> follows;       // set containing follow set of element, only for empties
 };
 
 typedef std::deque<ASTHandle> AST_State;

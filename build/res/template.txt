@@ -208,6 +208,16 @@ void ptg_node_addchild(ptg_node_t* node, ptg_node_t* child)
     node->ccount++;
 }
 
+void ptg_node_print(ptg_node_t* node, int indent)
+{
+    int i;
+
+    for (i = 0; i < indent; ++i) putchar(' ');
+    printf("%s: %s\n", node->name, ptg_enum_string(node->tok));
+    for (i = 0; i < node->ccount; ++i)
+        ptg_node_print(node->children[i], indent+1);
+}
+
 ptg_node_t* ptg_parse()
 {
     char a;

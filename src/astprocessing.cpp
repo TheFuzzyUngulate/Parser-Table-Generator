@@ -37,14 +37,16 @@ deque<AST*> ASTProcessor::trans6(deque<AST*> start) {
 std::pair<bool, deque<AST*>> ASTProcessor::trans5(deque<AST*> start) {
     deque<AST*> endlist = {};
     bool not_changed = true;
-    for (auto x : start) {
-        Rule* rule = (Rule*)x;
+    for (int i = 0; i < start.size(); i++) {
+        Rule* rule = (Rule*)start[i];
         auto litem = rule->getLeft();
         auto rlist = rule->getRight();
         deque<AST*> nodes = rlist->getChildren();
 
-        if (nodes[0]->getId() == "orstmt") {
-            // S => A | B yields S => A and S => B
+        /*if (nodes[0]->getId() == "orstmt") {
+            // S => (A | B) C yields S => A C and S => B C
+            // though, this only does it one at a time, because reasons...
+            // so a break statement is necessary
             not_changed    = false;
             OrExpr* mynode = (OrExpr*)nodes[0];
             auto left      = mynode->getLeft()->getChildren();
@@ -55,11 +57,55 @@ std::pair<bool, deque<AST*>> ASTProcessor::trans5(deque<AST*> start) {
 
             newA.insert(newA.begin(), left.begin(), left.end());
             newB.insert(newB.begin(), right.begin(), right.end());
+
+            for (i=i+1; i < start.size(); ++i) 
+            {
+                AST* node2 = start[i];
+                newA.push_back(node2);
+                newB.push_back(node2);
+            }
+            
             endlist.push_back(new Rule(litem, new RuleList(newA)));
             endlist.push_back(new Rule(litem, new RuleList(newB)));
         }
 
-        else endlist.push_back(rule);
+        else endlist.push_back(rule);*/
+
+        int k;
+        std::vector<RuleList*> newrules = {new RuleList()};
+
+        for (k = 0; k < nodes.size(); ++k)
+        {
+            auto n = nodes[k];
+
+            if (n->getId() == "orstmt") {
+                not_changed    = false;
+                OrExpr* mynode = (OrExpr*)n;
+                auto left      = mynode->getLeft()->getChildren();
+                auto right     = mynode->getRight()->getChildren();
+
+                deque<AST*> newA = {};
+                deque<AST*> newB = {};
+                auto earliers    = newrules[0]->getChildren();
+
+                newA.insert(newA.end(), nodes.begin(), nodes.begin()+k);
+                newB.insert(newB.end(), nodes.begin(), nodes.begin()+k);
+                
+                newA.insert(newA.end(), left.begin(), left.end());
+                newB.insert(newB.end(), right.begin(), right.end());
+
+                newA.insert(newA.end(), nodes.begin()+k+1, nodes.end());
+                newB.insert(newB.end(), nodes.begin()+k+1, nodes.end());
+
+                endlist.push_back(new Rule(litem, new RuleList(newA)));
+                endlist.push_back(new Rule(litem, new RuleList(newB)));
+
+                break;
+            }
+        }
+
+        if (k == nodes.size())
+            endlist.push_back(rule);
 
         /**std::vector<RuleList*> newrules = {new RuleList()};
         for (auto n : nodes) {
@@ -396,6 +442,12 @@ deque<AST*> ASTProcessor::process_ast_ll1() {
 deque<AST*> ASTProcessor::process_ast_lalr1(string start_state) {
     auto children = _start->getChildren();
     deque<AST*> res_holder = _start->getChildren();
+    if (_showProc) {
+        printf("At start of processing:\n");
+        for (auto child : res_holder)
+            child->print();
+        printf("\n");
+    }
 
     while (1) {
         bool no_change = true;
@@ -407,13 +459,33 @@ deque<AST*> ASTProcessor::process_ast_lalr1(string start_state) {
             no_change = no_change && res1.first;
             res_holder = res1.second;
             
+            if (_showProc && !no_change) {
+                printf("After simplifying repeats:\n");
+                for (auto child : res_holder)
+                    child->print();
+                printf("\n");
+            }
+            
             res1 = trans2(res_holder);
             no_change = no_change && res1.first;
             res_holder = res1.second;
+            
+            if (_showProc && !no_change) {
+                printf("After simplifying selects:\n");
+                for (auto child : res_holder)
+                    child->print();
+                printf("\n");
+            }
 
             res1 = trans5(res_holder);
             no_change = no_change && res1.first;
             res_holder = res1.second;
+            if (_showProc && !no_change) {
+                printf("After simplifying alternates:\n");
+                for (auto child : res_holder)
+                    child->print();
+                printf("\n");
+            }
         }
         if (no_change)
             break;

@@ -17,6 +17,7 @@ struct flags {
     bool SCANNER_TRACE = false;
     bool PRINT_PARSE_TREE = false;
     bool PRINT_RULES = false;
+    bool PRINT_RULE_GENERATION = false;
     bool PRINT_GRAMMAR = false;
     bool PRODUCE_GENERATOR = false;
     std::string input_file;
@@ -46,6 +47,7 @@ inline struct flags handle_args(std::vector<std::string> args) {
                       << "    -t:\t\tturn on parser trace\n"
                       << "    -s:\t\tturn on scanner trace\n"
                       << "    -d:\t\tdisplay syntax tree after parse\n"
+                      << "    -m:\t\tdisplay syntax tree simplification process\n"
                       << "    -r:\t\tdisplay rules extracted from syntax tree\n"
                       << "    -g:\t\tdisplay generated grammar with handles\n"
                       << "    -o:\t\tproduce parser tree generator\n"
@@ -77,6 +79,10 @@ inline struct flags handle_args(std::vector<std::string> args) {
             flags.PRODUCE_GENERATOR = true;
         }
         else
+        if (str == "-m") {
+            flags.PRINT_RULE_GENERATION = true;
+        }
+        else
         if (str == "-a") {
             flags.PARSER_TRACE = true;
             flags.PRINT_GRAMMAR = true;
@@ -84,6 +90,7 @@ inline struct flags handle_args(std::vector<std::string> args) {
             flags.PRINT_RULES = true;
             flags.PRODUCE_GENERATOR = true;
             flags.SCANNER_TRACE = true;
+            flags.PRINT_RULE_GENERATION = true;
 
         }
         else

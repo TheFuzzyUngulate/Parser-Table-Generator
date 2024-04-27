@@ -44,7 +44,7 @@ int main(int argc, char **argv) {
         par->print_root();
 
     auto root = par->getroot();
-    ASTProcessor proc = ASTProcessor(root);
+    ASTProcessor proc = ASTProcessor(root, flags.PRINT_RULE_GENERATION);
     auto res = proc.process_ast_lalr1(sc->getstartstate());
     if (flags.PRINT_RULES) {
         for (auto step : res)

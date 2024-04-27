@@ -1,5 +1,34 @@
 #include "../include/gen/codegen.hpp"
 
+bool rulecmp(Rule* a, Rule* b)
+{
+    int ind   = 0;
+    auto lita = a->getLeft();
+    auto litb = b->getLeft();
+    auto lsta = a->getRight()->getChildren();
+    auto lstb = b->getRight()->getChildren();
+
+    if (lita->getId() != litb->getId()) return false;
+    if (lita->getName() != litb->getName()) return false;
+    if (lsta.size() != lstb.size()) return false;
+
+    for (ind = 0; ind < lsta.size(); ++ind) {
+        auto itemA = lsta[ind];
+        auto itemB = lstb[ind];
+
+        if (itemA->getId() != itemB->getId()) return false;
+
+        if (itemA->getId() == "lit" 
+         || itemA->getId() == "tok") {
+            auto stra = ((Literal*)itemA)->getName();
+            auto strb = ((Literal*)itemB)->getName();
+            if (stra != strb) return false;
+        } else if (itemA->getId() != "empty") return false;
+    }
+
+    return true;
+}
+
 void CodeGenerator::generate()
 {
     int i;
@@ -155,33 +184,48 @@ void CodeGenerator::generate()
                                 auto content = head.substr(0, index);
                                 auto stateno = std::stoi(head.substr(index+1));
 
+                                /* find rule to go to, wow?? i guess.. */
+
                                 /* if you found the follow set of the handle and the states match*/
-                                if (content == lhs_name && i == stateno) 
+                                if (content == lhs_name) 
                                 {
-                                    /* loop through all follow set items */
-                                    for (auto dest : follow.second) 
+                                    /* find rule index */
+                                    
+                                    for (int k = 0; k < _rules.size(); ++k)
                                     {
-                                        if (dest == "$") 
-                                            content = dest;
-                                        else {
-                                            tagloc  = std::find(dest.rbegin(), dest.rend(), '@');
-                                            index   = std::distance(tagloc, dest.rend()) -1;
-                                            content = "#" + dest.substr(1, index-2);
+                                        Rule* itemK = (Rule*)_rules[k];
+
+                                        if ( rulecmp(itemK, rule) )
+                                        {
+                                            /* loop through all follow set items */
+                                            for (auto dest : follow.second) 
+                                            {
+                                                if (dest == "$") 
+                                                    content = dest;
+                                                else {
+                                                    tagloc  = std::find(dest.rbegin(), dest.rend(), '@');
+                                                    index   = std::distance(tagloc, dest.rend()) -1;
+                                                    content = "#" + dest.substr(1, index-2);
+                                                }
+
+                                                /* only add it if its not already in */
+                                                if (found.find(content) == found.end()) 
+                                                    found.insert(content); else continue;
+
+                                                /* represent in file */
+                                                ofile << "\tptg_table_next(" 
+                                                        << i << ", " << _elementtoks[content] 
+                                                        << ") = (ptg_pdata_t){"
+                                                        << "PTG_REDUCE"
+                                                        << ", " << k
+                                                        << ", " << j 
+                                                        << ", " << rule->getRight()->getChildren().size()
+                                                        << "};\n";
+                                            }
+
+                                            /* job is done, time to retire */
+                                            break;
                                         }
-
-                                        /* only add it if its not already in */
-                                        if (found.find(content) == found.end()) 
-                                            found.insert(content); else continue;
-
-                                        /* represent in file */
-                                        ofile << "\tptg_table_next(" 
-                                              << i << ", " << _elementtoks[content] 
-                                              << ") = (ptg_pdata_t){"
-                                              << "PTG_REDUCE"
-                                              << ", " << transitions[HandleDictPair(i, lhs_name)]
-                                              << ", " << j 
-                                              << ", " << rule->getRight()->getChildren().size()
-                                              << "};\n";
                                     }
                                 }
                             }
