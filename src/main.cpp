@@ -47,8 +47,11 @@ int main(int argc, char **argv) {
     ASTProcessor proc = ASTProcessor(root, flags.PRINT_RULE_GENERATION);
     auto res = proc.process_ast_lalr1(sc->getstartstate());
     if (flags.PRINT_RULES) {
-        for (auto step : res)
-            step->print();
+        for (int i = 0; i < res.size(); ++i) {
+            auto step = res[i];
+            printf("step %i:\n", i);
+            step->print(1);
+        }
     }
     
     // new handlefinder stuff
