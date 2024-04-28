@@ -162,7 +162,6 @@ Tokens Scanner::lex() {
                             } else lexeme += ch;
                             ch = get();
                         } while (isascii(ch) && !isspace(ch));
-                        printf("whitespace character found is \"%d\"\n", ch);
                         unget(ch);
                         return Tokens::S_STRING;
                     } else {
