@@ -67,11 +67,11 @@ Tokens Scanner::lex() {
                 case 0:
                     return Tokens::ENDFILE;
 
-                case ':':
+                /*case ':':
                     ch = get();
                     if (ch == '=') return Tokens::S_TRANSIT;
                     else scan_err("invalid token \':\'");
-                    break;
+                    break;*/
                 
                 /*case '%':
                     ch = get();
@@ -85,7 +85,7 @@ Tokens Scanner::lex() {
                     lineno++;
                     return Tokens::S_NEWLINE;
                 
-                case '\"':
+                /*case '\"':
                     lexeme.clear();
 
                     while (true) {
@@ -104,11 +104,11 @@ Tokens Scanner::lex() {
 
                     if (ch == '\"') return Tokens::S_CONTENT;
                     else scan_err("open quotation mark");
-                    break;
+                    break;*/
 
                 default:
                     lexeme.clear();
-                    if (isalpha(ch)) {
+                    /*if (isalpha(ch)) {
                         lexeme += ch;
                         
                         do {
@@ -117,6 +117,52 @@ Tokens Scanner::lex() {
                         } while (isalnum(ch));
                         
                         lexeme.pop_back();
+                        unget(ch);
+                        return Tokens::S_STRING;
+                    } else {
+                        string err = "invalid char ";
+                        err += ch;
+                        scan_err(err.c_str());
+                    }*/
+                    if (isascii(ch) && !isspace(ch)) {
+                        do {
+                            if (ch == '\\') {
+                                ch = get();
+                                switch (ch) {
+                                    case 'n':
+                                        lexeme += '\n';
+                                        break;
+                                    case 't':
+                                        lexeme += '\t';
+                                        break;
+                                    case 'b':
+                                        lexeme += '\b';
+                                        break;
+                                    case 'r':
+                                        lexeme += '\r';
+                                        break;
+                                    case 'a':
+                                        lexeme += '\a';
+                                        break;
+                                    case '\\':
+                                        lexeme += '\\';
+                                        break;
+                                    case 'f':
+                                        lexeme += '\f';
+                                        break;
+                                    case 'v':
+                                        lexeme += '\v';
+                                        break;
+                                    case '0':
+                                        lexeme += '\0';
+                                        break;
+                                    default:
+                                        scan_err("incorrect escape char");
+                                }
+                            } else lexeme += ch;
+                            ch = get();
+                        } while (isascii(ch) && !isspace(ch));
+                        printf("whitespace character found is \"%d\"\n", ch);
                         unget(ch);
                         return Tokens::S_STRING;
                     } else {
@@ -142,6 +188,17 @@ Tokens Scanner::lex() {
                 case '}': return Tokens::RREP;
                 case '|': return Tokens::BAR;
                 case ';': return Tokens::BREAK;
+
+                case ':':
+                    ch = get();
+                    if (ch == ':') {
+                        ch = get();
+                        if (ch == '=')
+                            return Tokens::ARROW;
+                        else scan_err("invalid token");
+                    } else scan_err("invalid token");
+                    break;
+
                 case '=':
                     ch = get();
                     if (ch == '>') return Tokens::ARROW;

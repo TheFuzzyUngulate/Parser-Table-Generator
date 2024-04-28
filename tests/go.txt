@@ -1,13 +1,13 @@
-ELEMENT := "{[A-Z]}+"
-STRING := "\"[^\"]+|\\\"\""
-COLON := ":"
-ATTRIBUTE := "{[a-z]}+"
-ADDRESS := "@{[0-9]}+"
-LBRACK := "{|[|("
-RBRACK := "}|]|)"
-COMMA := ","
-DIRECTIVE := "#{[A-Za-z]}+"
-ELLIPSIS := "..."
+ELEMENT                 {[A-Z]}+
+STRING                  "([^"]+|\\")"
+COLON                   :
+ATTRIBUTE               {[a-z]}+
+ADDRESS                 @{[0-9]}+
+LBRACK                  {|[|(
+RBRACK                  }|]|)
+COMMA                   ,
+DIRECTIVE               #{[A-Za-z]}+
+ELLIPSIS                ...
 
 %%
 

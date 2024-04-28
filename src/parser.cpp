@@ -118,7 +118,7 @@ int Parser::prime_table() {
     dict[make_pair<Tokens, Tokens>(S_START, S_NEWLINE)] = new vector<Tokens>({S_RULE, S_START});
     dict[make_pair<Tokens, Tokens>(S_START, S_DELIM)] = new vector<Tokens>({});
     dict[make_pair<Tokens, Tokens>(S_START, ENDFILE)] = new vector<Tokens>({});
-    dict[make_pair<Tokens, Tokens>(S_RULE, S_STRING)] = new vector<Tokens>({S_STRING, S_TRANSIT, S_CONTENT, S_NEWLINE});
+    dict[make_pair<Tokens, Tokens>(S_RULE, S_STRING)] = new vector<Tokens>({S_STRING, S_STRING, S_NEWLINE});
     dict[make_pair<Tokens, Tokens>(S_RULE, S_NEWLINE)] = new vector<Tokens>({S_NEWLINE});
     dict[make_pair<Tokens, Tokens>(P_START, ENDFILE)] = new vector<Tokens>({});
     dict[make_pair<Tokens, Tokens>(P_START, RULE)] = new vector<Tokens>({P_RULE, P_START});
@@ -274,11 +274,15 @@ int Parser::parse() {
                 }
 
                 case Tokens::S_RULE: {
-                    if (len == 4) {
-                        auto str = (Literal*)tail[3];
+                    if (len == 3) {
+                        auto str = (Literal*)tail[2];
                         auto regex = (Literal*)tail[1];
-                        delete tail[2];
                         delete tail[0];
+                        std::cout << "rule is "
+                                  << str->getName()
+                                  << ", regex is "
+                                  << regex->getName()
+                                  << "\n";
                         ast_push(new RegRule(str->getName(), regex->getName()));
                     } else ast_push(new EmptyAST());
                     break;

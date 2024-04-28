@@ -26,10 +26,8 @@ enum Tokens {
     EMPTY,
     RULE,
     BAR,
-    S_TRANSIT,
     S_NEWLINE,
     S_DELIM,
-    S_CONTENT,
     S_STRING,
     M_START,
     M_START1,
@@ -62,10 +60,8 @@ inline const char* tokname(int tok) {
         case Tokens::P_RULES: return "$rules";
         case Tokens::P_RULES1: return "$rules\'";
         case Tokens::P_RULES_EL: return "$rule_element";
-        case Tokens::S_TRANSIT: return ":=";
         case Tokens::S_NEWLINE: return "linebreak";
         case Tokens::S_DELIM: return "%%";
-        case Tokens::S_CONTENT: return "content";
         case Tokens::S_STRING: return "string";
         case Tokens::S_RULE: return "$scan_rule";
         case Tokens::S_START: return "$scan_start";

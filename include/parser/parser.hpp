@@ -41,7 +41,7 @@ class Parser {
         
         bool is_terminal(Tokens t) {return t < M_START;}
         bool is_parser_enum(Tokens t) {return (TOK <= t && t <= BAR) || (P_START <= t && t <= P_RULES_EL);}
-        bool is_scanner_enum(Tokens t) {return (S_TRANSIT <= t && t <= S_STRING) || t == S_RULE || t == S_START;}
+        bool is_scanner_enum(Tokens t) {return (S_NEWLINE <= t && t <= S_STRING) || t == S_RULE || t == S_START;}
         
         void parse_warn(const char* ch);
         void parse_err(const char* ch);
