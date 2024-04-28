@@ -278,11 +278,6 @@ int Parser::parse() {
                         auto str = (Literal*)tail[2];
                         auto regex = (Literal*)tail[1];
                         delete tail[0];
-                        std::cout << "rule is "
-                                  << str->getName()
-                                  << ", regex is "
-                                  << regex->getName()
-                                  << "\n";
                         ast_push(new RegRule(str->getName(), regex->getName()));
                     } else ast_push(new EmptyAST());
                     break;
