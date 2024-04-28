@@ -219,7 +219,7 @@ void CodeGenerator::generate()
                                                         << "PTG_REDUCE"
                                                         << ", " << k
                                                         << ", " << j 
-                                                        << ", " << rule->getRight()->getChildren().size()
+                                                        << ", " << _elementtoks[rule->getLeft()->getName()]
                                                         << "};\n";
                                             }
 
