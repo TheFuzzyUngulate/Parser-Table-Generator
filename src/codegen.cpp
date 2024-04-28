@@ -93,14 +93,7 @@ void CodeGenerator::generate()
                     name  = item.first;
                     regex = item.second;
 
-                    /* declare regcomp, wooweee!! */
-                    ofile << "\t\tif (regcomp(&re, \""
-                          << regex << "\", 0) != 0) exit(-1);\n";
-                    
-                    /* attempt to evaluate the pattern */
-                    ofile << "\t\tstat = regexec(&re, ptg_lexeme, (size_t)0, NULL, 0);\n";
-                    ofile << "\t\tregfree(&re);\n";
-                    ofile << "\t\tif (stat == 0) return " << _elementtoks["#" + name] << ";\n\n";
+                    ofile << "\t\t//to be implemented...\n\n";
                 }
 
                 /* break state */
