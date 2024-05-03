@@ -142,21 +142,22 @@ ptg_lex()
 
 /* stop */
 
-typedef struct 
-ptg_pdata
-{
-    int name;
-    int state;
-    int funcindex;
-    int size;
-}
-ptg_pdata_t;
-
 #define PTG_GOTO   1
 #define PTG_ERROR  0
 #define PTG_SHIFT  2
 #define PTG_REDUCE 3
 #define PTG_ACCEPT 4
+
+typedef struct ptg_pdata {
+    int                                            action;
+    union { int                          shift;
+            int                          sgoto;
+            char                         accept;
+            char                         error;
+            struct { int      rule;
+                     int      count;
+                     ptg_enum lhs_tok; } reduce; } op;
+} ptg_pdata_t;
 
 static ptg_pdata_t *ptg_ptable = NULL;
 
@@ -242,11 +243,11 @@ ptg_node_t* ptg_parse()
         state = *(int*)m_stack_tos(states);
         next  = ptg_table_next(state, tos);
 
-        switch (next.name)
+        switch (next.action)
         {
             case PTG_SHIFT:
                 m_stack_push(&symbols, &tos);
-                m_stack_push(&states, &(next.state));
+                m_stack_push(&states, &(next.op.shift));
                 leaf = ptg_node_new(ptg_getlexeme(), tos);
                 m_stack_push(&nodes, &leaf);
                 break;
@@ -254,7 +255,7 @@ ptg_node_t* ptg_parse()
             case PTG_REDUCE:
                 m_stack_pop(&states);
                 leaf = ptg_node_new(NULL, tos);
-                for (int i = 0; i < next.size; ++i) {
+                for (int i = 0; i < next.op.reduce.count; ++i) {
                     ptg_node_t** sub = (ptg_node_t**)m_stack_pop(&nodes);
                     if (sub == NULL) {
                         fprintf(stderr, "stack out of nodes.\n");
@@ -263,11 +264,11 @@ ptg_node_t* ptg_parse()
                     ptg_node_addchild(leaf, *sub);
                 }
                 m_stack_push(&nodes, &leaf);
-                m_stack_push(&states, &(next.state));
+                m_stack_push(&states, &(next.op.reduce.rule));
                 break;
 
             case PTG_GOTO:
-                m_stack_push(&states, &(next.state));
+                m_stack_push(&states, &(next.op.sgoto));
                 break;
 
             case PTG_ACCEPT:

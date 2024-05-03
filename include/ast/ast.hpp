@@ -192,23 +192,39 @@ class OrExpr : public AST {
 class Rule : public AST {
     public:
         Rule(Literal* ast1, RuleList* rlist1) {
-            _id = "rule";
-            _lhs = ast1;
-            _rhs = rlist1;
+            _id   = "rule";
+            _lhs  = ast1;
+            _rhs  = rlist1;
+            _folw = {};
         }
+        
         virtual void print(int INDENT = 0) override {
             cout << string(4*INDENT, ' ') 
                  << "rule: "
-                 << _lhs->getName() << std::endl;
+                 << _lhs->getName() << " [";
+            for (int i = 0; i < _folw.size(); ++i)
+                cout << _folw[i]
+                     << (i == _folw.size()-1 ? "" : ", ");
+            cout << "]\n";
             for (auto term : _rhs->getChildren())
                 term->print(INDENT+1);
         }
-        RuleList* getRight() {return _rhs;}
+
         Literal* getLeft() {return _lhs;}
+        RuleList* getRight() {return _rhs;}
+        
+        void addFollow(string str) {
+            _folw.push_back(str);
+        }
+
+        std::deque<std::string> getFollow() {
+            return _folw;
+        }
 
     private:
         Literal* _lhs;
         RuleList* _rhs;
+        deque<string> _folw;
 };
 
 class ClosedExpr : public AST {

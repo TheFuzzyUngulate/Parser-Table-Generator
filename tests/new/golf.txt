@@ -1,0 +1,88 @@
+LPAR       (
+RPAR       )
+LBRACE     {
+RBRACE     }
+SEMICOLON  ;
+COMMA      ,
+PLUS       +
+MINUS      -
+MULT       *
+DIV        /
+LAND       &&
+LOR        \|\|
+LNEG       ~
+ASSIGNOP   =
+ID         [A-Za-z][A-Za-z0-9]*
+INT        [0-9]+
+STRING     "([^"]|\\"|\\\\)+"
+VAR        var
+IF         if
+ELSE       else
+FUNC       func
+FOR        for
+RETURN     return
+BREAK      break
+
+%%
+
+%start Start
+
+Type      => TypeName;
+TypeName  => ID;
+
+Block => LBRACE StatementList RBRACE;
+
+StatementList => { Statement SEMICOLON };
+Declaration   => VarDecl;
+TopLevelDecl  => Declaration | FunctionDecl;
+
+VarDecl     => VAR VarSpec;
+VarSpec     => ID Type;
+
+FunctionDecl => FUNC FunctionName Signature FunctionBody;
+FunctionName => ID;
+FunctionBody => Block;
+
+Signature      => Parameters [ Result ];
+Result         => Type;
+Parameters     => LPAR [ ParameterList [ COMMA ] ] RPAR;
+ParameterList  => ParameterDecl { COMMA ParameterDecl };
+ParameterDecl  => ID Type;
+
+Operand     => Literal | OperandName | LPAR Expression RPAR;
+Literal     => BasicLit;
+BasicLit    => INT | STRING;
+OperandName => ID;
+PrimaryExpr => Operand | PrimaryExpr Arguments;
+
+Arguments      => LPAR [ ExpressionList [ COMMA ] ] RPAR;
+ExpressionList => Expression { COMMA Expression };
+
+Expression => UnaryExpr | Expression BinaryOp Expression;
+UnaryExpr  => PrimaryExpr | UnaryOp UnaryExpr;
+
+Statement => Declaration | SimpleStmt | ReturnStmt | BreakStmt | Block | IfStmt | ForStmt;
+
+SimpleStmt => EmptyStmt | ExpressionStmt | Assignment;
+
+EmptyStmt => empty;
+
+ExpressionStmt => Expression;
+
+Assignment => Expression ASSIGNOP Expression;
+
+IfStmt => IF Expression Block [ ELSE IfStmt | ELSE Block ];
+
+ForStmt => FOR [ Condition ] Block;
+
+Condition => Expression;
+
+ReturnStmt => RETURN [ Expression ];
+
+BreakStmt => BREAK;
+
+Start => { TopLevelDecl SEMICOLON };
+
+UnaryOp => MINUS | LNEG ;
+
+BinaryOp => PLUS | MINUS | MULT | DIV | LAND | LOR ;

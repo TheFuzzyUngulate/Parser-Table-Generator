@@ -5,6 +5,10 @@
 #include "ast.hpp"
 #include "../utilities/general_utils.hpp"
 #include <set>
+#include <map>
+#include <string>
+
+typedef std::map<std::string, std::set<std::string>> FollowSetMap;
 
 class ASTProcessor {
     public:

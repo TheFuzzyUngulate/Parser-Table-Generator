@@ -1,0 +1,76 @@
+LPAR       (
+RPAR       )
+ID         [A-Za-z][A-Za-z0-9]*
+INT        [0-9]+
+STRING     "([^"]|\\["\\ntbrafv0])+"
+PLUS       +
+MINUS      -
+MULT       *
+COMMA      ,
+DIV        /
+SPACE      [\ ]+
+ASSIGN     =
+LAND       and|&&
+LOR        or|\|\|
+LNEG       not|~
+LNEQ       !=
+BREAK      \n|\0
+IN         in
+ELLIPSIS   ...
+IF         if
+FOR        for
+ELSE       else
+RETURN     return
+BREAK      break
+
+%%
+
+%start start
+
+type     => typename ;
+typename => ID ;
+
+block => { SPACE statement BREAK } ;
+
+topleveldecl  => vardecl | funcdecl ;
+vardecl       => type ID [ ASSIGN literal ];
+funcdecl      => type functionname signature functionbody ;
+functionname  => ID ;
+functionbody  => block ;
+
+signature     => parameters ;
+parameters    => LPAR [ parameterlist ] RPAR ;
+parameterlist => parameterdecl { COMMA parameterdecl } ;
+parameterdecl => type ID ;
+
+operand     => literal | operandname | LPAR expression RPAR ;
+literal     => INT | STRING ;
+operandname => ID ;
+primaryexpr => operand | primaryexpr arguments ;
+
+arguments      => LPAR [ expressionlist ] RPAR ;
+expressionlist => expression { COMMA expression } ;
+
+expression => multexpr { boolop expression } ;
+multexpr   => addexpr { multop multexpr } ;
+addexpr    => primexpr { addop addexpr } ;
+primexpr   => INT | LPAR expression RPAR | primop primexpr ;
+
+addop  => PLUS | MINUS ;
+multop => MULT | DIV ;
+boolop => LAND | LOR | LNEQ ;
+primop => LNEG | MINUS ;
+
+statement => vardecl | simplestmt | returnstmt | breakstmt | ifstmt | forstmt ;
+
+simplestmt     => [ expressionstmt | assignment ] ;
+expressionstmt => expression ;
+assignment     => expression ASSIGN expression ;
+ifstmt         => IF expression block [ ELSE ifstmt | ELSE block ] ;
+forstmt        => FOR [ condition ] block ;
+condition      => expression | vardecl IN rangexpr ;
+rangexpr       => expression ELLIPSIS expression ;
+returnstmt     => RETURN [ expression ] ;
+breakstmt      => BREAK ;
+
+start => { topleveldecl };

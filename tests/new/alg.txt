@@ -1,0 +1,17 @@
+LPAR            (
+RPAR            )
+INTEGER         [0-9]+
+PLUS            +
+MINUS           -
+MULT            *
+DIV             /
+
+%%
+
+%start term
+
+term   => expr { termop term } ;
+termop => MULT | DIV ;
+expr   => fact { exprop expr } ;
+exprop => PLUS | MINUS ;
+fact   => INTEGER | LPAR term RPAR | MINUS fact ;

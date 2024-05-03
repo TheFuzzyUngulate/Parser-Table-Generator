@@ -127,12 +127,20 @@ void CodeGenerator::generate()
                     auto a = x.first.first;
                     auto b = x.first.second;
                     auto c = x.second;
-                    
-                    ofile << "\tptg_table_next(" 
-                          << a << ", " << _elementtoks[b] 
-                          << ") = (ptg_pdata_t){"
-                          << (b.at(0) == '#' ? "PTG_SHIFT" : "PTG_GOTO")
-                          << ", " << c << ", -1, 0};\n";
+
+                    ofile << "\tptg_table_next("
+                          << a << ", " << _elementtoks[b]
+                          << ") = (ptg_pdata_t) { .action = ";
+
+                    if (b.at(0) == '#') {
+                        ofile << "PTG_SHIFT, "
+                              << ".op.shift = " 
+                              << c << "};\n";
+                    } else {
+                        ofile << "PTG_GOTO, "
+                              << ".op.sgoto = " 
+                              << c << "};\n";
+                    }
                 }
 
                 /* get states, transitions, and follow-sets */
@@ -160,7 +168,7 @@ void CodeGenerator::generate()
                                 ofile << "\tptg_table_next(" 
                                       << i << ", " << _elementtoks["$"] 
                                       << ") = (ptg_pdata_t){"
-                                      << "PTG_ACCEPT, 0, -1, 0};\n";
+                                      << ".action = PTG_ACCEPT, .op.accept = 0};\n";
                                 continue;
                             }
                             
@@ -180,7 +188,7 @@ void CodeGenerator::generate()
                                 /* find rule to go to, wow?? i guess.. */
 
                                 /* if you found the follow set of the handle and the states match*/
-                                if (content == lhs_name) 
+                                if (content == lhs_name && i == stateno) 
                                 {
                                     /* find rule index */
                                     
@@ -209,11 +217,11 @@ void CodeGenerator::generate()
                                                 ofile << "\tptg_table_next(" 
                                                         << i << ", " << _elementtoks[content] 
                                                         << ") = (ptg_pdata_t){"
-                                                        << "PTG_REDUCE"
-                                                        << ", " << k
-                                                        << ", " << j 
+                                                        << ".action = PTG_REDUCE, .op.reduce = {"
+                                                        << k
+                                                        << ", " << rule->getRight()->getChildren().size() 
                                                         << ", " << _elementtoks[rule->getLeft()->getName()]
-                                                        << "};\n";
+                                                        << "}};\n";
                                             }
 
                                             /* job is done, time to retire */

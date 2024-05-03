@@ -153,6 +153,12 @@ Tokens Scanner::lex() {
                                     case 'v':
                                         lexeme += '\v';
                                         break;
+                                    case '|':
+                                        lexeme += '|';
+                                        break;
+                                    case ' ':
+                                        lexeme += ' ';
+                                        break;
                                     case '0':
                                         lexeme += '\0';
                                         break;
@@ -227,7 +233,7 @@ Tokens Scanner::lex() {
                         do {
                             ch = get();
                             lexeme += ch;
-                        } while (isalnum(ch));
+                        } while (isalnum(ch) || ch == '_');
                         
                         lexeme.pop_back();
                         unget(ch);

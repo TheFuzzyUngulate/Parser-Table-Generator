@@ -1,7 +1,10 @@
 #include "../include/ast/astprocessing.hpp"
 #include <deque>
+#include <sstream>
 
-using std::deque;
+using std::deque,
+      std::string;
+typedef std::map<std::string, std::set<std::string>> FollowSetMap;
 
 void astproc_err(std::string err, int lineno = -1) {
     std::cerr << "processing error: "
@@ -300,8 +303,8 @@ std::pair<bool, deque<AST*>> ASTProcessor::trans1(deque<AST*> start) {
 
         int i = 0;
         for (; i < nodes.size(); i++) {
-            // S => A {B} C becomes S => A B S', S' => B S' | C
-            // S => {B} has to be S => B S' and S' => B S' | empty
+            // S => A {B} C becomes S => A S' C, S' => B S' | empty
+            // S => {B} has to be S => B S | empty
 
             if (nodes[i]->getId() == "rep-expr") {
                 not_changed = false;
@@ -310,7 +313,7 @@ std::pair<bool, deque<AST*>> ASTProcessor::trans1(deque<AST*> start) {
                 RuleList* inner = mynode->getExpr();
                 auto innerlist = inner->getChildren();
 
-                // S => A B S'
+                /*// S => A B S'
                 deque<AST*> list1 = {};
                 list1.insert(list1.end(), nodes.begin(), nodes.begin()+i);
                 list1.insert(list1.end(), innerlist.begin(), innerlist.end());
@@ -325,7 +328,38 @@ std::pair<bool, deque<AST*>> ASTProcessor::trans1(deque<AST*> start) {
                 oright.insert(oright.begin(), nodes.begin()+i+1, nodes.end());
                 if (oright.empty()) oright.push_back(new EmptyAST());
                 auto orexpr = new OrExpr(new RuleList(orleft), new RuleList(oright));
-                endlist.push_back(new Rule(mylitr, new RuleList(orexpr)));
+                endlist.push_back(new Rule(mylitr, new RuleList(orexpr)));*/
+
+                // S => {B}
+                if (nodes.size() == 1) {
+                    // S => B S
+                    deque<AST*> list1  = {};
+                    list1.insert(list1.begin(), innerlist.begin(), innerlist.end());
+                    list1.push_back(litem);
+                    endlist.push_back(new Rule(litem, new RuleList(list1)));
+                    
+                    // S => empty
+                    endlist.push_back(new Rule(litem, new RuleList(new EmptyAST())));
+                }
+
+                // S => A {B} C
+                else {
+                    // S => A S' C
+                    deque<AST*> list1 = {};
+                    list1.insert(list1.end(), nodes.begin(), nodes.begin()+i);
+                    list1.push_back(mylitr);
+                    list1.insert(list1.end(), nodes.begin()+i+1, nodes.end());
+                    endlist.push_back(new Rule(litem, new RuleList(list1)));
+
+                    // S' => B S'
+                    deque<AST*> list2 = {};
+                    list2.insert(list2.begin(), innerlist.begin(), innerlist.end());
+                    list2.push_back(mylitr);
+                    endlist.push_back(new Rule(mylitr, new RuleList(list2)));
+
+                    // S' => empty
+                    endlist.push_back(new Rule(mylitr, new RuleList(new EmptyAST())));
+                }
                 
                 // break
                 break;
@@ -402,102 +436,268 @@ void ASTProcessor::setsymbs(deque<AST*> lst) {
     }
 }
 
+bool first_sets(deque<AST*> asts, FollowSetMap &frstset, FollowSetMap &folwset)
+{
+    int i          = 0;
+    int k          = 0;
+    bool no_change = true;
+
+    for (i = 0; i < asts.size(); ++i)
+    {
+        auto left           = ((Rule*)asts[i])->getLeft()->getName();
+        auto initsize       = frstset[left].size();
+        auto endsize        = 0;
+        auto rhs_items      = ((Rule*)asts[i])->getRight()->getChildren();
+        auto rhs_first      = rhs_items.at(0);
+        auto rhs_first_name = std::string();
+
+        if (rhs_first->getId() == "lit") {
+            
+            // add epsilon cover of first set
+            for (k = 0; k < rhs_items.size(); ++k) {
+                rhs_first_name = ((Literal*)rhs_items.at(k))->getName();
+                if (frstset.find(rhs_first_name) != frstset.end()) {
+                    for (auto fsvals : frstset[rhs_first_name]) {
+                        if (fsvals != "?") 
+                            frstset[left].insert(fsvals);
+                    }
+                    if (frstset[rhs_first_name].find("?") == frstset[rhs_first_name].end()) 
+                        break;
+                } else break;
+            }
+
+            // if all terms could be epsilon, add '?' to first set (epsilon)
+            if (k == rhs_items.size())
+                frstset[left].insert("?");
+        }
+        else if (rhs_first->getId() == "tok") {
+            rhs_first_name = ((Literal*)rhs_first)->getName();
+            frstset[left].insert(rhs_first_name);
+        }
+        else {
+            if (rhs_first->getId() == "empty") {
+                frstset[left].insert("?");
+            }
+        }
+
+        endsize   = frstset[left].size();
+        no_change = no_change && (initsize == endsize);
+    }
+
+    return no_change;
+}
+
+bool follow_sets(deque<AST*> asts, FollowSetMap &frstset, FollowSetMap &folwset, string start)
+{
+    int i             = 0;
+    string left       = "";
+    int endsize       = 0;
+    int initsize      = 0;
+    int k             = 0;
+    string curr       = "";
+    AST* last         = NULL;
+    string next       = "";
+    bool no_change    = true;
+    deque<AST*> right = {};
+
+    for (i = 0; i < asts.size(); ++i)
+    {
+        left  = ((Rule*)asts[i])->getLeft()->getName();
+        right = ((Rule*)asts[i])->getRight()->getChildren();
+        
+        if (left == start) {
+            if (folwset[left].find("$") == folwset[left].end()) {
+                no_change = false;
+                folwset[left].insert("$");
+            }
+        }
+        
+        for (k = 0; k < right.size() - 1; ++k) 
+        {
+            if (right[k]->getId() == "lit") {
+
+                curr     = ((Literal*)right[k])->getName();
+                next     = ((Literal*)right[k+1])->getName();
+                initsize = folwset[curr].size();
+
+                if (right[k+1]->getId() == "lit") {
+                    // add all non-eps elements in first set of next
+                    for (auto folw : frstset[next]) {
+                        if (folw != "?") folwset[curr].insert(folw);
+                    }
+
+                    // if next element is last, and it might be eps, then...
+                    if (k+1 == right.size() - 1) {
+                        if (frstset[next].find("?") != frstset[next].end()) {
+                            for (auto folw : folwset[left])
+                                folwset[curr].insert(folw);
+                        }
+                    }
+                }
+
+                // tok is easier, just add it
+                if (right[k+1]->getId() == "tok")
+                    folwset[curr].insert(next);
+
+                endsize   = folwset[curr].size();
+                no_change = no_change && (initsize == endsize);
+            }
+        }
+
+        /* handle last item */
+        last = right[right.size() - 1];
+
+        if (last->getId() == "lit") {
+
+            curr     = ((Literal*)last)->getName();
+            initsize = folwset[curr].size();
+            
+            for (auto folw : folwset[left])
+                folwset[curr].insert(folw);
+
+            endsize   = folwset[curr].size();
+            no_change = no_change && (initsize == endsize);
+        }
+    }
+
+    return no_change;
+}
+
 deque<AST*> ASTProcessor::process_ast_ll1() {
     auto children = _start->getChildren();
-    deque<AST*> res_holder = _start->getChildren();
+    deque<AST*> childtmp = _start->getChildren();
     while (1) {
         bool no_change = true;
         for (auto child : children) {
             Rule* myrule = (Rule*)child;
             std::pair<bool, deque<AST*>> res1;
             
-            res1 = trans1(res_holder);
+            res1 = trans1(childtmp);
             no_change = no_change && res1.first;
-            res_holder = res1.second;
+            childtmp = res1.second;
 
-            res1 = trans2(res_holder);
+            res1 = trans2(childtmp);
             no_change = no_change && res1.first;
-            res_holder = res1.second;
+            childtmp = res1.second;
 
-            res1 = trans3(res_holder);
+            res1 = trans3(childtmp);
             no_change = no_change && res1.first;
-            res_holder = res1.second;
+            childtmp = res1.second;
 
-            res1 = trans4(res_holder);
+            res1 = trans4(childtmp);
             no_change = no_change && res1.first;
-            res_holder = res1.second;
+            childtmp = res1.second;
 
-            res1 = trans5(res_holder);
+            res1 = trans5(childtmp);
             no_change = no_change && res1.first;
-            res_holder = res1.second;
+            childtmp = res1.second;
         }
         if (no_change)
             break;
     }
-    auto q = trans6(res_holder);
+    auto q = trans6(childtmp);
     setsymbs(q);
     return q;
 }
 
 deque<AST*> ASTProcessor::process_ast_lalr1(string start_state) {
-    auto children = _start->getChildren();
-    deque<AST*> res_holder = _start->getChildren();
+    int index             = 0;
+    int ruleind           = 0;
+    bool no_change        = true;
+    deque<AST*> children  = _start->getChildren();
+    deque<AST*> childtmp = _start->getChildren();
+    
+    std::pair<bool, deque<AST*>> result;
+
     if (_showProc) {
         printf("At start of processing:\n");
-        for (auto child : res_holder)
+        for (auto child : children)
             child->print();
         printf("\n");
     }
 
-    while (1) {
-        bool no_change = true;
-        for (auto child : children) {
-            Rule* myrule = (Rule*)child;
-            std::pair<bool, deque<AST*>> res1;
+    while (true)
+    {
+        no_change = true;
 
-            res1 = trans1(res_holder);
-            no_change = no_change && res1.first;
-            res_holder = res1.second;
-            
-            if (_showProc && !no_change) {
-                printf("After simplifying repeats:\n");
-                for (auto child : res_holder)
-                    child->print();
-                printf("\n");
-            }
-            
-            res1 = trans2(res_holder);
-            no_change = no_change && res1.first;
-            res_holder = res1.second;
-            
-            if (_showProc && !no_change) {
-                printf("After simplifying selects:\n");
-                for (auto child : res_holder)
-                    child->print();
-                printf("\n");
+        for (index = 0; index < children.size(); ++index)
+        {
+            Rule* rule = (Rule*)children[index];
+            auto litem = rule->getLeft();
+            auto rlist = rule->getRight();
+            deque<AST*> nodes = rlist->getChildren();
+
+            for (ruleind = 0; ruleind < nodes.size(); ++ruleind)
+            {
+                string id = nodes[ruleind]->getId();
+
+                if (id == "orstmt")        result = trans5({rule});
+                else if (id == "rep-expr") result = trans1({rule});
+                else if (id == "opt-expr") result = trans2({rule});
+                else continue;
+
+                if (!result.first) {
+                    if (_showProc) {
+                        cout << "old state:\n";
+                        rule->print(1);
+                    }
+
+                    childtmp.clear();
+                    childtmp.insert(childtmp.end(), children.begin(), children.begin()+index);
+                    childtmp.insert(childtmp.end(), result.second.begin(), result.second.end());
+                    childtmp.insert(childtmp.end(), children.begin()+index+1, children.end());
+                    children = childtmp;
+
+                    if (_showProc) {
+                        cout << "new states after "
+                            << (id == "orstmt" ? "alt resolution" :
+                                (id == "rep-expr" ? "repetition resolution" :
+                                "optional resolution"))
+                            << " \n";
+                        for (auto res : result.second)
+                            res->print(1);
+                        cout << "\n";
+                    }
+
+                    break;
+                }
             }
 
-            res1 = trans5(res_holder);
-            no_change = no_change && res1.first;
-            res_holder = res1.second;
-            if (_showProc && !no_change) {
-                printf("After simplifying alternates:\n");
-                for (auto child : res_holder)
-                    child->print();
-                printf("\n");
-            }
+            if (ruleind < nodes.size()) break;
         }
-        if (no_change)
+
+        if (index == children.size()) 
             break;
     }
 
-    auto q = trans6(res_holder);
-    setsymbs(q);
-    if (!semcheck1(q, start_state))
+    childtmp = trans6(childtmp);
+    setsymbs(childtmp);
+
+    if (!semcheck1(childtmp, start_state))
         astproc_err("no start state found");
-    if (!semcheck2(q))
+
+    if (!semcheck2(childtmp))
         astproc_err("undefined rule used");
-    return q;
+
+    FollowSetMap fst;
+    FollowSetMap flw;
+
+    for (auto ast : childtmp) {
+        fst[((Rule*)ast)->getLeft()->getName()] = {};
+        flw[((Rule*)ast)->getLeft()->getName()] = {};
+    }
+    
+    while (!first_sets(childtmp, fst, flw) 
+    || !follow_sets(childtmp, fst, flw, start_state));
+
+    for (auto ast : childtmp) {
+        auto rule   = (Rule*)ast;
+        auto flwset = flw[rule->getLeft()->getName()];
+        for (auto item : flwset)
+            rule->addFollow(item);
+    }
+    
+    return childtmp;
 }
 
 std::set<std::string> ASTProcessor::get_alphabet() {
