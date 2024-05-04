@@ -150,8 +150,9 @@ void CodeGenerator::generate()
                             /* find index of rule */
                             for (int k = 0; k < _rules.size(); ++k)
                             {
-                                Rule* itemk = (Rule*)_rules[k];
+                                Rule* itemk   = (Rule*)_rules[k];
                                 if ( rulecmp(itemk, rule) ) {
+                                    int itemcount = itemk->isEmpty() ? 0 : rule->getRight()->getChildren().size();
                                     for (auto folw : folwset) {
                                         auto content = folw;
                                         if (folw != "$") content = "#" + content;
@@ -160,7 +161,7 @@ void CodeGenerator::generate()
                                             << ", (ptg_pdata_t){"
                                             << ".action = PTG_REDUCE, .op.reduce = {"
                                             << k
-                                            << ", " << rule->getRight()->getChildren().size() 
+                                            << ", " << itemcount
                                             << ", " << _elementtoks[rule->getLeft()->getName()]
                                             << "}});\n";
                                     }
