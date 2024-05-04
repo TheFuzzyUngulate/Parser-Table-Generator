@@ -133,10 +133,12 @@ void CodeGenerator::generate()
                         if (handle.closed()) 
                         {
                             /* get lhs name */
-                            auto rule     = handle.getRule();
-                            auto rule_lhs = rule->getLeft();
-                            auto lhs_name = rule_lhs->getName();
-                            auto folwset  = rule->getFollow();
+                            auto rule      = handle.getRule();
+                            auto rule_lhs  = rule->getLeft();
+                            auto rule_rhs  = rule->getRight()->getChildren();
+                            auto lhs_name  = rule_lhs->getName();
+                            auto folwset   = rule->getFollow();
+                            auto itemcount = 0;
 
                             /* if lhs is starting state, this is ACCEPT */
                             if (lhs_name == "S*") {
@@ -152,7 +154,11 @@ void CodeGenerator::generate()
                             {
                                 Rule* itemk   = (Rule*)_rules[k];
                                 if ( rulecmp(itemk, rule) ) {
-                                    int itemcount = itemk->isEmpty() ? 0 : rule->getRight()->getChildren().size();
+
+                                    if (rule_rhs.size() > 1 || !rule_rhs[0]->isEmpty()) {
+                                        itemcount = rule->getRight()->getChildren().size();
+                                    } else itemcount = 0;
+
                                     for (auto folw : folwset) {
                                         auto content = folw;
                                         if (folw != "$") content = "#" + content;
@@ -165,6 +171,7 @@ void CodeGenerator::generate()
                                             << ", " << _elementtoks[rule->getLeft()->getName()]
                                             << "}});\n";
                                     }
+
                                     break;
                                 }
                             }
