@@ -196,63 +196,6 @@ void CodeGenerator::generate()
                                     break;
                                 }
                             }
-                            
-                            /* otherwise, do something else
-                            std::set<std::string> found;
-
-                            // loop through follow sets to find that of lhs
-                            for (auto follow : follow_set) 
-                            {
-                                // this is all to get the unadulterated name, btw.
-                                auto head    = follow.first;
-                                auto tagloc  = std::find(head.rbegin(), head.rend(), '@');
-                                auto index   = std::distance(tagloc, head.rend()) - 1;
-                                auto content = head.substr(0, index);
-                                auto stateno = std::stoi(head.substr(index+1));
-
-                                // find rule to go to, wow?? i guess..
-
-                                // if you found the follow set of the handle and the states match
-                                if (content == lhs_name && i == stateno) 
-                                {   
-                                    for (int k = 0; k < _rules.size(); ++k)
-                                    {
-                                        Rule* itemK = (Rule*)_rules[k];
-
-                                        if ( rulecmp(itemK, rule) )
-                                        {
-                                            // loop through all follow set items
-                                            for (auto dest : follow.second) 
-                                            {
-                                                if (dest == "$") 
-                                                    content = dest;
-                                                else {
-                                                    tagloc  = std::find(dest.rbegin(), dest.rend(), '@');
-                                                    index   = std::distance(tagloc, dest.rend()) -1;
-                                                    content = "#" + dest.substr(1, index-2);
-                                                }
-
-                                                // only add it if its not already in
-                                                if (found.find(content) == found.end()) 
-                                                    found.insert(content); else continue;
-
-                                                // represent in file
-                                                ofile << "\tptg_table_next(" 
-                                                        << i << ", " << _elementtoks[content] 
-                                                        << ") = (ptg_pdata_t){"
-                                                        << ".action = PTG_REDUCE, .op.reduce = {"
-                                                        << k
-                                                        << ", " << rule->getRight()->getChildren().size() 
-                                                        << ", " << _elementtoks[rule->getLeft()->getName()]
-                                                        << "}};\n";
-                                            }
-
-                                            // job is done, time to retire
-                                            break;
-                                        }
-                                    }
-                                }
-                            }*/
                         }
                     }
                 }
