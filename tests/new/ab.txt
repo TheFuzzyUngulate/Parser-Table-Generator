@@ -1,0 +1,11 @@
+a        a|A
+b        b|B
+plus     +
+
+%%
+
+%start E
+
+E  => T T_ ;
+T  => a | b ;
+T_ => [ plus T T_ ] ;

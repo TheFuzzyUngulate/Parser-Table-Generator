@@ -149,14 +149,18 @@ ptg_lex()
 #define PTG_ACCEPT 4
 
 typedef struct ptg_pdata {
-    int                                            action;
-    union { int                          shift;
-            int                          sgoto;
-            char                         accept;
-            char                         error;
-            struct { int      rule;
-                     int      count;
-                     ptg_enum lhs_tok; } reduce; } op;
+    int action;
+    union { 
+        int shift;
+        int sgoto;
+        char accept;
+        char error;
+        struct { 
+            int rule;
+            int count;
+            ptg_enum lhs_tok;
+        } reduce; 
+    } op;
 } ptg_pdata_t;
 
 static ptg_pdata_t *ptg_ptable = NULL;

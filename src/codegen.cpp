@@ -162,6 +162,7 @@ void CodeGenerator::generate()
                             auto rule     = handle.getRule();
                             auto rule_lhs = rule->getLeft();
                             auto lhs_name = rule_lhs->getName();
+                            auto folwset  = rule->getFollow();
 
                             /* if lhs is starting state, this is ACCEPT */
                             if (lhs_name == "S*") {
@@ -172,33 +173,52 @@ void CodeGenerator::generate()
                                 continue;
                             }
                             
-                            /* otherwise, do something else */
+                            /* find index of rule */
+                            for (int k = 0; k < _rules.size(); ++k)
+                            {
+                                Rule* itemk = (Rule*)_rules[k];
+                                if ( rulecmp(itemk, rule) ) {
+                                    for (auto folw : folwset) {
+                                        auto content = folw;
+                                        if (folw != "$") content = "#" + content;
+                                        ofile << "\tptg_table_next(" 
+                                            << i << ", " << _elementtoks[content]
+                                            << ") = (ptg_pdata_t) {"
+                                            << ".action = PTG_REDUCE, .op.reduce = {"
+                                            << k
+                                            << ", " << rule->getRight()->getChildren().size() 
+                                            << ", " << _elementtoks[rule->getLeft()->getName()]
+                                            << "}};\n";
+                                    }
+                                    break;
+                                }
+                            }
+                            
+                            /* otherwise, do something else
                             std::set<std::string> found;
 
-                            /* loop through follow sets to find that of lhs */
+                            // loop through follow sets to find that of lhs
                             for (auto follow : follow_set) 
                             {
-                                /* this is all to get the unadulterated name, btw. */
+                                // this is all to get the unadulterated name, btw.
                                 auto head    = follow.first;
                                 auto tagloc  = std::find(head.rbegin(), head.rend(), '@');
                                 auto index   = std::distance(tagloc, head.rend()) - 1;
                                 auto content = head.substr(0, index);
                                 auto stateno = std::stoi(head.substr(index+1));
 
-                                /* find rule to go to, wow?? i guess.. */
+                                // find rule to go to, wow?? i guess..
 
-                                /* if you found the follow set of the handle and the states match*/
+                                // if you found the follow set of the handle and the states match
                                 if (content == lhs_name && i == stateno) 
-                                {
-                                    /* find rule index */
-                                    
+                                {   
                                     for (int k = 0; k < _rules.size(); ++k)
                                     {
                                         Rule* itemK = (Rule*)_rules[k];
 
                                         if ( rulecmp(itemK, rule) )
                                         {
-                                            /* loop through all follow set items */
+                                            // loop through all follow set items
                                             for (auto dest : follow.second) 
                                             {
                                                 if (dest == "$") 
@@ -209,11 +229,11 @@ void CodeGenerator::generate()
                                                     content = "#" + dest.substr(1, index-2);
                                                 }
 
-                                                /* only add it if its not already in */
+                                                // only add it if its not already in
                                                 if (found.find(content) == found.end()) 
                                                     found.insert(content); else continue;
 
-                                                /* represent in file */
+                                                // represent in file
                                                 ofile << "\tptg_table_next(" 
                                                         << i << ", " << _elementtoks[content] 
                                                         << ") = (ptg_pdata_t){"
@@ -224,12 +244,12 @@ void CodeGenerator::generate()
                                                         << "}};\n";
                                             }
 
-                                            /* job is done, time to retire */
+                                            // job is done, time to retire
                                             break;
                                         }
                                     }
                                 }
-                            }
+                            }*/
                         }
                     }
                 }

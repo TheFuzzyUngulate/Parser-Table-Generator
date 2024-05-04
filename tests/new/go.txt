@@ -13,7 +13,7 @@ ELLIPSIS                ...
 
 %start start
 
-start     => { item };
+start     => item { item };
 
 item      => struct
            | directive

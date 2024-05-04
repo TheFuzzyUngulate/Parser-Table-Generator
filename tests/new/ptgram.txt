@@ -1,0 +1,51 @@
+LBRACK		[
+RBRACK		]
+PLUS		     +
+MINUS		-
+TIMES		*
+QUESTION	     ?
+BAR		     |
+SLASH		\\
+CAP		     ^
+LPAREN		(
+RPAREN		)
+CHAR		     woo
+
+%%
+
+%start re
+
+re   => [ exp { BAR exp } ] ;
+
+exp  => sub { exp } ;
+
+sub  => elm [ QUESTION | PLUS | TIMES ]
+     | LBRACK slc RBRACK
+     | LPAREN re RPAREN
+     ;
+
+elm  => CHAR
+     | CAP
+     | MINUS
+     | esc
+     ;
+
+esc  => SLASH QUESTION
+     | SLASH LBRACK
+     | SLASH RBRACK
+     | SLASH PLUS
+     | SLASH MINUS
+     | SLASH TIMES
+     | SLASH BAR
+     | SLASH SLASH
+     | SLASH CAP
+     | SLASH LPAREN
+     | SLASH RPAREN
+     ;
+
+slc => [ CAP ] sli { sli } ;
+
+sli => CHAR 
+     | esc 
+     | CHAR MINUS CHAR 
+     ;
