@@ -1,34 +1,5 @@
 #include "../include/gen/codegen.hpp"
 
-bool rulecmp(Rule* a, Rule* b)
-{
-    int ind   = 0;
-    auto lita = a->getLeft();
-    auto litb = b->getLeft();
-    auto lsta = a->getRight()->getChildren();
-    auto lstb = b->getRight()->getChildren();
-
-    if (lita->getId() != litb->getId()) return false;
-    if (lita->getName() != litb->getName()) return false;
-    if (lsta.size() != lstb.size()) return false;
-
-    for (ind = 0; ind < lsta.size(); ++ind) {
-        auto itemA = lsta[ind];
-        auto itemB = lstb[ind];
-
-        if (itemA->getId() != itemB->getId()) return false;
-
-        if (itemA->getId() == "lit" 
-         || itemA->getId() == "tok") {
-            auto stra = ((Literal*)itemA)->getName();
-            auto strb = ((Literal*)itemB)->getName();
-            if (stra != strb) return false;
-        } else if (itemA->getId() != "empty") return false;
-    }
-
-    return true;
-}
-
 void CodeGenerator::generate()
 {
     int i;
@@ -131,18 +102,18 @@ void CodeGenerator::generate()
                     auto b = x.first.second;
                     auto c = x.second;
 
-                    ofile << "\tptg_table_next("
+                    ofile << "\tptg_table_set("
                           << a << ", " << _elementtoks[b]
-                          << ") = (ptg_pdata_t) { .action = ";
+                          << ", (ptg_pdata_t){ .action = ";
 
                     if (b.at(0) == '#') {
                         ofile << "PTG_SHIFT, "
                               << ".op.shift = " 
-                              << c << "};\n";
+                              << c << "});\n";
                     } else {
                         ofile << "PTG_GOTO, "
                               << ".op.sgoto = " 
-                              << c << "};\n";
+                              << c << "});\n";
                     }
                 }
 
@@ -169,10 +140,10 @@ void CodeGenerator::generate()
 
                             /* if lhs is starting state, this is ACCEPT */
                             if (lhs_name == "S*") {
-                                ofile << "\tptg_table_next(" 
+                                ofile << "\tptg_table_set(" 
                                       << i << ", " << _elementtoks["$"] 
-                                      << ") = (ptg_pdata_t){"
-                                      << ".action = PTG_ACCEPT, .op.accept = 0};\n";
+                                      << ", (ptg_pdata_t){"
+                                      << ".action = PTG_ACCEPT, .op.accept = 0});\n";
                                 continue;
                             }
                             
@@ -184,14 +155,14 @@ void CodeGenerator::generate()
                                     for (auto folw : folwset) {
                                         auto content = folw;
                                         if (folw != "$") content = "#" + content;
-                                        ofile << "\tptg_table_next(" 
+                                        ofile << "\tptg_table_set(" 
                                             << i << ", " << _elementtoks[content]
-                                            << ") = (ptg_pdata_t) {"
+                                            << ", (ptg_pdata_t){"
                                             << ".action = PTG_REDUCE, .op.reduce = {"
                                             << k
                                             << ", " << rule->getRight()->getChildren().size() 
                                             << ", " << _elementtoks[rule->getLeft()->getName()]
-                                            << "}};\n";
+                                            << "}});\n";
                                     }
                                     break;
                                 }

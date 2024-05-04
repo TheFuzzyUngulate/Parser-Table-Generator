@@ -227,6 +227,36 @@ class Rule : public AST {
         deque<string> _folw;
 };
 
+static inline bool 
+rulecmp(Rule* a, Rule* b)
+{
+    int ind   = 0;
+    auto lita = a->getLeft();
+    auto litb = b->getLeft();
+    auto lsta = a->getRight()->getChildren();
+    auto lstb = b->getRight()->getChildren();
+
+    if (lita->getId() != litb->getId()) return false;
+    if (lita->getName() != litb->getName()) return false;
+    if (lsta.size() != lstb.size()) return false;
+
+    for (ind = 0; ind < lsta.size(); ++ind) {
+        auto itemA = lsta[ind];
+        auto itemB = lstb[ind];
+
+        if (itemA->getId() != itemB->getId()) return false;
+
+        if (itemA->getId() == "lit" 
+         || itemA->getId() == "tok") {
+            auto stra = ((Literal*)itemA)->getName();
+            auto strb = ((Literal*)itemB)->getName();
+            if (stra != strb) return false;
+        } else if (itemA->getId() != "empty") return false;
+    }
+
+    return true;
+}
+
 class ClosedExpr : public AST {
     public:
         ClosedExpr(RuleList* inner) : _in(inner) {

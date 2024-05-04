@@ -603,6 +603,8 @@ deque<AST*> ASTProcessor::process_ast_ll1() {
 deque<AST*> ASTProcessor::process_ast_lalr1(string start_state) {
     int index             = 0;
     int ruleind           = 0;
+    int seeind            = 0;
+    vector<int> seen      = {};
     bool no_change        = true;
     deque<AST*> children  = _start->getChildren();
     deque<AST*> childtmp = _start->getChildren();
@@ -637,9 +639,25 @@ deque<AST*> ASTProcessor::process_ast_lalr1(string start_state) {
                 else continue;
 
                 if (!result.first) {
+                    
                     if (_showProc) {
                         cout << "old state:\n";
                         rule->print(1);
+                    }
+
+                    /* delete items in results that we have already seen */
+                    seeind = 0;
+                    seen.clear();
+                    while (seeind < result.second.size()) {
+                        auto last  = 0;
+                        auto found = (Rule*)result.second[seeind];
+                        for (last = 0; last < children.size(); ++last) {
+                            if (rulecmp(found, (Rule*)children[last]))
+                                break;
+                        }
+                        if (last < children.size()) {
+                            result.second.erase(result.second.begin()+seeind);
+                        } else seeind++;
                     }
 
                     childtmp.clear();

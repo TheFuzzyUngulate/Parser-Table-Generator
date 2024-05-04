@@ -177,7 +177,7 @@ static ptg_pdata_t *ptg_ptable = NULL;
 static inline void
 ptg_table_set(int state, ptg_enum token, ptg_pdata_t data)
 {
-    ptg_pdata_t old = *(ptg_ptable + ((state) * P_ELEMENT_COUNT) + (token));
+    ptg_pdata_t old = ptg_table_next(state, token);
     if (old.action != PTG_ERROR) {
         if (old.action == PTG_SHIFT && data.action == PTG_REDUCE) {
             fprintf(stderr, "warning: shift-reduce conflict at (state#%d, %s)\n", state, ptg_enum_string(token));
@@ -193,8 +193,8 @@ ptg_table_set(int state, ptg_enum token, ptg_pdata_t data)
             exit(EXIT_FAILURE);
         }
     }
-    
-    *(ptg_ptable + ((state) * P_ELEMENT_COUNT) + (token)) = data;
+
+    ptg_table_next(state, token) = data;
 }
 
 static inline void
