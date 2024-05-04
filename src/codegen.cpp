@@ -61,30 +61,33 @@ void CodeGenerator::generate()
             case 0:
             {
                 /* add scanner token enum */
-                ofile << "typedef enum ptg_enum {\n";
                 for (i = 0; i < _elements.size(); ++i) {
                     ofile << "\t" 
-                            << _elementtoks[_elements[i]]
-                            << ((i != _elements.size()-1) ? "," : "")
-                            << "\n";
-                } ofile << "} ptg_enum;\n\n";
-
-                /* add string representations of tokens */
-                ofile << "static inline char*\n"
-                            "ptg_enum_string(ptg_enum tok) {\n"
-                            "\tswitch (tok) {\n";
-                for (i = 0; i < _elements.size(); ++i) {
-                    ofile << "\t\tcase " 
-                            << _elementtoks[_elements[i]]
-                            << ": return \""
-                            << _elements[i] << "\";\n";
-                } ofile << "\t\tdefault: return \"unknown\";\n\t}\n}\n";
+                          << _elementtoks[_elements[i]]
+                          << ((i != _elements.size()-1) ? "," : "")
+                          << "\n";
+                }
 
                 /* break state */
                 break;
             }
 
             case 1:
+            {
+                /* add string representation of tokens */
+                ofile << "\tswitch(tok) {\n";
+                for (i = 0; i < _elements.size(); ++i) {
+                    ofile << "\t\tcase " 
+                          << _elementtoks[_elements[i]]
+                          << ": return \""
+                          << _elements[i] << "\";\n";
+                } ofile << "\t\tdefault: return \"?\";\n\t}\n";
+
+                /* break state */
+                break;
+            }
+
+            case 2:
             {
                 /* use regular expression */
                 for (auto item : _regexes)
@@ -100,7 +103,7 @@ void CodeGenerator::generate()
                 break;
             }
 
-            case 2:
+            case 3:
             {
                 /* add rule count */
                 ofile << "#define P_RULE_COUNT "
@@ -118,7 +121,7 @@ void CodeGenerator::generate()
                 break;
             }
 
-            case 3:
+            case 4:
             {
                 /* declare transitions */
 

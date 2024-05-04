@@ -52,7 +52,14 @@ void* m_stack_pop(m_stack* m)
     } else return NULL;
 }
 
+typedef enum ptg_enum {
 /* stop */
+} ptg_enum;
+
+static inline char*
+ptg_enum_string(ptg_enum tok) {
+/* stop */
+}
 
 static FILE* ptg_in            = NULL;
 static int ptg_line            = 0;
@@ -166,6 +173,29 @@ typedef struct ptg_pdata {
 static ptg_pdata_t *ptg_ptable = NULL;
 
 #define ptg_table_next(state, token) (*(ptg_ptable + ((state) * P_ELEMENT_COUNT) + (token)))
+
+static inline void
+ptg_table_set(int state, ptg_enum token, ptg_pdata_t data)
+{
+    ptg_pdata_t old = *(ptg_ptable + ((state) * P_ELEMENT_COUNT) + (token));
+    if (old.action != PTG_ERROR) {
+        if (old.action == PTG_SHIFT && data.action == PTG_REDUCE) {
+            fprintf(stderr, "warning: shift-reduce conflict at (state#%d, %s)\n", state, ptg_enum_string(token));
+            fprintf(stderr, "opting to shift...\n");
+            return;
+        }
+        if (old.action == PTG_REDUCE && data.action == PTG_SHIFT) {
+            fprintf(stderr, "warning: shift-reduce conflict at (state#%d, %s)\n", state, ptg_enum_string(token));
+            fprintf(stderr, "opting to shift...\n");
+        }
+        if (old.action == PTG_REDUCE && data.action == PTG_REDUCE) {
+            fprintf(stderr, "error: reduce-reduce conflict at (state#%d, %s)\n", state, ptg_enum_string(token));
+            exit(EXIT_FAILURE);
+        }
+    }
+    
+    *(ptg_ptable + ((state) * P_ELEMENT_COUNT) + (token)) = data;
+}
 
 static inline void
 ptg_ptable_init()
