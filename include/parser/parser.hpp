@@ -10,7 +10,6 @@
 #include "../scanner/scanner.hpp"
 #include "../utilities/runutils.hpp"
 #include "../utilities/general_utils.hpp"
-#include "../regex/procregex.hpp"
 
 using   std::cout, 
         std::cerr, 
