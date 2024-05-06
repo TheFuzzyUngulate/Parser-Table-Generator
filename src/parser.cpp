@@ -278,7 +278,26 @@ int Parser::parse() {
                         auto str = (Literal*)tail[2];
                         auto regex = (Literal*)tail[1];
                         delete tail[0];
-                        ast_push(new RegRule(str->getName(), regex->getName()));
+
+                        auto name = str->getName();
+
+                        if (!isalpha(name[0])) {
+                            std::string err = "token name ";
+                            err += name;
+                            err += " not well-formed.\n";
+                            parse_err(err.c_str());
+                        }
+
+                        for (auto i = 1; i < name.size(); ++i) {
+                            if (!isalnum(name[i]) && name[i] != '_') {
+                                std::string err = "token name ";
+                                err += name;
+                                err += " not well-formed.\n";
+                                parse_err(err.c_str());
+                            }
+                        }
+                        
+                        ast_push(new RegRule(name, regex->getName()));
                     } else ast_push(new EmptyAST());
                     break;
                 }
