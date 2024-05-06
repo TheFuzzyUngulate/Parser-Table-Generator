@@ -7,6 +7,13 @@
 #include <unistd.h>
 #include <string>
 
+inline bool islit(std::string str) {
+    if (!isalpha(str[1])) return false;
+    for (int i = 1; i < str.size(); ++i)
+        if (!isalnum(str[i]) && str[i] != '_') return false;
+    return true;
+}
+
 inline bool isalpha(std::string str) {
     for (auto x : str)
         if (!isalpha(x)) return false;

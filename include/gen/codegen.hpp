@@ -27,7 +27,7 @@ class CodeGenerator {
                     _elementtoks[x] = "P_START_LIT";
                 else {
                     if (x.at(0) == '#') {
-                        if (isalpha(x.substr(1)))
+                        if (islit(x.substr(1)))
                             _elementtoks[x] = "P_TOK_" + x.substr(1);
                         else _elementtoks[x] = "P_TOK_" + std::to_string(tokcount++);
                     }
