@@ -1,11 +1,9 @@
-#ifndef PTGPARSE_H
-#define PTGPARSE_H
-#pragma once
-
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
+/* stop */
 
 typedef struct
 m_stack
@@ -52,64 +50,120 @@ void* m_stack_pop(m_stack* m)
     } else return NULL;
 }
 
-typedef enum ptg_enum {
-/* stop */
-} ptg_enum;
-
-static inline char*
-ptg_enum_string(ptg_enum tok) {
-/* stop */
-}
-
-static FILE* ptg_in            = NULL;
-static int ptg_line            = 0;
-static FILE* ptg_out           = NULL;
-static int ptg_column          = 0;
-static int ptg_unlex_count     = 0;
-static ptg_enum* ptg_unlex_buf = NULL;
-static int ptg_ungetch_count   = 0;
-static char* ptg_ungetch_buf   = NULL;
-static char* ptg_lexeme        = NULL;
-static char ptg_lexeme_count   = 0;
-
-char
-ptg_getch()
+void m_stack_clear(m_stack* m)
 {
-    char ch;
-
-    if (ptg_ungetch_buf && ptg_ungetch_count > 0)
-    {
-        --ptg_ungetch_count;
-        ch = ptg_ungetch_buf[ptg_ungetch_count];
-        ptg_ungetch_buf = (char*)realloc(ptg_ungetch_buf, ptg_ungetch_count * sizeof(char));
-        return ch;
+    if (m->count > 0) {
+        m->capacity = 2;
+        m->count = 0;
+        m->content = realloc(m->content, m->capacity * m->size);
     }
-
-    return getc(ptg_in);
 }
 
-void
-ptg_ungetch(char ch)
+// static FILE* ptg_infile = NULL;
+
+typedef struct
+ptg_sc
 {
-    ++ptg_ungetch_count;
-    ptg_ungetch_buf = (char*)realloc(ptg_ungetch_buf, ptg_ungetch_count * sizeof(char));
-    ptg_ungetch_buf[ptg_ungetch_count-1] = ch;
+    unsigned int line;     // current line number
+    unsigned int column;   // current column number
+    struct {
+        m_stack  lexeme;   // current lexeme
+        m_stack  chbuf;    // unget buffer
+        m_stack  tokbuf;   // unlex buffer
+        ptg_enum lasttok;  // last token returned by lex
+    } prog;
+    struct {
+        m_stack seeks;     // saved positions for seek
+        m_stack answers;   // saved answers for answer checking
+        m_stack counters;  // saved counters for future updates
+    } check;
+}
+ptg_sc;
+
+static ptg_sc* sc = NULL;
+
+char scan() {
+    char ch;
+    if (sc->prog.chbuf.count > 0) {
+        ch = *(char*)m_stack_pop(&(sc->prog.chbuf));
+    } else {
+        ch = fgetc(ptg_infile);
+        if (ch == EOF) 
+            return EOF;
+    }
+    m_stack_push(&(sc->prog.lexeme), &ch);
+    return ch;
 }
 
-void
-ptg_unlex(ptg_enum tok)
-{
-    ++ptg_unlex_count;
-    ptg_unlex_buf = (ptg_enum*)realloc(ptg_unlex_buf, ptg_unlex_count * sizeof(ptg_enum));
-    ptg_unlex_buf[ptg_unlex_count-1] = tok;
+void save_pos() {
+    int tl = ftell(ptg_infile);
+    m_stack_push(&(sc->check.seeks), &tl);
 }
 
-char*
-ptg_getlexeme()
-{
-    int len   = strlen(ptg_lexeme);
-    char* res = (char*)malloc((len + 1) * sizeof(char));
-    memcpy(res, ptg_lexeme, (len + 1) * sizeof(char));
+char load_pos() {
+    if (sc->check.seeks.count > 0) {
+        int p  = *(int*)m_stack_pop(&(sc->check.seeks));
+        int fs = fseek( ptg_infile, p, SEEK_SET );
+        if (!fs) {
+            fprintf(stderr, "error: fseek failed.\n");
+            exit(EXIT_FAILURE);
+        }
+        return scan();
+    } else {
+        fprintf(stderr, "error: no seek positions have been saved.\n");
+        exit(EXIT_FAILURE);
+    }
+}
+
+char unscan(char ch) {
+    m_stack_push(&(sc->prog.chbuf), &ch);
+}
+
+void save_bool(bool q) {
+    m_stack_push(&(sc->check.answers), &q);
+}
+
+bool load_bool() {
+    if (sc->check.answers.count > 0) {
+        return *(bool*)m_stack_pop(&(sc->check.answers));
+    } else {
+        fprintf(stderr, "error: no answers have been saved.\n");
+        exit(EXIT_FAILURE);
+    }
+}
+
+void new_counter() {
+    int q = 0;
+    m_stack_push(&(sc->check.counters), &q);
+}
+
+int count() {
+    if (sc->check.counters.count > 0) {
+        return *(int*)m_stack_pop(&(sc->check.counters));
+    } else {
+        fprintf(stderr, "error: no counters have been saved.\n");
+        exit(EXIT_FAILURE);
+    }
+}
+
+int inc_counter() {
+    if (sc->check.counters.count > 0) {
+        ++(*(int*)m_stack_tos(sc->check.counters));
+    } else {
+        fprintf(stderr, "error: no counters have been saved.\n");
+        exit(EXIT_FAILURE);
+    }
+}
+
+#define ptg_tokret(val) do {\
+    sc->prog.lasttok = (val);\
+    return (val);\
+} while(0);
+
+char* ptg_lexeme() {
+    char* res = (char*)malloc((sc->prog.lexeme.count + 1) * sizeof(char));
+    memcpy(res, sc->prog.lexeme.content, sc->prog.lexeme.count * sizeof(char));
+    res[sc->prog.lexeme.count] = '\0';
     return res;
 }
 
@@ -117,34 +171,39 @@ ptg_enum
 ptg_lex()
 {
     int ch;
-    int stat;
+    if (sc == NULL)
+    {
+        sc = (ptg_sc*)malloc(sizeof(ptg_sc));
 
-    stat = 0;
+        sc->line   = 0;
+        sc->column = 0;
 
-    if (!ptg_in) 
-        ptg_in = stdin;
-    if (!ptg_out) 
-        ptg_out = stdout;
-    
-    if (ptg_lexeme) 
-        free(ptg_lexeme);
-    
-    ptg_lexeme_count = 1;
-    ptg_lexeme = (char*)malloc(2 * sizeof(char));
-    ptg_lexeme[0] = ptg_getch();
-    ptg_lexeme[1] = '\0';
+        sc->prog.lexeme = m_stack_init(char);
+        sc->prog.chbuf  = m_stack_init(char);
+        sc->prog.tokbuf = m_stack_init(ptg_enum);
+
+        sc->check.seeks    = m_stack_init(int);
+        sc->check.answers  = m_stack_init(bool);
+        sc->check.counters = m_stack_init(int);
+    }
+
+    if (sc->prog.lexeme.count > 0) {
+        m_stack_clear(&(sc->prog.lexeme));
+    }
+
+    if (sc->prog.tokbuf.count > 0) {
+        ptg_enum tok = *(ptg_enum*)m_stack_pop(&(sc->prog.tokbuf));
+        return tok;
+    }
 
     while (1)
     {
 /* stop */
-        ch = ptg_getch();
-        if (ch == EOF) return P_TOK_END;
-        
-        ptg_lexeme_count++;
-        ptg_lexeme = (char*)realloc(ptg_lexeme, (ptg_lexeme_count + 1) * sizeof(char));
-        ptg_lexeme[ptg_lexeme_count]   = '\0';
-        ptg_lexeme[ptg_lexeme_count-1] = ptg_getch();
     }
+}
+
+void ptg_unlex(ptg_enum tok) {
+    m_stack_push(&(sc->prog.tokbuf), &tok);
 }
 
 /* stop */
@@ -180,16 +239,16 @@ ptg_table_set(int state, ptg_enum token, ptg_pdata_t data)
     ptg_pdata_t old = ptg_table_next(state, token);
     if (old.action != PTG_ERROR) {
         if (old.action == PTG_SHIFT && data.action == PTG_REDUCE) {
-            fprintf(stderr, "warning: shift-reduce conflict at (state#%d, %s)\n", state, ptg_enum_string(token));
-            fprintf(stderr, "opting to shift...\n");
+            fprintf(stderr, stderr, "warning: shift-reduce conflict at (state#%d, %s)\n", state, ptg_enum_string(token));
+            fprintf(stderr, stderr, "opting to shift...\n");
             return;
         }
         if (old.action == PTG_REDUCE && data.action == PTG_SHIFT) {
-            fprintf(stderr, "warning: shift-reduce conflict at (state#%d, %s)\n", state, ptg_enum_string(token));
-            fprintf(stderr, "opting to shift...\n");
+            fprintf(stderr, stderr, "warning: shift-reduce conflict at (state#%d, %s)\n", state, ptg_enum_string(token));
+            fprintf(stderr, stderr, "opting to shift...\n");
         }
         if (old.action == PTG_REDUCE && data.action == PTG_REDUCE) {
-            fprintf(stderr, "error: reduce-reduce conflict at (state#%d, %s)\n", state, ptg_enum_string(token));
+            fprintf(stderr, stderr, "error: reduce-reduce conflict at (state#%d, %s)\n", state, ptg_enum_string(token));
             exit(EXIT_FAILURE);
         }
     }
@@ -292,7 +351,7 @@ ptg_node_t* ptg_parse()
                 for (int i = 0; i < next.op.reduce.count; ++i) {
                     ptg_node_t** sub = (ptg_node_t**)m_stack_pop(&nodes);
                     if (sub == NULL) {
-                        fprintf(stderr, "stack out of nodes.\n");
+                        fprintf(stderr, stderr, "stack out of nodes.\n");
                         exit(EXIT_FAILURE);
                     }
                     ptg_node_addchild(leaf, *sub);
@@ -310,12 +369,10 @@ ptg_node_t* ptg_parse()
                 return leaf;
 
             case PTG_ERROR:
-                fprintf(stderr, "invalid token \"%s\".\n", ptg_enum_string(tos));
+                fprintf(stderr, stderr, "invalid token \"%s\".\n", ptg_enum_string(tos));
                 exit(EXIT_FAILURE);
         }
     }
 }
 
 #undef ptg_table_next
-
-#endif

@@ -110,11 +110,7 @@ inline struct flags handle_args(std::vector<std::string> args) {
     if (flags.input_file == "")
         run_error("no input file provided");
     if (flags.output_file == "")
-        flags.output_file = "ptgparse.h";
-    else
-    if (flags.output_file.back() != 'h' || flags.output_file[flags.output_file.size() - 2] != '.')
-        flags.output_file = flags.output_file + ".h";
-    
+        flags.output_file = "ptgparse";
     return flags;
 }
 

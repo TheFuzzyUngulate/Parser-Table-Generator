@@ -19,6 +19,7 @@
 #include "../include/utilities/runutils.hpp"
 #include "../include/utilities/general_utils.hpp"
 #include "../include/gen/codegen.hpp"
+#include "../include/regex/regprocess.hpp"
 
 void run_error(const char* ch) {
     std::cerr << ch << std::endl;
@@ -73,7 +74,10 @@ int main(int argc, char **argv) {
         for (auto item : fake) {
             if (item->getId() == "regex") {
                 RegRule* re = (RegRule*)item;
-                std::pair<std::string, std::string> pear = {re->getName(), re->getRegex()};
+                std::pair<std::string, std::string> pear = {
+                    re->getName(), 
+                    re_conv(re->getRegex(), 0)
+                };
                 regexes.push_back(pear);
             }
         }

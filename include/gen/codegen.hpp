@@ -4,8 +4,10 @@
 
 #include <fstream>
 #include <iostream>
+#include <sstream>
 
 #include "../ast/asthandles.hpp"
+#include "../regex/regprocess.hpp"
 
 typedef std::vector<std::pair<std::string, std::string>> regexlib;
 

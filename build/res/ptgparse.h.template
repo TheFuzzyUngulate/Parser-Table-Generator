@@ -1,0 +1,26 @@
+#ifndef PTGPARSE_H
+#define PTGPARSE_H
+#pragma once
+
+#include <stdio.h>
+#include <ctype.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+typedef enum ptg_enum {
+/* stop */
+} ptg_enum;
+
+static inline char*
+ptg_enum_string(ptg_enum tok) {
+/* stop */
+}
+
+static FILE* ptg_infile = NULL;
+
+char* ptg_lexeme();
+ptg_enum ptg_lex();
+void ptg_unlex(ptg_enum tok);
+
+#endif

@@ -11,13 +11,14 @@ void CodeGenerator::generate()
     std::ifstream templ;
     std::ofstream ofile;
 
-    state = 0;
     delim = "/* stop */";
-    ofile = std::ofstream();
-    ofile.open("out/" + _fname);
-    templ = std::ifstream();
-    templ.open("res/template.txt");
 
+    ofile = std::ofstream();
+    templ = std::ifstream();
+
+    state = 0;
+    templ.open("res/ptgparse.h.template");
+    ofile.open("out/" + _fname + ".h");
     while (std::getline(templ, line))
     {
         /* if we aren't signalled to insert, leave it */
@@ -57,24 +58,76 @@ void CodeGenerator::generate()
                 /* break state */
                 break;
             }
+        }
 
-            case 2:
+        /* we always increment state */
+        state++;
+    }
+
+    templ.close();
+    ofile.close();
+
+    state = 0;
+    templ.open("res/ptgparse.c.template");
+    ofile.open("out/" + _fname + ".c");
+    while (std::getline(templ, line))
+    {
+        /* if we aren't signalled to insert, leave it */
+        if (line != delim) {
+            ofile << line << "\n";
+            continue;
+        }
+
+        /* otherwise... depends on state */
+        switch (state)
+        {
+            case 0:
             {
-                /* use regular expression */
+                /* write include statement */
+                ofile << "#include \"" << _fname << ".h\"\n";
+
+                /* break state */
+                break;
+            }
+
+            case 1:
+            {
+                /* get first character */
+                ofile << "\t\tch = scan();\n\n";
+
+                /* use regular expressions */
                 for (auto item : _regexes)
                 {
                     /* get items and values */
                     name  = item.first;
                     regex = item.second;
 
-                    ofile << "\t\t//to be implemented...\n\n";
+                    /* add as a comment the rule being made*/
+                    ofile << "\t\t//" << name << "\n";
+
+                    /* save point, incase returning doesn't work */
+                    ofile << "\t\tsave_pos();\n";
+
+                    /* convert string to input string stream */
+                    std::string innerline;
+                    std::istringstream iss(regex);
+                    
+                    /* C code in regex should be printed line by line */
+                    while (std::getline(iss, innerline)) {
+                        ofile << "\t\t" << innerline << "\n";
+                    }
+
+                    /* return if positive, else keep going */
+                    ofile << "\t\tif (load_bool())\n";
+                    ofile << "\t\t\tptg_tokret(" << _elementtoks["#" + name] << ")\n";
+                    ofile << "\t\telse ch = load_pos();\n\n";
                 }
 
                 /* break state */
                 break;
             }
 
-            case 3:
+            case 2:
             {
                 /* add rule count */
                 ofile << "#define P_RULE_COUNT "
@@ -92,7 +145,7 @@ void CodeGenerator::generate()
                 break;
             }
 
-            case 4:
+            case 3:
             {
                 /* declare transitions */
 
@@ -189,6 +242,7 @@ void CodeGenerator::generate()
         state++;
     }
 
+    templ.close();
     ofile.close();
 }
 

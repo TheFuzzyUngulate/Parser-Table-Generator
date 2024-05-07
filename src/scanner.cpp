@@ -126,46 +126,7 @@ Tokens Scanner::lex() {
                     }*/
                     if (isascii(ch) && !isspace(ch)) {
                         do {
-                            if (ch == '\\') {
-                                ch = get();
-                                switch (ch) {
-                                    case 'n':
-                                        lexeme += '\n';
-                                        break;
-                                    case 't':
-                                        lexeme += '\t';
-                                        break;
-                                    case 'b':
-                                        lexeme += '\b';
-                                        break;
-                                    case 'r':
-                                        lexeme += '\r';
-                                        break;
-                                    case 'a':
-                                        lexeme += '\a';
-                                        break;
-                                    case '\\':
-                                        lexeme += '\\';
-                                        break;
-                                    case 'f':
-                                        lexeme += '\f';
-                                        break;
-                                    case 'v':
-                                        lexeme += '\v';
-                                        break;
-                                    case '|':
-                                        lexeme += '|';
-                                        break;
-                                    case ' ':
-                                        lexeme += ' ';
-                                        break;
-                                    case '0':
-                                        lexeme += '\0';
-                                        break;
-                                    default:
-                                        scan_err("incorrect escape char");
-                                }
-                            } else lexeme += ch;
+                            lexeme += ch;
                             ch = get();
                         } while (isascii(ch) && !isspace(ch));
                         unget(ch);

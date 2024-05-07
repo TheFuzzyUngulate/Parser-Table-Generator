@@ -3,8 +3,8 @@ STRING                  "([^"]+|\\")"
 COLON                   :
 ATTRIBUTE               {[a-z]}+
 ADDRESS                 @{[0-9]}+
-LBRACK                  {|[|(
-RBRACK                  }|]|)
+LBRACK                  \[
+RBRACK                  \]
 COMMA                   ,
 DIRECTIVE               #{[A-Za-z]}+
 ELLIPSIS                ...
