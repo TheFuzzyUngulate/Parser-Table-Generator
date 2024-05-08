@@ -1,20 +1,17 @@
-LPAR       (
-RPAR       )
+LPAR       \(
+RPAR       \)
 LBRACE     {
 RBRACE     }
 SEMICOLON  ;
 COMMA      ,
-PLUS       +
-MINUS      -
-MULT       *
+PLUS       \+
+MINUS      \-
+MULT       \*
 DIV        /
 LAND       &&
 LOR        \|\|
 LNEG       ~
 ASSIGNOP   =
-ID         [A-Za-z][A-Za-z0-9]*
-INT        [0-9]+
-STRING     "([^"]|\\"|\\\\)+"
 VAR        var
 IF         if
 ELSE       else
@@ -22,6 +19,9 @@ FUNC       func
 FOR        for
 RETURN     return
 BREAK      break
+ID         [A-Za-z][A-Za-z0-9]*
+INT        [0-9]+
+STRING     "([\ !#-&\(-\[\]-}]|\\[tnr"'])*"
 
 %%
 
