@@ -246,11 +246,91 @@ ptg_lex()
 				break;
 			}
 			save_pos();
-			save_pos();
 			new_counter();
 			while (true) {
-				save_bool(ch == '\"');
-				ch = scan();
+				save_pos();
+				do {
+					save_bool(ch == ' ');
+					ch = scan();
+					if (load_bool()) {
+						save_bool(true);
+						break;
+					}
+					save_bool(ch == '!');
+					ch = scan();
+					if (load_bool()) {
+						save_bool(true);
+						break;
+					}
+					save_bool(ch >= '#' && ch <= '&');
+					ch = scan();
+					if (load_bool()) {
+						save_bool(true);
+						break;
+					}
+					save_bool(ch >= '(' && ch <= '[');
+					ch = scan();
+					if (load_bool()) {
+						save_bool(true);
+						break;
+					}
+					save_bool(ch >= ']' && ch <= '}');
+					ch = scan();
+					if (load_bool()) {
+						save_bool(true);
+						break;
+					}
+					save_bool(false);
+				} while (0);
+				if (!load_bool()) {
+					ch = load_pos();
+						do {
+							save_bool(ch == '\\');
+							ch = scan();
+							if (!load_bool()) {
+								save_bool(false);
+								break;
+							}
+							do {
+								save_bool(ch == 't');
+								ch = scan();
+								if (load_bool()) {
+									save_bool(true);
+									break;
+								}
+								save_bool(ch == 'n');
+								ch = scan();
+								if (load_bool()) {
+									save_bool(true);
+									break;
+								}
+								save_bool(ch == 'r');
+								ch = scan();
+								if (load_bool()) {
+									save_bool(true);
+									break;
+								}
+								save_bool(ch == '\"');
+								ch = scan();
+								if (load_bool()) {
+									save_bool(true);
+									break;
+								}
+								save_bool(ch == '\'');
+								ch = scan();
+								if (load_bool()) {
+									save_bool(true);
+									break;
+								}
+								save_bool(false);
+							} while (0);
+							if (!load_bool()) {
+								save_bool(false);
+								break;
+							}
+							save_bool(true);
+						} while (0);
+				} else save_bool(true);
 				if (!load_bool()) {
 					ch = load_pos();
 				break;
@@ -258,25 +338,7 @@ ptg_lex()
 					save_pos();
 					inc_counter();
 				}
-			} save_bool(count() > 0);
-			if (!load_bool()) {
-				ch = load_pos();
-					do {
-						save_bool(ch == '\\');
-						ch = scan();
-						if (!load_bool()) {
-							save_bool(false);
-							break;
-						}
-						save_bool(ch == '\"');
-						ch = scan();
-						if (!load_bool()) {
-							save_bool(false);
-							break;
-						}
-						save_bool(true);
-					} while (0);
-			} else save_bool(true);
+			} save_bool(count() > -1);
 			if (!load_bool()) {
 				save_bool(false);
 				break;

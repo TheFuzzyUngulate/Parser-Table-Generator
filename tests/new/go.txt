@@ -1,5 +1,5 @@
 ELEMENT                 {[A-Z]}+
-STRING                  "([^"]+|\\")"
+STRING                  "([\ !#-&\(-\[\]-}]|\\[tnr"'])*"
 COLON                   :
 ATTRIBUTE               {[a-z]}+
 ADDRESS                 @{[0-9]}+

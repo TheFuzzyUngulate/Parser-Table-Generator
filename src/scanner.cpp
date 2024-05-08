@@ -126,8 +126,21 @@ Tokens Scanner::lex() {
                     }*/
                     if (isascii(ch) && !isspace(ch)) {
                         do {
-                            lexeme += ch;
-                            ch = get();
+                            if (ch == '\\') {
+                                ch = get();
+                                if (ch == ' ') {
+                                    lexeme += ' ';
+                                    ch = get();
+                                } else {
+                                    lexeme += '\\';
+                                    lexeme += ch;
+                                    ch = get();
+                                }
+                            }
+                            else {
+                                lexeme += ch;
+                                ch = get();
+                            }
                         } while (isascii(ch) && !isspace(ch));
                         unget(ch);
                         return Tokens::S_STRING;
