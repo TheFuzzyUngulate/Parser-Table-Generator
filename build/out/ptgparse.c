@@ -200,7 +200,6 @@ ptg_lex()
     {
 		ch = scan();
 
-		//ELEMENT
 		save_pos();
 		do {
 			save_bool(ch == '{');
@@ -238,7 +237,6 @@ ptg_lex()
 			ptg_tokret(P_TOK_ELEMENT)
 		else ch = load_pos();
 
-		//STRING
 		save_pos();
 		do {
 			save_bool(ch == '\"');
@@ -295,7 +293,6 @@ ptg_lex()
 			ptg_tokret(P_TOK_STRING)
 		else ch = load_pos();
 
-		//COLON
 		save_pos();
 		save_bool(ch == ':');
 		ch = scan();
@@ -303,7 +300,6 @@ ptg_lex()
 			ptg_tokret(P_TOK_COLON)
 		else ch = load_pos();
 
-		//ATTRIBUTE
 		save_pos();
 		do {
 			save_bool(ch == '{');
@@ -341,7 +337,6 @@ ptg_lex()
 			ptg_tokret(P_TOK_ATTRIBUTE)
 		else ch = load_pos();
 
-		//ADDRESS
 		save_pos();
 		do {
 			save_bool(ch == '@');
@@ -385,7 +380,6 @@ ptg_lex()
 			ptg_tokret(P_TOK_ADDRESS)
 		else ch = load_pos();
 
-		//LBRACK
 		save_pos();
 		save_bool(ch == '[');
 		ch = scan();
@@ -393,7 +387,6 @@ ptg_lex()
 			ptg_tokret(P_TOK_LBRACK)
 		else ch = load_pos();
 
-		//RBRACK
 		save_pos();
 		save_bool(ch == ']');
 		ch = scan();
@@ -401,7 +394,6 @@ ptg_lex()
 			ptg_tokret(P_TOK_RBRACK)
 		else ch = load_pos();
 
-		//COMMA
 		save_pos();
 		save_bool(ch == ',');
 		ch = scan();
@@ -409,7 +401,6 @@ ptg_lex()
 			ptg_tokret(P_TOK_COMMA)
 		else ch = load_pos();
 
-		//DIRECTIVE
 		save_pos();
 		do {
 			save_bool(ch == '#');
@@ -466,22 +457,21 @@ ptg_lex()
 			ptg_tokret(P_TOK_DIRECTIVE)
 		else ch = load_pos();
 
-		//ELLIPSIS
 		save_pos();
 		do {
-			save_bool(true);
+			save_bool(ch == '.');
 			ch = scan();
 			if (!load_bool()) {
 				save_bool(false);
 				break;
 			}
-			save_bool(true);
+			save_bool(ch == '.');
 			ch = scan();
 			if (!load_bool()) {
 				save_bool(false);
 				break;
 			}
-			save_bool(true);
+			save_bool(ch == '.');
 			ch = scan();
 			if (!load_bool()) {
 				save_bool(false);
@@ -491,8 +481,7 @@ ptg_lex()
 		} while (0);
 		if (load_bool())
 			ptg_tokret(P_TOK_ELLIPSIS)
-		else ch = load_pos();
-
+		else fprintf(stderr, "invalid char \"%c\"found\n", ch);
     }
 }
 

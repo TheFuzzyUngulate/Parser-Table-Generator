@@ -1,6 +1,6 @@
 a        a|A
 b        b|B
-plus     +
+plus     \+
 
 %%
 

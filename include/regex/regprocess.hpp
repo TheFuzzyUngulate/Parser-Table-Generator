@@ -54,8 +54,8 @@ typedef enum re_tk {
 	P_LIT_fch,
 	P_TOK_CAP,
 	P_TOK_MINUS,
-	P_LIT_esc,
 	P_TOK_DOT,
+	P_LIT_esc,
 	P_TOK_SLASH,
 	P_TOK_NEWLINE_CHAR,
 	P_TOK_CRETURN_CHAR,
@@ -90,8 +90,8 @@ re_tk_string(re_tk tok) {
 		case P_LIT_fch: return "fch";
 		case P_TOK_CAP: return "#CAP";
 		case P_TOK_MINUS: return "#MINUS";
-		case P_LIT_esc: return "esc";
 		case P_TOK_DOT: return "#DOT";
+		case P_LIT_esc: return "esc";
 		case P_TOK_SLASH: return "#SLASH";
 		case P_TOK_NEWLINE_CHAR: return "#NEWLINE_CHAR";
 		case P_TOK_CRETURN_CHAR: return "#CRETURN_CHAR";

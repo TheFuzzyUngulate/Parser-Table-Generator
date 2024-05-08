@@ -96,14 +96,14 @@ void CodeGenerator::generate()
                 ofile << "\t\tch = scan();\n\n";
 
                 /* use regular expressions */
-                for (auto item : _regexes)
+                for (i = 0; i < _regexes.size(); ++i)
                 {
+                    /* get item */
+                    auto item = _regexes[i];
+
                     /* get items and values */
                     name  = item.first;
                     regex = item.second;
-
-                    /* add as a comment the rule being made*/
-                    ofile << "\t\t//" << name << "\n";
 
                     /* save point, incase returning doesn't work */
                     ofile << "\t\tsave_pos();\n";
@@ -120,7 +120,11 @@ void CodeGenerator::generate()
                     /* return if positive, else keep going */
                     ofile << "\t\tif (load_bool())\n";
                     ofile << "\t\t\tptg_tokret(" << _elementtoks["#" + name] << ")\n";
-                    ofile << "\t\telse ch = load_pos();\n\n";
+
+                    /* behavior here varies depending on whether this is the last */
+                    if (i == _regexes.size() - 1)
+                        ofile << "\t\telse fprintf(stderr, \"invalid char \\\"%c\\\"found\\n\", ch);\n";
+                    else ofile << "\t\telse ch = load_pos();\n\n";
                 }
 
                 /* break state */

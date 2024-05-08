@@ -7,7 +7,7 @@ LBRACK                  \[
 RBRACK                  \]
 COMMA                   ,
 DIRECTIVE               #{[A-Za-z]}+
-ELLIPSIS                ...
+ELLIPSIS                \.\.\.
 
 %%
 
