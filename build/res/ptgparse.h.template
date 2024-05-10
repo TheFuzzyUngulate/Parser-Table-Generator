@@ -8,19 +8,30 @@
 #include <stdlib.h>
 #include <string.h>
 
-typedef enum ptg_enum {
+typedef enum ptgenum {
 /* stop */
-} ptg_enum;
+} ptgenum;
 
 static inline char*
-ptg_enum_string(ptg_enum tok) {
+ptgenum_string(ptgenum tok) {
 /* stop */
 }
 
 static FILE* ptg_infile = NULL;
 
 char* ptg_lexeme();
-ptg_enum ptg_lex();
-void ptg_unlex(ptg_enum tok);
+ptgenum ptglex();
+void ptgunlex(ptgenum tok);
+
+typedef struct ptgast {
+    enum {
+        PTGASTATOM,
+/* stop */
+    } id;
+    union {
+        char* atom;
+/* stop */
+    } op;
+} ptgast;
 
 #endif

@@ -1472,24 +1472,22 @@ void re_conv_rec(re_exp* re, stringstream *fptr, int space)
 	switch (re->tag)
 	{
 		case re_exp::char_exp:
-			re_write(fptr, "save_bool(ch == \'", space);
+			re_write(fptr, "save_bool(scan() == \'", space);
 			re_write(fptr, ch_to_str(re->op.charExp), 0);
 			re_write(fptr, "\');\n", 0);
-			re_write(fptr, "ch = scan();\n", space);
 			break;
 
 		case re_exp::dot_exp:
-			re_write(fptr, "save_bool(ch != EOF);\n", space);
-			re_write(fptr, "ch = scan();\n", space);
+			re_write(fptr, "save_bool(scan() != EOF);\n", space);
 			break;
 
 		case re_exp::range_exp:
+			re_write(fptr, "ch = scan();\n", space);
 			re_write(fptr, "save_bool(ch >= \'", space);
 			re_write(fptr, ch_to_str(re->op.rangeExp.min), 0);
 			re_write(fptr, "\' && ch <= \'", 0);
 			re_write(fptr, ch_to_str(re->op.rangeExp.max), 0);
 			re_write(fptr, "\');\n", 0);
-			re_write(fptr, "ch = scan();\n", space);
 			break;
 
 		case re_exp::empty_exp:
@@ -1508,7 +1506,7 @@ void re_conv_rec(re_exp* re, stringstream *fptr, int space)
 			}), fptr, space + 1);
 
 			re_write(fptr, "if (!load_bool()) {\n", space + 1);
-			re_write(fptr, "ch = load_pos();\n", space + 2);
+			re_write(fptr, "load_pos();\n", space + 2);
 			re_write(fptr, "break;\n", space + 1);
 			re_write(fptr, "} else {\n", space + 2);
 			re_write(fptr, "save_pos();\n", space + 2);
@@ -1530,7 +1528,7 @@ void re_conv_rec(re_exp* re, stringstream *fptr, int space)
 			}), fptr, space);
 
 			re_write(fptr, "if (!load_bool())\n", space);
-			re_write(fptr, "ch = load_pos();\n", space + 1);
+			re_write(fptr, "load_pos();\n", space + 1);
 			re_write(fptr, "save_bool(true);\n", space);
 			
 			break;
@@ -1570,11 +1568,11 @@ void re_conv_rec(re_exp* re, stringstream *fptr, int space)
 				}), fptr, space);
 				re_write(fptr, "if (!load_bool()) {\n", space);
 				iter = re->op.barExp.right;
-				re_write(fptr, "ch = load_pos();\n", space + 1);
+				re_write(fptr, "load_pos();\n", space + 1);
 				re_conv_rec(re_exp_new({
 					.tag = re_exp::plain_exp,
 					.op = {.plainExp = iter}
-				}), fptr, space + 2);
+				}), fptr, space + 1);
 				re_write(fptr, "} else save_bool(true);\n", space);
 			}
 			else {

@@ -1,74 +1,5 @@
 #include "../include/parser/parser.hpp"
 
-// Parser operators
-
-void Parser::ppush(ParserItem* p) {
-    pred_stack.push_back(p);
-}
-
-ParserItem* Parser::ppop() {
-    ParserItem *p = pred_stack.back();
-    pred_stack.pop_back();
-    return p;
-}
-
-void Parser::pprint() {
-    if (!pred_stack.empty()) {
-        for (int k = pred_stack.size() - 1; k >= 0; --k) {
-            cout << "name: " << tokname(pred_stack[k]->name())
-                << ", type: " << pred_stack[k]->type() 
-                << std::endl;
-        }
-        cout << std::endl;
-    }
-}
-
-// RegEx operators
-
-void Parser::reg_push(string a) {
-    reg_stack.push_back(a);
-}
-
-string Parser::reg_pop() {
-    string a = reg_stack.back();
-    reg_stack.pop_back();
-    return a;
-}
-
-void Parser::reg_print() {
-    /* if (!res_stack.empty()) {
-        for (int k = (int)res_stack.size() - 1; k >= 0; --k) {
-            cout << "val[" << k << "]: " 
-                    << res_stack[k]->getId()
-                    << std::endl;
-        }
-        cout << std::endl;
-    } */
-}
-
-// AST operators
-
-void Parser::ast_push(AST* a) {
-    res_stack.push_back(a);
-}
-
-AST* Parser::ast_pop() {
-    AST* a = res_stack.back();
-    res_stack.pop_back();
-    return a;
-}
-
-void Parser::ast_print() {
-    if (!res_stack.empty()) {
-        for (int k = (int)res_stack.size() - 1; k >= 0; --k) {
-            cout << "val[" << k << "]: " 
-                    << res_stack[k]->getId()
-                    << std::endl;
-        }
-        cout << std::endl;
-    }
-}
-
 // warnings and errors
 
 void Parser::parse_warn(const char* ch) {
@@ -90,297 +21,418 @@ void Parser::parse_illegal_transition_err(Tokens t_tos, Tokens t_cur) {
     parse_err(ch.c_str());
 }
 
-void Parser::print_root() {
-    if (!root) {
-        parse_err("cannot view root before parsing\n");
-    } else root->print();
+bool Parser::sc_exists(string name)
+{
+    for (auto scitem : _scitems) {
+        if (scitem.first == name)
+            return true;
+    } return false;
 }
 
-void Parser::print_dict() {
-    ParseDict::iterator it;
-    for (it = dict.begin(); it != dict.end(); ++it) {
-        cout << "(" << it->first.first << ", "
-                << it->first.second << ": [";
-        for (auto x : *(it->second)) {
-            cout << x << ", ";
-        } cout << "]\n";
+void Parser::parse()
+{
+    sc_parse();
+    if (sc->sdir().state == 1) {
+        pr_parse();
     }
 }
 
-int Parser::prime_table() {
-    dict[make_pair<Tokens, Tokens>(M_START, S_STRING)] = new vector<Tokens>({S_START, M_START1});
-    dict[make_pair<Tokens, Tokens>(M_START, S_NEWLINE)] = new vector<Tokens>({S_START, M_START1});
-    dict[make_pair<Tokens, Tokens>(M_START, S_DELIM)] = new vector<Tokens>({S_START, M_START1});
-    dict[make_pair<Tokens, Tokens>(M_START, ENDFILE)] = new vector<Tokens>({S_START, M_START1});
-    dict[make_pair<Tokens, Tokens>(M_START1, S_DELIM)] = new vector<Tokens>({S_DELIM, P_START});
-    dict[make_pair<Tokens, Tokens>(M_START1, ENDFILE)] = new vector<Tokens>({});
-    dict[make_pair<Tokens, Tokens>(S_START, S_STRING)] = new vector<Tokens>({S_RULE, S_START});
-    dict[make_pair<Tokens, Tokens>(S_START, S_NEWLINE)] = new vector<Tokens>({S_RULE, S_START});
-    dict[make_pair<Tokens, Tokens>(S_START, S_DELIM)] = new vector<Tokens>({});
-    dict[make_pair<Tokens, Tokens>(S_START, ENDFILE)] = new vector<Tokens>({});
-    dict[make_pair<Tokens, Tokens>(S_RULE, S_STRING)] = new vector<Tokens>({S_STRING, S_STRING, S_NEWLINE});
-    dict[make_pair<Tokens, Tokens>(S_RULE, S_NEWLINE)] = new vector<Tokens>({S_NEWLINE});
-    dict[make_pair<Tokens, Tokens>(P_START, ENDFILE)] = new vector<Tokens>({});
-    dict[make_pair<Tokens, Tokens>(P_START, RULE)] = new vector<Tokens>({P_RULE, P_START});
-    dict[make_pair<Tokens, Tokens>(P_START, BREAK)] = new vector<Tokens>({P_RULE, P_START});
-    dict[make_pair<Tokens, Tokens>(P_RULE, RULE)] = new vector<Tokens>({RULE, ARROW, P_RULES, BREAK});
-    dict[make_pair<Tokens, Tokens>(P_RULE, BREAK)] = new vector<Tokens>({BREAK});
-    dict[make_pair<Tokens, Tokens>(P_RULES, EMPTY)] = new vector<Tokens>({P_RULES_EL, P_RULES1});
-    dict[make_pair<Tokens, Tokens>(P_RULES, RULE)] = new vector<Tokens>({P_RULES_EL, P_RULES1});
-    //dict[make_pair<Tokens, Tokens>(P_RULES, TOK)] = new vector<Tokens>({P_RULES_EL, P_RULES1});
-    dict[make_pair<Tokens, Tokens>(P_RULES, LOPT)] = new vector<Tokens>({P_RULES_EL, P_RULES1});
-    dict[make_pair<Tokens, Tokens>(P_RULES, LREP)] = new vector<Tokens>({P_RULES_EL, P_RULES1});
-    dict[make_pair<Tokens, Tokens>(P_RULES1, EMPTY)] = new vector<Tokens>({P_RULES_EL, P_RULES1});
-    dict[make_pair<Tokens, Tokens>(P_RULES1, RULE)] = new vector<Tokens>({P_RULES_EL, P_RULES1});
-    //dict[make_pair<Tokens, Tokens>(P_RULES1, TOK)] = new vector<Tokens>({P_RULES_EL, P_RULES1});
-    dict[make_pair<Tokens, Tokens>(P_RULES1, LOPT)] = new vector<Tokens>({P_RULES_EL, P_RULES1});
-    dict[make_pair<Tokens, Tokens>(P_RULES1, LREP)] = new vector<Tokens>({P_RULES_EL, P_RULES1});
-    dict[make_pair<Tokens, Tokens>(P_RULES1, BAR)] = new vector<Tokens>({BAR, P_RULES_EL, P_RULES1});
-    dict[make_pair<Tokens, Tokens>(P_RULES1, ROPT)] = new vector<Tokens>({});
-    dict[make_pair<Tokens, Tokens>(P_RULES1, RREP)] = new vector<Tokens>({});
-    dict[make_pair<Tokens, Tokens>(P_RULES1, BREAK)] = new vector<Tokens>({});
-    dict[make_pair<Tokens, Tokens>(P_RULES_EL, EMPTY)] = new vector<Tokens>({EMPTY});
-    dict[make_pair<Tokens, Tokens>(P_RULES_EL, RULE)] = new vector<Tokens>({RULE});
-    //dict[make_pair<Tokens, Tokens>(P_RULES_EL, TOK)] = new vector<Tokens>({TOK});
-    dict[make_pair<Tokens, Tokens>(P_RULES_EL, LOPT)] = new vector<Tokens>({LOPT, P_RULES, ROPT});
-    dict[make_pair<Tokens, Tokens>(P_RULES_EL, LREP)] = new vector<Tokens>({LREP, P_RULES, RREP});
-    return EXIT_SUCCESS;
-}
+void Parser::sc_parse()
+{
+    pitem tos;
+    Tokens a;
+    ParserTable tb;
+    vector<reglit> nodes;
+    vector<pitem> stack;
 
-int Parser::parse() {
-    ppush(new ParserTok(ENDFILE));
-    ppush(new ParserRule(M_START));
+    tb[{START, ENDFILE}] = {};
+    tb[{START, STRING}] = vector<Tokens>{RULE, START};
+    tb[{START, NEWLINE}] = vector<Tokens>{RULE, START};
+    tb[{RULE, STRING}] = vector{STRING, STRING, NEWLINE};
+    tb[{RULE, NEWLINE}] = vector<Tokens>{NEWLINE};
 
-    ParserItem *tos;
-    Tokens cur = sc->lex();
-    if (_flags.SCANNER_TRACE)
-        cout << "first symbol: " 
-                << tokname(cur) 
-                << std::endl;
+    stack.push_back(pitem{.id = pitem::LIT, .op = {.lit = ENDFILE}});
+    stack.push_back(pitem{.id = pitem::NONLIT, .op = {.nonlit = START}});
 
-    vector<AST> trash_pile = {};
-    
-    while (!pred_stack.empty()) {
-        
-        if (_flags.PARSER_TRACE) 
-            pprint();
-        tos = pred_stack.back();
-        
-        if (tos->type() == "reduce") {
-            ParserRed *mytos = (ParserRed*)tos;
-            tos = ppop();
-            int len = mytos->getarg_count();
-            
-            AST* head;
-            vector<AST*> tail;
-            for (int i = 0; i < len; i++) {
-                tail.push_back(ast_pop());
-            }
-            
-            switch(mytos->name()) {
-                case Tokens::P_START: {
-                    if (len == 0)
-                        ast_push(new StartAST());
-                    else
-                    if (len == 2) {
-                        StartAST *start = (StartAST*)tail[0];
-                        if (tail[1]->getId() != "empty")
-                            start->add(tail[1]);
-                        else delete tail[1];
-                        ast_push(tail[0]);
-                    }
-                    break;
-                }
+    a = sc->lex();
+    if (_flags.PARSER_TRACE)
+        cout << "a = " << tokname(a) << ".\n";
 
-                case Tokens::P_RULE: {
-                    if (len == 4)
-                        ast_push(new Rule((Literal*)tail[3], (RuleList*)tail[1]));
-                    else
-                    if (len == 1)
-                        ast_push(new EmptyAST());
-                    break;
-                }
-                
-                case Tokens::P_RULES: {
-                    auto x = (RuleList*)tail[0];
-                    if (x->isEmpty() || !x->curr_is_or_node()) {
-                        x->addChild(tail[1]);
-                        ast_push(tail[0]);
-                    }
-                    else {
-                        auto b = (OrExpr*)x->last();
-                        b->addLeft(tail[1]);
-                        ast_push(tail[0]);
-                    }
-                    break;
-                }
-                
-                case Tokens::P_RULES1: {
-                    if (len == 0) {
-                        ast_push(new RuleList());
-                    }
-                    else
-                    if (len == 2) {
-                        auto x = (RuleList*)tail[0];
-                        if (x->isEmpty() || !x->curr_is_or_node()) {
-                            x->addChild(tail[1]);
-                            ast_push(tail[0]);
-                        }
-                        else {
-                            auto b = (OrExpr*)x->last();
-                            b->addLeft(tail[1]);
-                            ast_push(tail[0]);
-                        }
-                    }
-                    else
-                    if (len == 3) {
-                        auto x = (RuleList*)tail[0];
-                        if (x->isEmpty() || !x->curr_is_or_node()) {
-                            x->addChild(tail[1]);
-                        }
-                        else {
-                            auto b = (OrExpr*)x->last();
-                            b->addLeft(tail[1]);
-                        } ast_push(new RuleList(new OrExpr(x)));
-                    }
-                    break;
-                }
-                
-                case Tokens::P_RULES_EL: {
-                    if (len == 1)
-                        ast_push(tail[0]);
-                    else {
-                        auto tok = ((Literal*)tail[0])->getToken();
-                        if (tok == Tokens::ROPT)
-                            ast_push(new OptExpr((RuleList*)tail[1]));
-                        else
-                            ast_push(new RepExpr((RuleList*)tail[1]));
-                    }
-                    break;
-                }
-
-                case Tokens::M_START: {
-                    ast_push(tail[1]);
-                    ast_push(tail[0]);
-                    break;
-                }
-
-                case Tokens::M_START1: {
-                    if (len == 2) {
-                        delete tail[1];
-                        ast_push(tail[0]);
-                    } else ast_push(new EmptyAST());
-                    break;
-                }
-
-                case Tokens::S_RULE: {
-                    if (len == 3) {
-                        auto str = (Literal*)tail[2];
-                        auto regex = (Literal*)tail[1];
-                        delete tail[0];
-
-                        auto name = str->getName();
-
-                        if (!isalpha(name[0])) {
-                            std::string err = "token name ";
-                            err += name;
-                            err += " not well-formed.\n";
-                            parse_err(err.c_str());
-                        }
-
-                        for (auto i = 1; i < name.size(); ++i) {
-                            if (!isalnum(name[i]) && name[i] != '_') {
-                                std::string err = "token name ";
-                                err += name;
-                                err += " not well-formed.\n";
-                                parse_err(err.c_str());
-                            }
-                        }
-                        
-                        ast_push(new RegRule(name, regex->getName()));
-                    } else ast_push(new EmptyAST());
-                    break;
-                }
-
-                case Tokens::S_START: {
-                    if (len == 2) {
-                        StartAST *start = (StartAST*)tail[0];
-                        if (tail[1]->getId() != "empty")
-                            start->add(tail[1]);
-                        else delete tail[1];
-                        ast_push(tail[0]);
-                    } else ast_push(new StartAST());
-                    break;
-                }
-                
-                default: {
-                    std::string err = "invalid reduce symbol ";
-                    err += tokname(mytos->name());
-                    parse_err(err.c_str());
-                }
-            }
-
-            if (_flags.PARSER_TRACE)
-                ast_print();
+    while (!stack.empty())
+    {
+        tos = stack.back();
+        stack.pop_back();
+        if (_flags.PARSER_TRACE) {
+            cout << "\nnew iteration:\n";
+            cout << "  stack.pop() = " << pitem_string(tos) << ".\n";
         }
 
-        else
-        if (tos->type() == "nonterm") {
-            ParsePair x = make_pair<Tokens, Tokens>((Tokens)tos->name(), (Tokens)cur);
-            if (dict.count(x) == 0)
-                parse_illegal_transition_err((Tokens)tos->name(), (Tokens)cur);
-            else {
-                tos = ppop();
-                auto x = dict[make_pair<Tokens, Tokens>((Tokens)tos->name(), (Tokens)cur)];
-                int len = x->size();
-                ppush(new ParserRed(tos->name(), len));
-                if (len > 0) {
-                    for (int i = len - 1; i >= 0; i--)
-                        if (is_terminal((*x)[i])) ppush(new ParserTok((*x)[i])); else ppush(new ParserRule((*x)[i]));
-                }
-                free(tos);         
-            }
-        }
-
-        else {
-            if (tos->name() == cur) {
-                tos = ppop();
-                if (cur != Tokens::ENDFILE) {
-                    if (cur == Tokens::EMPTY)
-                        ast_push(new EmptyAST());
-                    else 
-                    if (!is_parser_enum(cur) || cur != Tokens::RULE)
-                        ast_push(new Literal(sc->getlexeme(), cur));
-                    else
-                    {
-                        auto toks = ((StartAST*)res_stack[0])->getChildren();
-                        bool _f = false;
-                        for (auto x : toks) {
-                            auto r = (RegRule*)x;
-                            if (r->getName() == sc->getlexeme()) {
-                                _f = true;
-                                break;
-                            }
-                        }
-                        if (_f)
-                            ast_push(new Literal(sc->getlexeme(), Tokens::TOK));
-                        else ast_push(new Literal(sc->getlexeme(), Tokens::RULE));
-                    }
-
+        switch (tos.id)
+        {
+            case pitem::LIT:
+                if (tos.op.lit == a) {
+                    auto lexs  = sc->getlexeme();
+                    nodes.push_back({"", lexs});
                     if (_flags.PARSER_TRACE)
-                        ast_print();
+                        cout << "  terms.push(\"\", " << tokname(a) << ").\n";
+                    a = sc->lex();
+                    if (_flags.PARSER_TRACE)
+                        cout << "  a = " << tokname(a) << ".\n";
+                } else parse_unexpected_terminal_err(tos.op.lit, a);
+                break;
+
+            case pitem::NONLIT:
+                if (tb.find({tos.op.nonlit, a}) == tb.end()) {
+                    parse_illegal_transition_err(tos.op.nonlit, a);
+                } else {
+                    auto res = tb[{tos.op.nonlit, a}];
+                    if (_flags.PARSER_TRACE)
+                        cout << "  table[" << tokname(tos.op.nonlit) << ", " << tokname(a) << "] = " << pitem_string(tos) << ".\n";
+                    stack.push_back(pitem{.id = pitem::REDUCTION, .op = {.reduce = {.tag = tos.op.nonlit, .count = res.size()}}});
+                    for (int i = res.size(); i > 0; i--) {
+                        auto item = res[i-1];
+                        if (isterminal(item)) {
+                            auto pt = pitem{.id = pitem::LIT, .op = {.lit = item}};
+                            stack.push_back(pt);
+                            if (_flags.PARSER_TRACE)
+                                cout << "  stack.push(" << pitem_string(pt) << ").\n";
+                        } else {
+                            auto pt = pitem{.id = pitem::NONLIT, .op = {.nonlit = item}};
+                            stack.push_back(pt);
+                            if (_flags.PARSER_TRACE)
+                                cout << "  stack.push(" << pitem_string(pt) << ").\n";
+                        }
+                    }
                 }
-                cur = sc->lex();
-                if (_flags.SCANNER_TRACE)
-                    cout << "next symbol: " 
-                            << tokname(cur) 
-                            << std::endl;
-                free(tos);
-            } else parse_unexpected_terminal_err((Tokens)tos->name(), (Tokens)cur);
+                break;
+
+            case pitem::REDUCTION:
+                switch (tos.op.reduce.tag)
+                {
+                    case START:
+                    {
+                        if (tos.op.reduce.count == 0) {
+                            nodes.push_back({"", ""});
+                            if (_flags.PARSER_TRACE)
+                                cout << "  terms.push({}).\n";
+                        }
+                        else
+                        if (tos.op.reduce.count == 2) 
+                        {
+                            nodes.pop_back();
+                            reglit b = nodes.back();  // Rule
+                            nodes.pop_back();
+                            if (!b.first.empty()) {
+                                _scitems.push_front(b);
+                                if (_flags.PARSER_TRACE)
+                                    cout << "  answer.push({" << b.first << ", " << b.second << "}).\n";
+                            }
+                            nodes.push_back({"", ""});
+                            if (_flags.PARSER_TRACE)
+                                cout << "  terms.push({}).\n";
+                        }
+                        break;
+                    }
+
+                    case RULE:
+                    {
+                        if (tos.op.reduce.count == 3)
+                        {
+                            nodes.pop_back();
+                            reglit a = nodes.back();  // STRING
+                            nodes.pop_back();
+                            reglit b = nodes.back();  // STRING
+                            nodes.pop_back();
+                            nodes.push_back({b.second, a.second});
+                            if (_flags.PARSER_TRACE)
+                                cout << "  terms.push({" << b.second << ", " << a.second << "}).\n";
+                        }
+                        else
+                        if (tos.op.reduce.count == 1) {
+                            nodes.pop_back();
+                            nodes.push_back({"", ""});
+                            if (_flags.PARSER_TRACE)
+                                cout << "  terms.push({}).\n";
+                        }
+                    }
+                }
+        }
+    } 
+    
+    sc->unlex(a);
+}
+
+void Parser::pr_parse()
+{
+    pitem tos;
+    Tokens a;
+    ParserTable tb;
+    vector<AST*> nodes;
+    vector<pitem> stack;
+
+    tb[{START, ENDFILE}] = vector<Tokens>();
+    tb[{START, LIT}] = vector{RULE, START};
+    //tb[{START, BREAK}] = vector{RULE, START};
+    tb[{RULE, LIT}] = vector{LIT, ARROW, RULES, BREAK};
+    //tb[{RULE, BREAK}] = vector{BREAK};
+    tb[{RULES, LIT}] = vector{RULESEL, RULES1};
+    tb[{RULES, EMPTY}] = vector{RULESEL, RULES1};
+    tb[{RULES, LOPT}] = vector{RULESEL, RULES1};
+    tb[{RULES, LREP}] = vector{RULESEL, RULES1};
+    tb[{RULES1, BAR}] = vector{BAR, RULESEL, RULES1};
+    tb[{RULES1, LIT}] = vector{RULESEL, RULES1};
+    tb[{RULES1, EMPTY}] = vector{RULESEL, RULES1};
+    tb[{RULES1, LOPT}] = vector{RULESEL, RULES1};
+    tb[{RULES1, LREP}] = vector{RULESEL, RULES1};
+    tb[{RULES1, BREAK}] = vector<Tokens>{};
+    tb[{RULES1, ROPT}] = vector<Tokens>{};
+    tb[{RULES1, RREP}] = vector<Tokens>{};
+    tb[{RULESEL, LIT}] = vector{LIT};
+    tb[{RULESEL, EMPTY}] = vector{EMPTY};
+    tb[{RULESEL, LOPT}] = vector{LOPT, RULES, ROPT};
+    tb[{RULESEL, LREP}] = vector{LREP, RULES, RREP};
+
+    stack.push_back(pitem{.id = pitem::LIT, .op = {.nonlit = ENDFILE}});
+    stack.push_back(pitem{.id = pitem::NONLIT, .op = {.nonlit = START}});
+
+    a = sc->lex();
+    if (_flags.PARSER_TRACE)
+        cout << "a = " << tokname(a) << ".\n";
+
+    while (!stack.empty())
+    {
+        tos = stack.back();
+        stack.pop_back();
+        if (_flags.PARSER_TRACE) {
+            cout << "\nnew iteration:\n";
+            cout << "  stack.pop() = " << pitem_string(tos) << ".\n";
+        }
+
+        switch (tos.id)
+        {
+            case pitem::LIT:
+                if (tos.op.lit == a) 
+                {   
+                    if (a == Tokens::LIT) {
+                        auto lexs  = sc->getlexeme();
+                        bool isTok = sc_exists(lexs);
+                        nodes.push_back(new Literal(lexs, isTok ? Tokens::TOK : Tokens::LIT));
+                        if (_flags.PARSER_TRACE)
+                            cout << "  terms.push(" << tokname(isTok ? Tokens::TOK : Tokens::LIT) << ").\n";
+                    } else {
+                        if (a == Tokens::EMPTY) {
+                            if (_flags.PARSER_TRACE)
+                                cout << "  terms.push($).\n";
+                            nodes.push_back(new EmptyAST());
+                        } else {
+                            if (_flags.PARSER_TRACE)
+                                cout << "  terms.push(" << tokname(a) << ").\n";
+                            nodes.push_back(new Literal("", a));
+                        }
+                    } 
+                    a = sc->lex();
+                    if (_flags.PARSER_TRACE)
+                        cout << "  a = " << tokname(a) << ".\n";
+                } else parse_unexpected_terminal_err(tos.op.lit, a);
+                break;
+
+            case pitem::NONLIT:
+                if (tb.find({tos.op.nonlit, a}) == tb.end()) {
+                    parse_illegal_transition_err(tos.op.lit, a);
+                } else {
+                    auto res = tb[{tos.op.nonlit, a}];
+                    if (_flags.PARSER_TRACE)
+                        cout << "  table[" << tokname(tos.op.nonlit) << ", " << tokname(a) << "] = " << pitem_string(tos) << ".\n";
+                    stack.push_back(pitem{.id = pitem::REDUCTION, .op = {.reduce = {.tag = tos.op.nonlit, .count = res.size()}}});
+                    for (int i = res.size(); i > 0; i--) {
+                        auto item = res[i-1];
+                        if (isterminal(item)) {
+                            auto pt = pitem{.id = pitem::LIT, .op = {.lit = item}};
+                            stack.push_back(pt);
+                            if (_flags.PARSER_TRACE)
+                                cout << "  stack.push(" << pitem_string(pt) << ").\n";
+                        } else {
+                            auto pt = pitem{.id = pitem::NONLIT, .op = {.nonlit = item}};
+                            stack.push_back(pt);
+                            if (_flags.PARSER_TRACE)
+                                cout << "  stack.push(" << pitem_string(pt) << ").\n";
+                        }
+                    }
+                }
+                break;
+
+            case pitem::REDUCTION:
+                switch (tos.op.reduce.tag)
+                {
+                    case START:
+                    {
+                        if (tos.op.reduce.count == 0) {
+                            if (_flags.PARSER_TRACE)
+                                cout << "  Start <- empty.\n";
+                            nodes.push_back(new EmptyAST());
+                        }
+                        else
+                        if (tos.op.reduce.count == 2)
+                        {  
+                            if (_flags.PARSER_TRACE)
+                                cout << "  Start <- Rule Start.\n";
+
+                            AST* a = nodes.back();  // Start
+                            nodes.pop_back();
+                            AST* b = nodes.back();  // Start
+                            nodes.pop_back();
+
+                            if (b->getId() != "empty") {
+                                _psitems.push_front((Rule*)b);
+                                if (_flags.PARSER_TRACE) {
+                                    cout << "  pushed to results:\n";
+                                    ((Rule*)b)->print(2);
+                                }
+                            }
+                            
+                            nodes.push_back(new EmptyAST());
+                        }
+
+                        break;
+                    }
+
+                    case RULE:
+                    {
+                        if (tos.op.reduce.count == 4)
+                        {   
+                            nodes.pop_back();
+                            AST* a = nodes.back();  // Rules
+                            nodes.pop_back();
+                            nodes.pop_back();
+                            AST* b = nodes.back();  // LIT
+                            nodes.pop_back();
+
+                            if (_flags.PARSER_TRACE)
+                                cout << "  Rule <- LIT ARROW Rules BREAK.\n";
+
+                            RuleList* l;
+                            auto orw = (OrExpr*)a;
+
+                            if (orw->emptyleft()) {
+                                nodes.push_back(new Rule((Literal*)b, new RuleList(orw->getRight())));
+                            } else if (orw->emptyright()) {
+                                nodes.push_back(new Rule((Literal*)b, new RuleList(orw->getLeft())));
+                            } else nodes.push_back(new Rule((Literal*)b, new RuleList(a)));
+
+                        }
+                        else
+                        if (tos.op.reduce.count == 1) {
+                            nodes.pop_back();
+                            if (_flags.PARSER_TRACE)
+                                cout << "  Rule <- BREAK.\n";
+                            nodes.push_back(new EmptyAST());
+                        }
+
+                        break;
+                    }
+
+                    case RULES:
+                    {   
+                        AST* a = nodes.back();  // Rules'
+                        nodes.pop_back();
+                        AST* b = nodes.back();  // RulesEl
+                        nodes.pop_back();
+
+                        if (_flags.PARSER_TRACE)
+                            cout << "  Rules <- RulesEl Rules'.\n";
+
+                        auto orw = (OrExpr*)a;
+                        orw->add(b);
+                        nodes.push_back(a);
+
+                        break;
+                    }
+
+                    case RULES1:
+                    {   
+                        if (tos.op.reduce.count == 0) {
+                            if (_flags.PARSER_TRACE)
+                                cout << "  Rules' <- empty.\n";
+                            nodes.push_back(new OrExpr());
+                        }
+                        else
+                        if (tos.op.reduce.count == 2) 
+                        {
+                            AST* a = nodes.back();  // Rules'
+                            nodes.pop_back();
+                            AST* b = nodes.back();  // RulesEl
+                            nodes.pop_back();
+
+                            if (_flags.PARSER_TRACE)
+                                cout << "  Rules' <- RulesEl Rules'.\n";
+
+                            auto orw = (OrExpr*)a;
+                            orw->add(b);
+                            nodes.push_back(a);
+                        }
+                        else
+                        if (tos.op.reduce.count == 3)
+                        {
+                            AST* a = nodes.back();  // Rules'
+                            nodes.pop_back();
+                            AST* b = nodes.back();  // RulesEl
+                            nodes.pop_back();
+                            nodes.pop_back();
+
+                            if (_flags.PARSER_TRACE)
+                                cout << "  Rules' <- OR RulesEl Rules'.\n";
+
+                            auto orw = (OrExpr*)a;
+                            orw->add(b);
+                            orw->swap();
+                            nodes.push_back(a);
+                        }
+
+                        break;
+                    }
+
+                    case RULESEL:
+                    {
+                        if (tos.op.reduce.count == 1) {
+                            AST* a = nodes.back();
+                            nodes.pop_back();
+                            auto tok = ((Literal*)a)->getToken();
+                            if (_flags.PARSER_TRACE) {
+                                if (tok == Tokens::LIT || tok == Tokens::TOK) 
+                                    cout << "  RulesEl <- LIT.\n";
+                                else cout << "  RulesEl <- EMPTY.\n";
+                            }
+                            nodes.push_back(a);
+                        }
+                        else
+                        if (tos.op.reduce.count == 3) 
+                        {
+                            AST* a = nodes.back();  // ROPT/RREP
+                            nodes.pop_back();
+                            AST* b = nodes.back();  // Rules
+                            nodes.pop_back();
+                            nodes.pop_back();
+
+                            auto tok = ((Literal*)a)->getToken();
+                            auto orw = (OrExpr*)b;
+                            deque<AST*> l = orw->emptyleft() ? orw->getRight() : (orw->emptyright() ? orw->getLeft() : deque{b});
+
+                            if (tok == Tokens::ROPT) {
+                                if (_flags.PARSER_TRACE)
+                                    cout << "  RulesEl <- LOPT Rules ROPT.\n";
+                                nodes.push_back(new OptExpr(new RuleList(l)));
+                            } else {
+                                if (_flags.PARSER_TRACE)
+                                    cout << "  RulesEl <- LREP Rules RREP.\n";
+                                nodes.push_back(new RepExpr(new RuleList(l)));
+                            }
+                        }
+
+                        break;
+                    }
+                }
         }
     }
 
-    root    = (StartAST*)res_stack[1];
-    regexes = (StartAST*)res_stack[0];
-    return EXIT_SUCCESS;
+    sc->unlex(a);
 }

@@ -255,8 +255,8 @@ void HandleFinder::expand_state(AST_State &state) {
             if (alrseen.find(lname) == alrseen.end()) {
                 for (auto k : _lst) {
                     Rule *k_rule = (Rule*)k;
-                    if (k_rule->getLeft()->getName() == lname) {
-                        state.push_back(ASTHandle(k_rule));
+                    if (k->getLeft()->getName() == lname) {
+                        state.push_back(ASTHandle(k));
                     }
                 }
                 alrseen.insert(lname);
@@ -363,17 +363,16 @@ vector<int> HandleFinder::backtrack_state(int result_state, string trigger_lit) 
 std::vector<string> HandleFinder::get_all_terms_and_nterms() {
     std::vector<string> ret = {"S*", "$"};
     for (auto x : _lst) {
-        Rule* kx = (Rule*)x;
         bool found = false;
         for (auto y : ret) {
-            if (kx->getLeft()->getName() == y) {
+            if (x->getLeft()->getName() == y) {
                 found = true;
                 break;
             }
         }
         if (found == false)
-            ret.push_back(kx->getLeft()->getName());
-        for (auto k : kx->getRight()->getChildren()) {
+            ret.push_back(x->getLeft()->getName());
+        for (auto k : x->getRight()->getChildren()) {
             if (k->getId() == "empty") 
                 continue;
             bool found2 = false;

@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <stdarg.h>
 /* stop */
 
 typedef struct
@@ -64,13 +65,14 @@ void m_stack_clear(m_stack* m)
 typedef struct
 ptg_sc
 {
+    int ptr;               // pointer val starting at -1
     unsigned int line;     // current line number
     unsigned int column;   // current column number
     struct {
         m_stack  lexeme;   // current lexeme
         m_stack  chbuf;    // unget buffer
         m_stack  tokbuf;   // unlex buffer
-        ptg_enum lasttok;  // last token returned by lex
+        ptgenum lasttok;  // last token returned by lex
     } prog;
     struct {
         m_stack seeks;     // saved positions for seek
@@ -82,34 +84,46 @@ ptg_sc;
 
 static ptg_sc* sc = NULL;
 
-char scan() {
+char scan() 
+{
     char ch;
+    
     if (sc->prog.chbuf.count > 0) {
         ch = *(char*)m_stack_pop(&(sc->prog.chbuf));
     } else {
+        fseek(ptg_infile, ++(sc->ptr), SEEK_SET);
         ch = fgetc(ptg_infile);
+        sc->column++;
+        fseek(ptg_infile, sc->ptr, SEEK_SET);
         if (ch == EOF) 
             return EOF;
     }
+    
+    if (ch == '\n') {
+        sc->line++;
+        sc->column = 0;
+    }
+
     m_stack_push(&(sc->prog.lexeme), &ch);
     return ch;
 }
 
 void save_pos() {
-    int tl = ftell(ptg_infile);
-    m_stack_push(&(sc->check.seeks), &tl);
+    m_stack_push(&(sc->check.seeks), &(sc->ptr));
 }
 
-char load_pos() {
-    if (sc->check.seeks.count > 0) {
-        int p  = *(int*)m_stack_pop(&(sc->check.seeks));
-        int fs = fseek( ptg_infile, p, SEEK_SET );
-        if (!fs) {
-            fprintf(stderr, "error: fseek failed.\n");
-            exit(EXIT_FAILURE);
-        }
-        return scan();
-    } else {
+void load_pos() {
+    int lexcompt = ftell(ptg_infile);
+
+    if (sc->check.seeks.count > 0)
+    {
+        int p   = *(int*)m_stack_pop(&(sc->check.seeks));
+        sc->ptr = p;
+        lexcompt -= p;
+        for (int i = 0; i < lexcompt; ++i)
+            m_stack_pop(&(sc->prog.lexeme));
+    }
+    else {
         fprintf(stderr, "error: no seek positions have been saved.\n");
         exit(EXIT_FAILURE);
     }
@@ -167,20 +181,27 @@ char* ptg_lexeme() {
     return res;
 }
 
-ptg_enum
-ptg_lex()
+#define ptgvrberr(...) do {\
+    fprintf(stderr, __VA_ARGS__);\
+    fprintf(stderr, " at (%d:%d)\n", sc->line, sc->column);\
+    exit(EXIT_FAILURE);\
+} while (0)
+
+ptgenum
+ptglex()
 {
     int ch;
     if (sc == NULL)
     {
         sc = (ptg_sc*)malloc(sizeof(ptg_sc));
 
+        sc->ptr    = -1;
         sc->line   = 0;
         sc->column = 0;
 
         sc->prog.lexeme = m_stack_init(char);
         sc->prog.chbuf  = m_stack_init(char);
-        sc->prog.tokbuf = m_stack_init(ptg_enum);
+        sc->prog.tokbuf = m_stack_init(ptgenum);
 
         sc->check.seeks    = m_stack_init(int);
         sc->check.answers  = m_stack_init(bool);
@@ -192,27 +213,37 @@ ptg_lex()
     }
 
     if (sc->prog.tokbuf.count > 0) {
-        ptg_enum tok = *(ptg_enum*)m_stack_pop(&(sc->prog.tokbuf));
+        ptgenum tok = *(ptgenum*)m_stack_pop(&(sc->prog.tokbuf));
         return tok;
     }
 
+    m_stack_clear(&(sc->check.seeks));
+    m_stack_clear(&(sc->check.answers));
+    m_stack_clear(&(sc->check.counters));
+
     while (1)
     {
+        save_pos();
+        if (scan() == EOF) {
+            ptg_tokret(P_TOK_END); 
+        } else load_pos();
+
 /* stop */
+        else ptgvrberr("invalid character found");
     }
 }
 
-void ptg_unlex(ptg_enum tok) {
+void ptgunlex(ptgenum tok) {
     m_stack_push(&(sc->prog.tokbuf), &tok);
 }
 
 /* stop */
 
-#define PTG_GOTO   1
+#define PTGGOTO   1
 #define PTG_ERROR  0
-#define PTG_SHIFT  2
-#define PTG_REDUCE 3
-#define PTG_ACCEPT 4
+#define PTGSHIFT  2
+#define PTGREDUCE 3
+#define PTGACCEPT 4
 
 typedef struct ptg_pdata {
     int action;
@@ -224,155 +255,162 @@ typedef struct ptg_pdata {
         struct { 
             int rule;
             int count;
-            ptg_enum lhs_tok;
+            ptgenum lhs_tok;
         } reduce; 
     } op;
-} ptg_pdata_t;
+} ptg_tdata;
 
-static ptg_pdata_t *ptg_ptable = NULL;
-
-#define ptg_table_next(state, token) (*(ptg_ptable + ((state) * P_ELEMENT_COUNT) + (token)))
+#define ptg_table_next(table, state, token) (*(table + ((state) * P_ELEMENT_COUNT) + (token)))
 
 static inline void
-ptg_table_set(int state, ptg_enum token, ptg_pdata_t data)
+ptg_table_set(ptg_tdata* table, int state, ptgenum token, ptg_tdata data)
 {
-    ptg_pdata_t old = ptg_table_next(state, token);
+    ptg_tdata old = ptg_table_next(table, state, token);
     if (old.action != PTG_ERROR) {
-        if (old.action == PTG_SHIFT && data.action == PTG_REDUCE) {
-            fprintf(stderr, stderr, "warning: shift-reduce conflict at (state#%d, %s)\n", state, ptg_enum_string(token));
-            fprintf(stderr, stderr, "opting to shift...\n");
+        if (old.action == PTGSHIFT && data.action == PTGREDUCE) {
+            fprintf(stderr, "warning: shift-reduce conflict at (state#%d, %s)\n", state, ptgenum_string(token));
+            fprintf(stderr, "opting to shift...\n");
             return;
         }
-        if (old.action == PTG_REDUCE && data.action == PTG_SHIFT) {
-            fprintf(stderr, stderr, "warning: shift-reduce conflict at (state#%d, %s)\n", state, ptg_enum_string(token));
-            fprintf(stderr, stderr, "opting to shift...\n");
+        if (old.action == PTGREDUCE && data.action == PTGSHIFT) {
+            fprintf(stderr, "warning: shift-reduce conflict at (state#%d, %s)\n", state, ptgenum_string(token));
+            fprintf(stderr, "opting to shift...\n");
         }
-        if (old.action == PTG_REDUCE && data.action == PTG_REDUCE) {
-            fprintf(stderr, stderr, "error: reduce-reduce conflict at (state#%d, %s)\n", state, ptg_enum_string(token));
+        if (old.action == PTGREDUCE && data.action == PTGREDUCE) {
+            fprintf(stderr, "error: reduce-reduce conflict at (state#%d, %s)\n", state, ptgenum_string(token));
             exit(EXIT_FAILURE);
         }
     }
 
-    ptg_table_next(state, token) = data;
+    ptg_table_next(table, state, token) = data;
 }
 
-static inline void
-ptg_ptable_init()
+static inline ptg_tdata*
+ptg_table_init()
 {
-    ptg_ptable = (ptg_pdata_t*)calloc(P_STATE_COUNT * P_ELEMENT_COUNT, sizeof(ptg_pdata_t));
+    ptg_tdata* table = (ptg_tdata*)calloc(P_STATE_COUNT * P_ELEMENT_COUNT, sizeof(ptg_tdata));
 
 /* stop */
+
+    return table;
 }
 
-typedef struct
-ptg_node
+ptgast* ptg_parse()
 {
-    char* name;
-    ptg_enum tok;
-    int ccount;
-    int ccapacity;
-    struct ptg_node **children;
-}
-ptg_node_t;
+    // stacks
+    m_stack nodes  = m_stack_init(ptgast*);
+    m_stack states = m_stack_init(int);
 
-ptg_node_t*
-ptg_node_new(char* name, ptg_enum tok)
-{
-    ptg_node_t* node = (ptg_node_t*)malloc(sizeof(ptg_node_t));
+    // table stuff
+    ptg_tdata next   = {0};
+    ptg_tdata *table = ptg_table_init();
 
-    node->name      = name;
-    node->ccount    = 0;
-    node->tok       = tok;
-    node->ccapacity = 2;
-    node->children  = (ptg_node_t**)malloc(node->ccapacity * sizeof(ptg_node_t*));
-
-    return node;
-}
-
-void ptg_node_addchild(ptg_node_t* node, ptg_node_t* child)
-{
-    if (node->ccount == node->ccapacity) {
-        node->ccapacity = node->ccapacity * 3 / 2;
-        node->children  = (ptg_node_t**)realloc(node->children, node->ccapacity * sizeof(ptg_node_t*));
-    }
-
-    node->children[node->ccount] = child;
-    node->ccount++;
-}
-
-void ptg_node_print(ptg_node_t* node, int indent)
-{
-    int i;
-
-    for (i = 0; i < indent; ++i) putchar(' ');
-    printf("%s: %s\n", node->name, ptg_enum_string(node->tok));
-    for (i = 0; i < node->ccount; ++i)
-        ptg_node_print(node->children[i], indent+1);
-}
-
-ptg_node_t* ptg_parse()
-{
-    char a;
-    int state;
-    ptg_enum tos;
-    m_stack nodes;
-    m_stack states;
-    m_stack symbols;
-    ptg_pdata_t next;
-    ptg_node_t *leaf;
-
-    ptg_ptable_init();
-
-    state   = 0;
-    states  = m_stack_init(int);
-    symbols = m_stack_init(ptg_enum);
-    nodes   = m_stack_init(ptg_node_t*);
+    // parser variables
+    int state      = 0;
+    ptgenum tmpa   = 0;
+    ptgenum a      = 0;
+    ptgast* newast = NULL;
     
+    // parser initialization
+    a = ptglex();
     m_stack_push(&states, &state);
 
     while (1)
     {
-        tos   = ptg_lex();
-        state = *(int*)m_stack_tos(states);
-        next  = ptg_table_next(state, tos);
+        if (states.count < 1) {
+            fprintf(stderr, "empty state stack!\n");
+            exit(EXIT_FAILURE);
+        }
+
+        state  = *(int*)m_stack_tos(states);
+        newast = NULL;
+        next   = ptg_table_next(table, state, a);
 
         switch (next.action)
         {
-            case PTG_SHIFT:
-                m_stack_push(&symbols, &tos);
+            case PTGSHIFT:
+                // push state to stack
                 m_stack_push(&states, &(next.op.shift));
-                leaf = ptg_node_new(ptg_getlexeme(), tos);
-                m_stack_push(&nodes, &leaf);
+
+                // create new ast, which is an ATOM
+                newast = (ptgast*)malloc(sizeof(ptgast));
+                newast->id = PTGASTATOM;
+                newast->op.atom = ptg_lexeme();
+
+                // push new ast
+                m_stack_push(&nodes, &newast);
+                
+                // get new token
+                a = ptglex();
+
+                // break
                 break;
 
-            case PTG_REDUCE:
-                m_stack_pop(&states);
-                leaf = ptg_node_new(NULL, tos);
-                for (int i = 0; i < next.op.reduce.count; ++i) {
-                    ptg_node_t** sub = (ptg_node_t**)m_stack_pop(&nodes);
-                    if (sub == NULL) {
-                        fprintf(stderr, stderr, "stack out of nodes.\n");
-                        exit(EXIT_FAILURE);
-                    }
-                    ptg_node_addchild(leaf, *sub);
+            case PTGREDUCE:
+                // handle different cases
+                switch (next.op.reduce.rule) 
+                {
+/* stop */
                 }
-                m_stack_push(&nodes, &leaf);
-                m_stack_push(&states, &(next.op.reduce.rule));
-                break;
 
-            case PTG_GOTO:
+                // push ast
+                m_stack_push(&nodes, &newast);
+
+                // pop states
+                for (int i = 0; i < next.op.reduce.count; ++i)
+                    m_stack_pop(&states);
+
+                // simulate goto step
+                tmpa  = next.op.reduce.lhs_tok;
+                state = *(int*)m_stack_tos(states);
+                next  = ptg_table_next(table, state, tmpa);
+                
+                // if goto step fails, error (of course)
+                if (next.action != PTGGOTO) {
+                    fprintf(stderr, "invalid token \"%s\" in state#d.\n", ptgenum_string(tmpa), state);
+                    exit(EXIT_FAILURE);
+                }
+                
+                // otherwise, push goto state
                 m_stack_push(&states, &(next.op.sgoto));
                 break;
 
-            case PTG_ACCEPT:
-                leaf = *(ptg_node_t**)m_stack_pop(&nodes);
-                return leaf;
+            case PTGGOTO:
+                m_stack_push(&states, &(next.op.sgoto));
+                break;
+
+            case PTGACCEPT:
+                newast = *(ptgast**)m_stack_pop(&nodes);
+                return newast;
 
             case PTG_ERROR:
-                fprintf(stderr, stderr, "invalid token \"%s\".\n", ptg_enum_string(tos));
+                fprintf(stderr, "invalid token \"%s\" in state%d.\n", ptgenum_string(a), state);
                 exit(EXIT_FAILURE);
         }
     }
+}
+
+// this is for testing scanner
+int main(int argc, char** argv)
+{
+	if (argc != 2) {
+		fprintf(stderr, "not enough args.\n");
+		return EXIT_FAILURE;
+	}
+
+	ptg_infile = fopen(argv[1], "r");
+	if (ptg_infile == NULL) {
+		fprintf(stderr, "couldn't open file.\n");
+		return EXIT_FAILURE;
+	}
+
+	ptgenum tok;
+	do {
+		tok = ptglex();
+		printf("%s\n", ptgenum_string(tok));
+	} while (tok != P_TOK_END);
+
+	return EXIT_SUCCESS;
 }
 
 #undef ptg_table_next

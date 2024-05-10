@@ -1,0 +1,26 @@
+EMPTY    empty
+RULE     [A-Za-z][A-Za-z0-9_]
+ARROW    =>|::=
+BREAK    \n
+LOPT     \(
+ROPT     \)
+LREP     \[
+RREP     \]
+
+%%
+
+%start Start
+
+Start   => { Rule } ;
+
+Rule    => [ RULE ARROW Rules ] BREAK ;
+
+Rules   => RulesEl
+         | RulesEl [OR] Rules
+         ;
+
+RulesEl => RULE
+         | LOPT Rules ROPT
+         | LREP Rules RREP
+         | EMPTY
+         ;

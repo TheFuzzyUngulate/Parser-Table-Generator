@@ -4,6 +4,8 @@
 #pragma once
 
 #include <deque>
+#include <exception>
+#include <optional>
 
 #include "../ast/ast.hpp"
 #include "parseritems.hpp"
@@ -18,42 +20,27 @@ using   std::cout,
         std::make_pair,
         std::deque;
 
+typedef std::pair<std::string, std::string> reglit;
+
 class Parser {
     public:
         Parser(Scanner* scptr, struct flags flags) {
             sc = scptr;
             _flags = flags;
-            prime_table();
+            //prime_table();
         }
-
-        void ppush(ParserItem* p);
-        ParserItem* ppop();
-        void pprint();
-
-        void ast_push(AST* a);
-        AST* ast_pop();
-        void ast_print();
-
-        void reg_push(string a);
-        string reg_pop();
-        void reg_print();
         
-        bool is_terminal(Tokens t) {return t < M_START;}
-        bool is_parser_enum(Tokens t) {return (TOK <= t && t <= BAR) || (P_START <= t && t <= P_RULES_EL);}
-        bool is_scanner_enum(Tokens t) {return (S_NEWLINE <= t && t <= S_STRING) || t == S_RULE || t == S_START;}
+        bool isterminal(Tokens t) {return t < START;}
         
         void parse_warn(const char* ch);
         void parse_err(const char* ch);
         void parse_unexpected_terminal_err(Tokens t_exp, Tokens t_rec);
         void parse_illegal_transition_err(Tokens t_tos, Tokens t_cur);
-        
-        void print_root();
-        StartAST* getroot() {return root;}
-        StartAST* getregexes() {return regexes;}
 
-        int prime_table();
-        void print_dict();
-        int parse();
+        bool sc_exists(string name);
+        void parse();
+        void pr_parse();
+        void sc_parse();
 
     private:
         Scanner *sc;
@@ -65,6 +52,64 @@ class Parser {
         StartAST* root;
         StartAST* regexes;
         struct flags _flags;
+        deque<Rule*> _psitems;
+        deque<reglit> _scitems;
+
+    public:
+        const deque<Rule*>& psitems(){return _psitems;}
+        const deque<reglit>& scitems(){return _scitems;}
 };
+
+/* NEWER CONTENT */
+
+typedef std::map<std::pair<Tokens, Tokens>, std::vector<Tokens>> ParserTable;
+
+typedef
+struct pitem {
+    enum {
+        LIT,
+        NONLIT,
+        REDUCTION
+    } id;
+    union {
+        Tokens lit;
+        Tokens nonlit;
+        struct {
+            Tokens tag;
+            std::size_t count;
+        } reduce;
+    } op;
+} pitem;
+
+static inline string
+pitem_string(pitem p)
+{
+    std::string str;
+
+    switch (p.id)
+    {
+        case pitem::LIT:
+            str += "lit(";
+            str += tokname(p.op.lit);
+            str += ")";
+            break;
+
+        case pitem::NONLIT:
+            str += "nonlit(";
+            str += tokname(p.op.nonlit);
+            str += ")";
+            break;
+
+        case pitem::REDUCTION:
+            str += "reduce(";
+            str += tokname(p.op.reduce.tag);
+            str += ", ";
+            str += std::to_string(p.op.reduce.count);
+            str += ")";
+            break;
+    }
+
+    return str;
+}
 
 #endif

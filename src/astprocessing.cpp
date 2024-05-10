@@ -19,13 +19,13 @@ void processing_error(string err) {
     exit(-1);
 }
 
-deque<AST*> ASTProcessor::trans6(deque<AST*> start) {
-    deque<AST*> endlist = {};
+deque<Rule*> ASTProcessor::trans6(deque<Rule*> start) {
+    deque<Rule*> endlist = {};
     for (int i = 0; i < (int)start.size(); i++) {
-        Rule* rx = (Rule*)start[i];
+        Rule* rx = start[i];
         bool is_found = false;
         for (int j = 0; j < (int)start.size(); j++) {
-            Rule* ry = (Rule*)start[j];
+            Rule* ry = start[j];
             if (ry == rx && i > j) {
                 is_found = true;
                 break;
@@ -37,11 +37,11 @@ deque<AST*> ASTProcessor::trans6(deque<AST*> start) {
     return endlist;
 }
 
-std::pair<bool, deque<AST*>> ASTProcessor::trans5(deque<AST*> start) {
-    deque<AST*> endlist = {};
+std::pair<bool, deque<Rule*>> ASTProcessor::trans5(deque<Rule*> start) {
+    deque<Rule*> endlist = {};
     bool not_changed = true;
     for (int i = 0; i < start.size(); i++) {
-        Rule* rule = (Rule*)start[i];
+        Rule* rule = start[i];
         auto litem = rule->getLeft();
         auto rlist = rule->getRight();
         deque<AST*> nodes = rlist->getChildren();
@@ -55,8 +55,8 @@ std::pair<bool, deque<AST*>> ASTProcessor::trans5(deque<AST*> start) {
             auto left      = mynode->getLeft()->getChildren();
             auto right     = mynode->getRight()->getChildren();
 
-            deque<AST*> newA = {};
-            deque<AST*> newB = {};
+            deque<Rule*> newA = {};
+            deque<Rule*> newB = {};
 
             newA.insert(newA.begin(), left.begin(), left.end());
             newB.insert(newB.begin(), right.begin(), right.end());
@@ -84,12 +84,12 @@ std::pair<bool, deque<AST*>> ASTProcessor::trans5(deque<AST*> start) {
             if (n->getId() == "orstmt") {
                 not_changed    = false;
                 OrExpr* mynode = (OrExpr*)n;
-                auto left      = mynode->getLeft()->getChildren();
-                auto right     = mynode->getRight()->getChildren();
+                auto left      = mynode->getLeft();
+                auto right     = mynode->getRight();
 
                 deque<AST*> newA = {};
                 deque<AST*> newB = {};
-                auto earliers    = newrules[0]->getChildren();
+                auto earliers = newrules[0]->getChildren();
 
                 newA.insert(newA.end(), nodes.begin(), nodes.begin()+k);
                 newB.insert(newB.end(), nodes.begin(), nodes.begin()+k);
@@ -138,14 +138,15 @@ std::pair<bool, deque<AST*>> ASTProcessor::trans5(deque<AST*> start) {
         for (auto z : newrules)
             endlist.push_back(new Rule(litem, z));**/
     }
+
     return make_pair(not_changed, endlist);
 }
 
-std::pair<bool, deque<AST*>> ASTProcessor::trans4(deque<AST*> start) {
-    deque<AST*> endlist = {};
+std::pair<bool, deque<Rule*>> ASTProcessor::trans4(deque<Rule*> start) {
+    deque<Rule*> endlist = {};
     bool not_changed = true;
     for (auto x : start) {
-        Rule* rule = (Rule*)x;
+        Rule* rule = x;
         auto litem = rule->getLeft();
         auto rlist = rule->getRight();
         deque<AST*> nodes = rlist->getChildren();
@@ -154,8 +155,8 @@ std::pair<bool, deque<AST*>> ASTProcessor::trans4(deque<AST*> start) {
             // S => A B | A C yields S => A S' and S' => B C | empty
             OrExpr* mynode = (OrExpr*)nodes[0];
             Literal* mylitr = new Literal(litem->getName() + "\'", Tokens::RULE);
-            auto left = mynode->getLeft()->getChildren();
-            auto right = mynode->getRight()->getChildren();
+            auto left = mynode->getLeft();
+            auto right = mynode->getRight();
 
             if (left[0]->getId() == "lit" 
             && right[0]->getId() == "lit"
@@ -177,7 +178,7 @@ std::pair<bool, deque<AST*>> ASTProcessor::trans4(deque<AST*> start) {
                 if (!orleft.empty() || !oright.empty()) {
                     if (orleft.empty()) orleft.push_back(new EmptyAST());
                     if (oright.empty()) oright.push_back(new EmptyAST());
-                    auto orexpr = new OrExpr(new RuleList(orleft), new RuleList(oright));
+                    auto orexpr = new OrExpr(orleft, oright);
                     endlist.push_back(new Rule(mylitr, new RuleList(orexpr)));
                 }
             }
@@ -189,11 +190,11 @@ std::pair<bool, deque<AST*>> ASTProcessor::trans4(deque<AST*> start) {
     return make_pair(not_changed, endlist);
 }
 
-std::pair<bool, deque<AST*>> ASTProcessor::trans3(deque<AST*> start) {
-    deque<AST*> endlist = {};
+std::pair<bool, deque<Rule*>> ASTProcessor::trans3(deque<Rule*> start) {
+    deque<Rule*> endlist = {};
     bool not_changed = true;
     for (auto x : start) {
-        Rule* rule = (Rule*)x;
+        Rule* rule = x;
         auto litem = rule->getLeft();
         auto rlist = rule->getRight();
         deque<AST*> nodes = rlist->getChildren();
@@ -202,8 +203,8 @@ std::pair<bool, deque<AST*>> ASTProcessor::trans3(deque<AST*> start) {
             // S => S B | C yields S => C S' and S' => B S' | empty
             OrExpr* mynode = (OrExpr*)nodes[0];
             Literal* mylitr = new Literal(litem->getName() + "\'", Tokens::RULE);
-            auto left = mynode->getLeft()->getChildren();
-            auto right = mynode->getRight()->getChildren();
+            auto left = mynode->getLeft();
+            auto right = mynode->getRight();
 
             bool in_left = left[0]->getId() == "lit" && litem->getName() == ((Literal*)left[0])->getName();
             bool in_right = right[0]->getId() == "lit" && litem->getName() == ((Literal*)right[0])->getName();
@@ -226,7 +227,7 @@ std::pair<bool, deque<AST*>> ASTProcessor::trans3(deque<AST*> start) {
                     orleft.insert(orleft.begin(), r1.begin()+1, r1.end());
                     orleft.push_back(mylitr);
                     oright.push_back(new EmptyAST());
-                    auto orexpr = new OrExpr(new RuleList(orleft), new RuleList(oright));
+                    auto orexpr = new OrExpr(orleft, oright);
                     endlist.push_back(new Rule(mylitr, new RuleList(orexpr)));
                 }
                 else processing_error("grammar not in LL(1)");
@@ -243,11 +244,11 @@ std::pair<bool, deque<AST*>> ASTProcessor::trans3(deque<AST*> start) {
     return make_pair(not_changed, endlist);
 }
 
-std::pair<bool, deque<AST*>> ASTProcessor::trans2(deque<AST*> start) {
-    deque<AST*> endlist = {};
+std::pair<bool, deque<Rule*>> ASTProcessor::trans2(deque<Rule*> start) {
+    deque<Rule*> endlist = {};
     bool not_changed = true;
     for (auto x : start) {
-        Rule* rule = (Rule*)x;
+        Rule* rule = x;
         auto litem = rule->getLeft();
         auto rlist = rule->getRight();
         deque<AST*> nodes = rlist->getChildren();
@@ -278,7 +279,7 @@ std::pair<bool, deque<AST*>> ASTProcessor::trans2(deque<AST*> start) {
                 oright.insert(oright.begin(), nodes.begin()+i+1, nodes.end());
                 if (oright.empty())
                     oright.push_back(new EmptyAST());
-                auto orexpr = new OrExpr(new RuleList(orleft), new RuleList(oright));
+                auto orexpr = new OrExpr(orleft, oright);
                 if (list1.size() > 0)
                     endlist.push_back(new Rule(mylitr, new RuleList(orexpr)));
                 else
@@ -292,11 +293,11 @@ std::pair<bool, deque<AST*>> ASTProcessor::trans2(deque<AST*> start) {
     return make_pair(not_changed, endlist);
 }
 
-std::pair<bool, deque<AST*>> ASTProcessor::trans1(deque<AST*> start) {
-    deque<AST*> endlist = {};
+std::pair<bool, deque<Rule*>> ASTProcessor::trans1(deque<Rule*> start) {
+    deque<Rule*> endlist = {};
     bool not_changed = true;
     for (auto x : start) {
-        Rule* rule = (Rule*)x;
+        Rule* rule = x;
         auto litem = rule->getLeft();
         auto rlist = rule->getRight();
         deque<AST*> nodes = rlist->getChildren();
@@ -314,15 +315,15 @@ std::pair<bool, deque<AST*>> ASTProcessor::trans1(deque<AST*> start) {
                 auto innerlist = inner->getChildren();
 
                 /*// S => A B S'
-                deque<AST*> list1 = {};
+                deque<Rule*> list1 = {};
                 list1.insert(list1.end(), nodes.begin(), nodes.begin()+i);
                 list1.insert(list1.end(), innerlist.begin(), innerlist.end());
                 list1.push_back(mylitr);
                 endlist.push_back(new Rule(litem, new RuleList(list1)));
 
                 // S' => B S' | C
-                deque<AST*> orleft = {};
-                deque<AST*> oright = {};
+                deque<Rule*> orleft = {};
+                deque<Rule*> oright = {};
                 orleft.insert(orleft.begin(), innerlist.begin(), innerlist.end());
                 orleft.push_back(mylitr);
                 oright.insert(oright.begin(), nodes.begin()+i+1, nodes.end());
@@ -378,11 +379,11 @@ std::pair<bool, deque<AST*>> ASTProcessor::trans1(deque<AST*> start) {
  * @return true if present, and
  * @return false otherwise
  */
-bool ASTProcessor::semcheck1(deque<AST*> start, string start_state) {
+bool ASTProcessor::semcheck1(deque<Rule*> start, string start_state) {
     if (start_state == "")
         processing_error("no start state specified");
     for (auto x : start) {
-        Rule* rule = (Rule*)x;
+        Rule* rule = x;
         auto litem = rule->getLeft();
         if (litem->getName() == start_state)
             return true;
@@ -396,9 +397,9 @@ bool ASTProcessor::semcheck1(deque<AST*> start, string start_state) {
  * @return true, if all non-terminals are indeed defined in the ruleset, and
  * @return false otherwise.
  */
-bool ASTProcessor::semcheck2(deque<AST*> start) {
+bool ASTProcessor::semcheck2(deque<Rule*> start) {
     for (auto x : start) {
-        Rule* rule = (Rule*)x;
+        Rule* rule = x;
         auto rchilds = rule->getRight()->getChildren();
         for (int i = 0; i < rchilds.size(); ++i) {
             auto symb = rchilds[i];
@@ -413,9 +414,9 @@ bool ASTProcessor::semcheck2(deque<AST*> start) {
     } return true;
 }
 
-void ASTProcessor::setsymbs(deque<AST*> lst) {
+void ASTProcessor::setsymbs(deque<Rule*> lst) {
     for (auto r : lst) {
-        Rule* rule = (Rule*)r;
+        Rule* rule = r;
         
         auto litem = rule->getLeft();
         alphabet.insert(litem->getName());
@@ -436,7 +437,7 @@ void ASTProcessor::setsymbs(deque<AST*> lst) {
     }
 }
 
-bool first_sets(deque<AST*> asts, FollowSetMap &frstset, FollowSetMap &folwset)
+bool first_sets(deque<Rule*> asts, FollowSetMap &frstset, FollowSetMap &folwset)
 {
     int i          = 0;
     int k          = 0;
@@ -444,10 +445,10 @@ bool first_sets(deque<AST*> asts, FollowSetMap &frstset, FollowSetMap &folwset)
 
     for (i = 0; i < asts.size(); ++i)
     {
-        auto left           = ((Rule*)asts[i])->getLeft()->getName();
+        auto left           = (asts[i])->getLeft()->getName();
         auto initsize       = frstset[left].size();
         auto endsize        = 0;
-        auto rhs_items      = ((Rule*)asts[i])->getRight()->getChildren();
+        auto rhs_items      = (asts[i])->getRight()->getChildren();
         auto rhs_first      = rhs_items.at(0);
         auto rhs_first_name = std::string();
 
@@ -487,7 +488,7 @@ bool first_sets(deque<AST*> asts, FollowSetMap &frstset, FollowSetMap &folwset)
     return no_change;
 }
 
-bool follow_sets(deque<AST*> asts, FollowSetMap &frstset, FollowSetMap &folwset, string start)
+bool follow_sets(deque<Rule*> asts, FollowSetMap &frstset, FollowSetMap &folwset, string start)
 {
     int i             = 0;
     string left       = "";
@@ -502,8 +503,8 @@ bool follow_sets(deque<AST*> asts, FollowSetMap &frstset, FollowSetMap &folwset,
 
     for (i = 0; i < asts.size(); ++i)
     {
-        left  = ((Rule*)asts[i])->getLeft()->getName();
-        right = ((Rule*)asts[i])->getRight()->getChildren();
+        left  = (asts[i])->getLeft()->getName();
+        right = (asts[i])->getRight()->getChildren();
         
         if (left == start) {
             if (folwset[left].find("$") == folwset[left].end()) {
@@ -563,14 +564,13 @@ bool follow_sets(deque<AST*> asts, FollowSetMap &frstset, FollowSetMap &folwset,
     return no_change;
 }
 
-deque<AST*> ASTProcessor::process_ast_ll1() {
-    auto children = _start->getChildren();
-    deque<AST*> childtmp = _start->getChildren();
+deque<Rule*> ASTProcessor::process_ast_ll1() {
+    deque<Rule*> childtmp = _start;
     while (1) {
         bool no_change = true;
-        for (auto child : children) {
-            Rule* myrule = (Rule*)child;
-            std::pair<bool, deque<AST*>> res1;
+        for (auto child : _start) {
+
+            std::pair<bool, deque<Rule*>> res1;
             
             res1 = trans1(childtmp);
             no_change = no_change && res1.first;
@@ -600,20 +600,19 @@ deque<AST*> ASTProcessor::process_ast_ll1() {
     return q;
 }
 
-deque<AST*> ASTProcessor::process_ast_lalr1(string start_state) {
+deque<Rule*> ASTProcessor::process_ast_lalr1(string start_state) {
     int index             = 0;
     int ruleind           = 0;
     int seeind            = 0;
     vector<int> seen      = {};
     bool no_change        = true;
-    deque<AST*> children  = _start->getChildren();
-    deque<AST*> childtmp = _start->getChildren();
+    deque<Rule*> childtmp = _start;
     
-    std::pair<bool, deque<AST*>> result;
+    std::pair<bool, deque<Rule*>> result;
 
     if (_showProc) {
         printf("At start of processing:\n");
-        for (auto child : children)
+        for (auto child : _start)
             child->print();
         printf("\n");
     }
@@ -622,9 +621,9 @@ deque<AST*> ASTProcessor::process_ast_lalr1(string start_state) {
     {
         no_change = true;
 
-        for (index = 0; index < children.size(); ++index)
+        for (index = 0; index < _start.size(); ++index)
         {
-            Rule* rule = (Rule*)children[index];
+            Rule* rule = _start[index];
             auto litem = rule->getLeft();
             auto rlist = rule->getRight();
             deque<AST*> nodes = rlist->getChildren();
@@ -650,21 +649,21 @@ deque<AST*> ASTProcessor::process_ast_lalr1(string start_state) {
                     seen.clear();
                     while (seeind < result.second.size()) {
                         auto last  = 0;
-                        auto found = (Rule*)result.second[seeind];
-                        for (last = 0; last < children.size(); ++last) {
-                            if (rulecmp(found, (Rule*)children[last]))
+                        auto found = result.second[seeind];
+                        for (last = 0; last < _start.size(); ++last) {
+                            if (rulecmp(found, _start[last]))
                                 break;
                         }
-                        if (last < children.size()) {
+                        if (last < _start.size()) {
                             result.second.erase(result.second.begin()+seeind);
                         } else seeind++;
                     }
 
                     childtmp.clear();
-                    childtmp.insert(childtmp.end(), children.begin(), children.begin()+index);
+                    childtmp.insert(childtmp.end(), _start.begin(), _start.begin()+index);
                     childtmp.insert(childtmp.end(), result.second.begin(), result.second.end());
-                    childtmp.insert(childtmp.end(), children.begin()+index+1, children.end());
-                    children = childtmp;
+                    childtmp.insert(childtmp.end(), _start.begin()+index+1, _start.end());
+                    _start = childtmp;
 
                     if (_showProc) {
                         cout << "new states after "
@@ -684,7 +683,7 @@ deque<AST*> ASTProcessor::process_ast_lalr1(string start_state) {
             if (ruleind < nodes.size()) break;
         }
 
-        if (index == children.size()) 
+        if (index == _start.size()) 
             break;
     }
 
@@ -701,15 +700,15 @@ deque<AST*> ASTProcessor::process_ast_lalr1(string start_state) {
     FollowSetMap flw;
 
     for (auto ast : childtmp) {
-        fst[((Rule*)ast)->getLeft()->getName()] = {};
-        flw[((Rule*)ast)->getLeft()->getName()] = {};
+        fst[(ast)->getLeft()->getName()] = {};
+        flw[(ast)->getLeft()->getName()] = {};
     }
     
     while (!first_sets(childtmp, fst, flw) 
     || !follow_sets(childtmp, fst, flw, start_state));
 
     for (auto ast : childtmp) {
-        auto rule   = (Rule*)ast;
+        auto rule   = ast;
         auto flwset = flw[rule->getLeft()->getName()];
         for (auto item : flwset)
             rule->addFollow(item);

@@ -110,6 +110,7 @@
     "cinttypes": "cpp",
     "typeinfo": "cpp",
     "p_output_scanner.h": "c",
-    "p_output_parser.h": "c"
+    "p_output_parser.h": "c",
+    "lexentry.h": "c"
   }
 }

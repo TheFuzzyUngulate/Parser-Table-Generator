@@ -9,43 +9,38 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <sstream>
 
 #include "../utilities/runutils.hpp"
+#include "../utilities/directives.hpp"
 
 using std::cout, std::cerr, std::string, std::vector, std::make_pair;
 
 enum Tokens {
-    ENDFILE = 0,
+    LIT = 0,
+    ARROW,
+    BREAK,
+    EMPTY,
+    BAR,
     TOK,
     LOPT,
     ROPT,
     LREP,
     RREP,
-    ARROW,
-    BREAK,
-    EMPTY,
+    STRING,
+    NEWLINE,
+    ENDFILE,
+    START,
     RULE,
-    BAR,
-    S_NEWLINE,
-    S_DELIM,
-    S_STRING,
-    M_START,
-    M_START1,
-    P_START,
-    P_RULE,
-    P_RULES,
-    P_RULES1,
-    P_RULES_EL,
-    S_RULE,
-    S_START
+    RULES,
+    RULES1,
+    RULESEL
 };
 
 inline const char* tokname(int tok) {
     switch(tok) {
-        case Tokens::M_START: return "main_start";
-        case Tokens::M_START1: return "main_start1";
-        case Tokens::RULE: return "rule";
-        case Tokens::TOK: return "token";
+        case Tokens::LIT: return "lit";
+        case Tokens::TOK: return "tok";
         case Tokens::LOPT: return "[";
         case Tokens::ROPT: return "]";
         case Tokens::LREP: return "{";
@@ -55,16 +50,13 @@ inline const char* tokname(int tok) {
         case Tokens::EMPTY: return "empty";
         case Tokens::ENDFILE: return "EOF";
         case Tokens::BAR: return "|";
-        case Tokens::P_START: return "$start";
-        case Tokens::P_RULE: return "$rule";
-        case Tokens::P_RULES: return "$rules";
-        case Tokens::P_RULES1: return "$rules\'";
-        case Tokens::P_RULES_EL: return "$rule_element";
-        case Tokens::S_NEWLINE: return "linebreak";
-        case Tokens::S_DELIM: return "%%";
-        case Tokens::S_STRING: return "string";
-        case Tokens::S_RULE: return "$scan_rule";
-        case Tokens::S_START: return "$scan_start";
+        case Tokens::START: return "$start";
+        case Tokens::RULE: return "$rule";
+        case Tokens::RULES: return "$rules";
+        case Tokens::RULES1: return "$rules\'";
+        case Tokens::RULESEL: return "$rule_element";
+        case Tokens::NEWLINE: return "newline";
+        case Tokens::STRING: return "string";
         default:
             std::cerr << "Unknown token\n";
             exit(-1);
@@ -74,26 +66,51 @@ inline const char* tokname(int tok) {
 class Scanner {
     public:
         Scanner(std::fstream *fptr) {
-            file = fptr;
+            file       = fptr;
+            dirs.state = 0;
+            prescan();
         }
 
         Tokens lex();
+        void unlex(Tokens tok);
         int get();
+        void prescan();
         void unget(int ch);
         void scan_err(const char* ch);
         void scan_warn(const char* ch);
         int getlineno() {return lineno;}
         string getlexeme() {return lexeme;}
-        string getstartstate() {return start_state;}
+        const s_dirs &sdir() {return dirs;}
 
     private:
-        int state = 0;                              // Scanner's current state
         std::fstream *file;                         // A file containing rules
         string lexeme;                              // String content ("lexeme") of tokens like TOK and RULE
         int lineno = 1;                             // Current line number
         bool reached_end = false;                   // Boolean used to ensure EOF has a break inside of it
         vector<char> unget_list;                    // Vector storing unget characters for parser convenience
-        string start_state;                         // Start state value found by scanner
+        s_dirs dirs;                                // Struct containing directives provided
+        vector<Tokens> unlex_list;                  // SAVE ME AIEEEE
+        
+        void statetrans() 
+        {
+            if (!dirs.trs.empty()) 
+            {
+                auto top = dirs.trs.front();
+                if (lineno == top.first)
+                {
+                    dirs.trs.pop_front();
+                    if (top.second) {
+                        dirs.state++;
+                        unlex(ENDFILE);
+                    }
+                    char ch = get();
+                    do {
+                        ch = get(); 
+                    } while (ch != '\n');
+                    lineno++;
+                }
+            }
+        }
 };
 
 #endif

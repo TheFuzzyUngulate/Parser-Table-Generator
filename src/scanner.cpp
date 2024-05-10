@@ -28,41 +28,132 @@ void Scanner::unget(int ch) {
     unget_list.push_back(ch);
 }
 
-Tokens Scanner::lex() {
-    while(1) {
+void Scanner::unlex(Tokens tok) {
+    unlex_list.push_back(tok);
+}
+
+void Scanner::prescan()
+{
+    int ln = 1;
+    string line;
+
+    for (; std::getline(*file, line); ++ln) 
+    {
+        if (line.size() > 1 && line[0] == '%') 
+        {    
+            char ch;
+            string str;
+
+            // remove first char
+            line.erase(line.begin());
+            
+            while (!line.empty()) {
+                ch = line[0];
+                line.erase(line.begin());
+                if (ch != '%' && !isalpha(ch)) break;
+                str.push_back(ch);
+            } line.insert(line.begin(), ch);
+
+            if (str == "%") {
+                dirs.trs.push_back({ln, true});
+                continue;
+            }
+            else
+            {
+                dirs.trs.push_back({ln, false});
+                
+                if (str == "start") 
+                {
+                    // if start already set, this is an error
+                    if (dirs.start != "")
+                        scan_err("multiple start states specified");
+
+                    
+                    // eliminate spaces before the next argument
+                    while (!line.empty()) {
+                        ch = line[0];
+                        line.erase(line.begin());
+                        if (ch == 0 || !isspace(ch) || ch == '\n') break;
+                    }
+
+                    // we need this.. again...
+                    str.clear();
+
+                    // get next string
+                    if (isalpha(ch)) {
+                        str.push_back(ch);
+                        while (!line.empty()) {
+                            if (!isalpha(ch)) break;
+                            ch = line[0];
+                            line.erase(line.begin());
+                            str.push_back(ch);
+                        }
+                    } else scan_err("invalid start state argument provided");
+
+                    dirs.start = str;
+                }
+                else
+                if (str == "ignore")
+                {
+                    // eliminate spaces before the next argument
+                    while (!line.empty()) {
+                        ch = line[0];
+                        line.erase(line.begin());
+                        if (ch == 0 || !isspace(ch) || ch == '\n') break;
+                    }
+
+                    str.clear();
+                    
+                    str.push_back(ch);
+                    while (!line.empty()) {
+                        if (isspace(ch) && ch != ' ') break;
+                        ch = line[0];
+                        line.erase(line.begin());
+                        str.push_back(ch);
+                    }
+
+                    if (str == "\\n") {
+                        dirs.ignored.insert('\n');
+                    } else if (str == "\\r") {
+                        dirs.ignored.insert('\r');
+                    } else if (str == "\\ ") {
+                        dirs.ignored.insert(' ');
+                    } else if (str == "\\t") {
+                        dirs.ignored.insert('\t');
+                    } else {
+                        if (str.size() == 1) {
+                            dirs.ignored.insert(str[0]);
+                        } else {
+                            cout << "suggested " << str << std::endl;
+                            scan_err("invalid ignore char suggested.\n");
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    file->clear();
+    file->seekg(0);
+}
+
+Tokens Scanner::lex()
+{
+    while (1) 
+    {
         char ch;
-        //lexeme.clear();
+
+        if (!unlex_list.empty()) {
+            auto tok = unlex_list.back();
+            unlex_list.pop_back();
+            return tok;
+        }
 
         do ch = get();
         while (ch != 0 && isspace(ch) && ch != '\n');
 
-        // directives
-        if (ch == '%') {
-            string str;
-            while ((ch = get()) == '%' || isalpha(ch)) str += ch; 
-            unget(ch);
-
-            if (str == "%") {
-                state++;
-                return Tokens::S_DELIM;
-            }
-            else
-            if (str == "start") {
-                if (start_state != "")
-                    scan_err("multiple start states specified");
-                do ch = get();
-                while (ch != 0 && isspace(ch) && ch != '\n');
-                string ddr;
-                while (isalpha(ch)) {
-                    ddr += ch;
-                    ch = get();
-                } unget(ch);
-                start_state = ddr;
-            }
-            else scan_err("illegal symbol");
-        }
-
-        if (state == 0) {
+        if (dirs.state == 0)
+        {
             switch(ch) {
                 case 0:
                     return Tokens::ENDFILE;
@@ -83,7 +174,8 @@ Tokens Scanner::lex() {
 
                 case '\n':
                     lineno++;
-                    return Tokens::S_NEWLINE;
+                    statetrans();
+                    return Tokens::NEWLINE;
                 
                 /*case '\"':
                     lexeme.clear();
@@ -143,7 +235,7 @@ Tokens Scanner::lex() {
                             }
                         } while (isascii(ch) && !isspace(ch));
                         unget(ch);
-                        return Tokens::S_STRING;
+                        return Tokens::STRING;
                     } else {
                         string err = "invalid char ";
                         err += ch;
@@ -152,7 +244,8 @@ Tokens Scanner::lex() {
             }
         }
         else
-        if (state == 1) {
+        if (dirs.state == 1) 
+        {
             switch(ch) {
                 case 0:
                     /**if (!reached_end) {
@@ -186,6 +279,7 @@ Tokens Scanner::lex() {
                 
                 case '\n':
                     lineno++;
+                    statetrans();
                     break;
                 
                 /*case '\"':
@@ -213,7 +307,7 @@ Tokens Scanner::lex() {
                         unget(ch);
                         
                         if (lexeme == "empty") return Tokens::EMPTY;
-                        else return Tokens::RULE;
+                        else return Tokens::LIT;
                     } else {
                         string err = "invalid char ";
                         err += ch;

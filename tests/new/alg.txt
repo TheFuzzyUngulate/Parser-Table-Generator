@@ -1,9 +1,9 @@
-LPAR            (
-RPAR            )
+LPAR            \(
+RPAR            \)
 INTEGER         [0-9]+
-PLUS            +
-MINUS           -
-MULT            *
+PLUS            \+
+MINUS           \-
+MULT            \*
 DIV             /
 
 %%

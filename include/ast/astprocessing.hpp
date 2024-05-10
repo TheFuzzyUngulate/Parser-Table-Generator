@@ -12,7 +12,7 @@ typedef std::map<std::string, std::set<std::string>> FollowSetMap;
 
 class ASTProcessor {
     public:
-        ASTProcessor(StartAST* start, bool show) {
+        ASTProcessor(deque<Rule*> start, bool show) {
             _start = start;
             _showProc = show;
         }
@@ -40,24 +40,24 @@ class ASTProcessor {
         /**
          * Search for and remove duplicate rules
         */
-        deque<AST*> trans6(deque<AST*> start);
-        std::pair<bool, deque<AST*>> trans5(deque<AST*> start);
-        std::pair<bool, deque<AST*>> trans4(deque<AST*> start);
-        std::pair<bool, deque<AST*>> trans3(deque<AST*> start);
-        std::pair<bool, deque<AST*>> trans2(deque<AST*> start);
-        std::pair<bool, deque<AST*>> trans1(deque<AST*> start);
+        deque<Rule*> trans6(deque<Rule*> start);
+        std::pair<bool, deque<Rule*>> trans5(deque<Rule*> start);
+        std::pair<bool, deque<Rule*>> trans4(deque<Rule*> start);
+        std::pair<bool, deque<Rule*>> trans3(deque<Rule*> start);
+        std::pair<bool, deque<Rule*>> trans2(deque<Rule*> start);
+        std::pair<bool, deque<Rule*>> trans1(deque<Rule*> start);
 
-        bool semcheck1(deque<AST*> start, string start_state);
-        bool semcheck2(deque<AST*> start);
-        void setsymbs(deque<AST*> lst);
+        bool semcheck1(deque<Rule*> start, string start_state);
+        bool semcheck2(deque<Rule*> start);
+        void setsymbs(deque<Rule*> lst);
 
-        deque<AST*> process_ast_ll1();
-        deque<AST*> process_ast_lalr1(string start_state);
+        deque<Rule*> process_ast_ll1();
+        deque<Rule*> process_ast_lalr1(string start_state);
         std::set<std::string> get_alphabet();
 
     private:
         bool _showProc;
-        StartAST* _start;
+        deque<Rule*> _start;
         std::set<std::string> alphabet;
         std::set<std::string> nontermlist;
 };

@@ -39,14 +39,16 @@ int main(int argc, char **argv) {
     }
 
     Scanner *sc = new Scanner((std::fstream*)&myfile);
-    Parser *par = new Parser(sc, flags);
-    par->parse();
-    if (flags.PRINT_PARSE_TREE)
-        par->print_root();
+    Parser  *pr = new Parser(sc, flags);
+    pr->parse();
 
-    auto root = par->getroot();
-    ASTProcessor proc = ASTProcessor(root, flags.PRINT_RULE_GENERATION);
-    auto res = proc.process_ast_lalr1(sc->getstartstate());
+    if (flags.PRINT_PARSE_TREE) {
+        for (auto k : pr->psitems())
+            k->print();
+    }
+    
+    ASTProcessor proc = ASTProcessor(pr->psitems(), flags.PRINT_RULE_GENERATION);
+    auto res = proc.process_ast_lalr1(sc->sdir().start);
     if (flags.PRINT_RULES) {
         for (int i = 0; i < res.size(); ++i) {
             auto step = res[i];
@@ -56,7 +58,7 @@ int main(int argc, char **argv) {
     }
     
     // new handlefinder stuff
-    HandleFinder hfind = HandleFinder(res, proc.get_alphabet(), sc->getstartstate());
+    HandleFinder hfind = HandleFinder(res, proc.get_alphabet(), sc->sdir().start);
     hfind.exec();
     if (flags.PRINT_GRAMMAR) {
         hfind.print_states();
@@ -70,16 +72,13 @@ int main(int argc, char **argv) {
     {
         // change regexes to tuple list    
         regexlib regexes;
-        auto fake = par->getregexes()->getChildren();
+        auto fake = pr->scitems();
         for (auto item : fake) {
-            if (item->getId() == "regex") {
-                RegRule* re = (RegRule*)item;
-                std::pair<std::string, std::string> pear = {
-                    re->getName(), 
-                    re_conv(re->getRegex(), 0)
-                };
-                regexes.push_back(pear);
-            }
+            std::pair<std::string, std::string> pear = {
+                item.first, 
+                re_conv(item.second, 0)
+            };
+            regexes.push_back(pear);
         }
         
         CodeGenerator cgen = CodeGenerator(&hfind, res, regexes, flags.output_file);

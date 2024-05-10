@@ -10,10 +10,11 @@
 #include "../regex/regprocess.hpp"
 
 typedef std::vector<std::pair<std::string, std::string>> regexlib;
+typedef std::deque<std::deque<std::pair<int, Rule*>>> astsorting;
 
 class CodeGenerator {
     public:
-        CodeGenerator(HandleFinder *h, deque<AST*> rules, regexlib regexes, std::string filename) {
+        CodeGenerator(HandleFinder *h, deque<Rule*> rules, regexlib regexes, std::string filename) {
             _hf       = h;
             _fname    = filename;
             _rules    = rules;
@@ -47,16 +48,19 @@ class CodeGenerator {
             }
         }
 
-        void genPrereqs();
-        void genScannerFiles();
-        void genParserFiles();
         void generate();
 
     private:
+
+        void ast_create_groups();
+        void ast_create_groupnames();
+
         HandleFinder *_hf;
         std::string _fname;
-        deque<AST*> _rules;
+        deque<Rule*> _rules;
         regexlib _regexes;
+        astsorting _astgroups;
+        std::deque<std::string> _astgroupnames;
         std::vector<std::string> _elements;
         std::map<std::string, std::string> _elementtoks;
 };

@@ -155,20 +155,35 @@ class RuleList : public AST {
 
 class OrExpr : public AST {
     public:
-        OrExpr(RuleList* arg1) {
+        OrExpr() {
             _id = "orstmt";
-            _rhs = arg1;
-            _lhs = new RuleList();
+            _lhs = {};
+            _rhs = {};
         }
-        OrExpr(RuleList* arg1, RuleList* arg2) {
+        OrExpr(deque<AST*> arg1) {
+            _id = "orstmt";
+            _lhs = arg1;
+            _rhs = {};
+        }
+        OrExpr(deque<AST*> arg1, deque<AST*> arg2) {
             _id = "orstmt";
             _lhs = arg1;
             _rhs = arg2;
         }
-        void addLeft(AST* a) {_lhs->addChild(a);}
-        void addRight(AST* a) {_rhs->addChild(a);}
-        RuleList* getLeft() {return _lhs;}
-        RuleList* getRight() {return _rhs;}
+        void add(AST* a) {_lhs.push_front(a);}
+        deque<AST*> getLeft() {return _lhs;}
+        deque<AST*> getRight() {return _rhs;}
+        void swap() {
+            if (_rhs.empty()) {
+                _rhs = _lhs;
+                _lhs = {};
+            } else {
+                _rhs = {new OrExpr(_lhs, _rhs)};
+                _lhs = {};
+            }
+        }
+        bool emptyleft() {return _lhs.empty();}
+        bool emptyright() {return _rhs.empty();}
         virtual void print(int INDENT = 0) override {
             cout << string(4*INDENT, ' ') 
                  << _id << ":" 
@@ -176,17 +191,17 @@ class OrExpr : public AST {
                  << string(4*(INDENT+1), ' ')
                  << "left: "
                  << std::endl;
-            for (auto left : _lhs->getChildren())
+            for (auto left : _lhs)
                 left->print(INDENT+2);
             cout << string(4*(INDENT+1), ' ')
                  << "right: "
                  << std::endl;
-            for (auto rght : _rhs->getChildren())
+            for (auto rght : _rhs)
                 rght->print(INDENT+2);
         }
     private:
-        RuleList* _lhs;
-        RuleList* _rhs;
+        deque<AST*> _lhs;
+        deque<AST*> _rhs;
 };
 
 class Rule : public AST {
