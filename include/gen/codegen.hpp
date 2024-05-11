@@ -6,6 +6,7 @@
 #include <iostream>
 #include <sstream>
 
+#include "../parser/parser.hpp"
 #include "../ast/asthandles.hpp"
 #include "../regex/regprocess.hpp"
 
@@ -14,15 +15,16 @@ typedef std::deque<std::deque<std::pair<int, Rule*>>> astsorting;
 
 class CodeGenerator {
     public:
-        CodeGenerator(HandleFinder *h, deque<Rule*> rules, regexlib regexes, std::string filename) {
+        CodeGenerator(HandleFinder *h, std::set<std::string> alphabet, deque<Rule*> rules, deque<reglit> regexes, std::string filename) {
             _hf       = h;
             _fname    = filename;
             _rules    = rules;
             _regexes  = regexes;
-            _elements = h->get_all_terms_and_nterms();
+            _elements = alphabet;
 
             auto tokcount = 1;
-            for (auto x : _elements) {
+            for (auto x : _elements) 
+            {
                 if (x == "$")
                     _elementtoks[x] = "P_TOK_END";
                 else
@@ -58,10 +60,10 @@ class CodeGenerator {
         HandleFinder *_hf;
         std::string _fname;
         deque<Rule*> _rules;
-        regexlib _regexes;
+        deque<reglit> _regexes;
         astsorting _astgroups;
         std::deque<std::string> _astgroupnames;
-        std::vector<std::string> _elements;
+        std::set<std::string> _elements;
         std::map<std::string, std::string> _elementtoks;
 };
 

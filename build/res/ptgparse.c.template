@@ -38,7 +38,7 @@ void m_stack_push(m_stack* m, void* item)
         m->capacity = m->capacity * 3 / 2;
         m->content  = realloc(m->content, m->capacity * m->size);
     }
-    memcpy(m->content + m->count, item, m->size);
+    memcpy(m->content + (m->size * m->count), item, m->size);
     m->count++;
 }
 
@@ -46,7 +46,8 @@ void* m_stack_pop(m_stack* m)
 {
     if (m->count > 0) {
         void* item = malloc(m->size);
-        memcpy(item, m->content + (m->count - 1), m->size);
+		m->count--;
+        memcpy(item, m->content + (m->size * m->count), m->size);
         return item;
     } else return NULL;
 }
@@ -129,6 +130,24 @@ void load_pos() {
     }
 }
 
+void update_pos() {
+    if (sc->check.seeks.count > 0) {
+        *(int*)m_stack_tos(sc->check.seeks) = sc->ptr;
+    } else {
+        fprintf(stderr, "error: no seek positions have been saved.\n");
+        exit(EXIT_FAILURE);
+    }
+}
+
+void get_pos() {
+    if (sc->check.seeks.count > 0) {
+        sc->ptr = *(int*)m_stack_tos(sc->check.seeks);
+    } else {
+        fprintf(stderr, "error: no seek positions have been saved.\n");
+        exit(EXIT_FAILURE);
+    }
+}
+
 char unscan(char ch) {
     m_stack_push(&(sc->prog.chbuf), &ch);
 }
@@ -191,6 +210,7 @@ ptgenum
 ptglex()
 {
     int ch;
+    int jmp;
     if (sc == NULL)
     {
         sc = (ptg_sc*)malloc(sizeof(ptg_sc));
@@ -221,12 +241,17 @@ ptglex()
     m_stack_clear(&(sc->check.answers));
     m_stack_clear(&(sc->check.counters));
 
+    save_pos();
+    ch = scan();
+
     while (1)
     {
-        save_pos();
-        if (scan() == EOF) {
+        if (ch == EOF) {
             ptg_tokret(P_TOK_END); 
-        } else load_pos();
+        } else {
+			get_pos();
+			ch = scan();
+		}
 
 /* stop */
         else ptgvrberr("invalid character found");

@@ -154,74 +154,38 @@ Tokens Scanner::lex()
 
         if (dirs.state == 0)
         {
-            switch(ch) {
+            switch(ch) 
+            {
                 case 0:
                     return Tokens::ENDFILE;
 
-                /*case ':':
-                    ch = get();
-                    if (ch == '=') return Tokens::S_TRANSIT;
-                    else scan_err("invalid token \':\'");
-                    break;*/
-                
-                /*case '%':
-                    ch = get();
-                    if (ch == '%') {
-                        state = 1;
-                        return Tokens::S_DELIM;
-                    } else scan_err("illegal symbol");
-                    break;*/
+                case '{':
+                    return Tokens::LOPT;
+
+                case '}':
+                    return Tokens::ROPT;
 
                 case '\n':
                     lineno++;
                     statetrans();
-                    return Tokens::NEWLINE;
-                
-                /*case '\"':
-                    lexeme.clear();
-
-                    while (true) {
-                        ch = get();
-                        while (ch == '\\') {
-                            lexeme += ch;
-                            if ((ch = get()) == 0)
-                                scan_err("broken quotations");
-                            lexeme += ch;
-                            ch = get();
-                        }
-                        if (ch == '\"' || !isascii(ch)) 
-                            break;
-                        else lexeme += ch;
-                    }
-
-                    if (ch == '\"') return Tokens::S_CONTENT;
-                    else scan_err("open quotation mark");
-                    break;*/
+                    //return Tokens::NEWLINE;
+                    break;
 
                 default:
                     lexeme.clear();
-                    /*if (isalpha(ch)) {
-                        lexeme += ch;
-                        
-                        do {
-                            ch = get();
-                            lexeme += ch;
-                        } while (isalnum(ch));
-                        
-                        lexeme.pop_back();
-                        unget(ch);
-                        return Tokens::S_STRING;
-                    } else {
-                        string err = "invalid char ";
-                        err += ch;
-                        scan_err(err.c_str());
-                    }*/
+                    
                     if (isascii(ch) && !isspace(ch)) {
                         do {
                             if (ch == '\\') {
                                 ch = get();
                                 if (ch == ' ') {
                                     lexeme += ' ';
+                                    ch = get();
+                                } else if (ch == '{') {
+                                    lexeme += '{';
+                                    ch = get();
+                                } else if (ch == '}') {
+                                    lexeme += '}';
                                     ch = get();
                                 } else {
                                     lexeme += '\\';
@@ -233,7 +197,7 @@ Tokens Scanner::lex()
                                 lexeme += ch;
                                 ch = get();
                             }
-                        } while (isascii(ch) && !isspace(ch));
+                        } while (isascii(ch) && !isspace(ch) && ch != '{' && ch != '}');
                         unget(ch);
                         return Tokens::STRING;
                     } else {

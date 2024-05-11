@@ -1,1 +1,18 @@
-STRING 
+LPAR \{
+RPAR \}
+STRING [^\t\n\r\ \{\}]+ {
+    FOR for
+    WHILE while
+    EVEN even
+    ODD odd
+}
+DOG sus
+
+%start Start
+
+%%
+
+Start    => { Rule } ;
+Rule     => STRING STRING [ Opts ] ;
+Opts     => LPAR CompList RPAR ;
+CompList => { STRING STRING } ;

@@ -1,12 +1,12 @@
-ELEMENT                 {[A-Z]}+
-STRING                  "([\ !#-&\(-\[\]-}]|\\[tnr"'])*"
+ELEMENT                 [A-Z]+
+STRING                  "([\ !#-&\(-\[\]-\}]|\\[tnr"'])*"
 COLON                   :
-ATTRIBUTE               {[a-z]}+
-ADDRESS                 @{[0-9]}+
+ATTRIBUTE               [a-z]+
+ADDRESS                 @[0-9]+
 LBRACK                  \[
 RBRACK                  \]
 COMMA                   ,
-DIRECTIVE               #{[A-Za-z]}+
+DIRECTIVE               #[A-Za-z]+
 ELLIPSIS                \.\.\.
 
 %%

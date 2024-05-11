@@ -414,7 +414,8 @@ bool ASTProcessor::semcheck2(deque<Rule*> start) {
     } return true;
 }
 
-void ASTProcessor::setsymbs(deque<Rule*> lst) {
+void ASTProcessor::setsymbs(deque<Rule*> lst) 
+{
     for (auto r : lst) {
         Rule* rule = r;
         

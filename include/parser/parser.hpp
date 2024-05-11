@@ -18,9 +18,11 @@ using   std::cout,
         std::string, 
         std::vector, 
         std::make_pair,
+        std::tuple,
         std::deque;
 
-typedef std::pair<std::string, std::string> reglit;
+typedef deque<std::pair<string, string>> regopts;
+typedef tuple<string, string, regopts> reglit;
 
 class Parser {
     public:

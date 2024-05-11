@@ -1,0 +1,8 @@
+A a
+B [0-1]
+
+%%
+
+%start Start
+
+Start => { A } ;

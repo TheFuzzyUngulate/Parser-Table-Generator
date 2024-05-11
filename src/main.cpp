@@ -56,9 +56,20 @@ int main(int argc, char **argv) {
             step->print(1);
         }
     }
-    
+
+    // get alphabet
+    auto alphabet = proc.get_alphabet();
+
+    // add all tokens, even unused ones
+    for (auto tok : pr->scitems()) {
+        alphabet.insert("#" + std::get<0>(tok));
+        for (auto sub : std::get<2>(tok)) {
+            alphabet.insert("#" + sub.first);
+        }
+    }
+
     // new handlefinder stuff
-    HandleFinder hfind = HandleFinder(res, proc.get_alphabet(), sc->sdir().start);
+    HandleFinder hfind = HandleFinder(res, alphabet, sc->sdir().start);
     hfind.exec();
     if (flags.PRINT_GRAMMAR) {
         hfind.print_states();
@@ -67,21 +78,33 @@ int main(int argc, char **argv) {
         hfind.print_first_and_follow_sets();
     }
 
+    // add S* and $ to alphabet due to handle finder
+    alphabet.insert("$");
+    alphabet.insert("S*");
+
     // code generation
     if (flags.PRODUCE_GENERATOR) 
     {
         // change regexes to tuple list    
-        regexlib regexes;
+        deque<reglit> regexes;
         auto fake = pr->scitems();
-        for (auto item : fake) {
-            std::pair<std::string, std::string> pear = {
-                item.first, 
-                re_conv(item.second, 0)
-            };
-            regexes.push_back(pear);
+        for (auto item : fake) 
+        {
+            regopts opts;
+            for (auto q : std::get<2>(item)) {
+                opts.push_front({
+                    q.first,
+                    re_conv(q.second, 0)
+                });
+            }
+            regexes.push_back({
+                std::get<0>(item),
+                re_conv(std::get<1>(item), 0),
+                opts
+            });
         }
         
-        CodeGenerator cgen = CodeGenerator(&hfind, res, regexes, flags.output_file);
+        CodeGenerator cgen = CodeGenerator(&hfind, alphabet, res, regexes, flags.output_file);
         cgen.generate();
     }
 

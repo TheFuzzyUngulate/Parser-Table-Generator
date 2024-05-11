@@ -24,7 +24,7 @@ enum Tokens {
     BAR,
     TOK,
     LOPT,
-    ROPT,
+    ROPT,   
     LREP,
     RREP,
     STRING,

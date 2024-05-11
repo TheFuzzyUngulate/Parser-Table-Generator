@@ -99,6 +99,7 @@ void CodeGenerator::generate()
     std::string line;
     std::string name;
     std::string regex;
+    regopts subst;
     std::string delim;
     std::ifstream templ;
     std::ofstream ofile;
@@ -125,11 +126,13 @@ void CodeGenerator::generate()
             case 0:
             {
                 /* add scanner token enum */
-                for (i = 0; i < _elements.size(); ++i) {
+                i = 0;
+                for (auto el : _elements) {
                     ofile << "\t" 
-                          << _elementtoks[_elements[i]]
+                          << _elementtoks[el]
                           << ((i != _elements.size()-1) ? "," : "")
                           << "\n";
+                    ++i;
                 }
 
                 /* break state */
@@ -140,11 +143,11 @@ void CodeGenerator::generate()
             {
                 /* add string representation of tokens */
                 ofile << "\tswitch(tok) {\n";
-                for (i = 0; i < _elements.size(); ++i) {
+                for (auto el : _elements) {
                     ofile << "\t\tcase " 
-                          << _elementtoks[_elements[i]]
+                          << _elementtoks[el]
                           << ": return \""
-                          << _elements[i] << "\";\n";
+                          << el << "\";\n";
                 } ofile << "\t\tdefault: return \"?\";\n\t}\n";
 
                 /* break state */
@@ -256,11 +259,9 @@ void CodeGenerator::generate()
                     auto item = _regexes[i];
 
                     /* get items and values */
-                    name  = item.first;
-                    regex = item.second;
-
-                    /* save point, incase returning doesn't work */
-                    ofile << "\t\tsave_pos();\n";
+                    name  = std::get<0>(item);
+                    regex = std::get<1>(item);
+                    subst = std::get<2>(item);
 
                     /* convert string to input string stream */
                     std::string innerline;
@@ -272,11 +273,43 @@ void CodeGenerator::generate()
                     }
 
                     /* return if positive, else keep going */
-                    ofile << "\t\tif (load_bool())\n";
-                    ofile << "\t\t\tptg_tokret(" << _elementtoks["#" + name] << ")\n";
+                    ofile << "\t\tif (load_bool()) {\n";
+                    
+                    /* handle, possibly, subset types */
+                    if (subst.size() > 0) 
+                    {
+                        ofile << "\t\t\tjmp = sc->ptr;\n";
+
+                        for (auto opt : subst)
+                        {
+                            ofile << "\t\t\tget_pos();\n";
+                            ofile << "\t\t\tch = scan();\n";
+
+                            iss.clear();
+                            innerline.clear();
+                            iss = std::istringstream(opt.second);
+
+                            while (std::getline(iss, innerline)) {
+                                ofile << "\t\t\t" << innerline << "\n";
+                            } 
+                            
+                            ofile << "\t\t\tif (load_bool())\n";
+                            ofile << "\t\t\t\tptg_tokret(" << _elementtoks["#" + opt.first] << ")\n";
+                        }
+                        
+                        ofile << "\t\t\tsc->ptr = jmp;\n";
+                    }
+                    
+                    /* in any case, give the option of returning the suitable token */
+                    ofile << "\t\t\tptg_tokret(" << _elementtoks["#" + name] << ")\n\t\t}\n";
 
                     /* behavior here varies depending on whether this is the last */
-                    if (i < _regexes.size() - 1) ofile << "\t\telse load_pos();\n\n";
+                    if (i < _regexes.size() - 1) {
+                        ofile << "\t\telse {\n";
+                        ofile << "\t\t\tget_pos();\n";
+                        ofile << "\t\t\tch = scan();\n";
+                        ofile << "\t\t}\n\n";
+                    }
                 }
 
                 /* break state */

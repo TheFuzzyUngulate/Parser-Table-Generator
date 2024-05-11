@@ -1472,17 +1472,16 @@ void re_conv_rec(re_exp* re, stringstream *fptr, int space)
 	switch (re->tag)
 	{
 		case re_exp::char_exp:
-			re_write(fptr, "save_bool(scan() == \'", space);
+			re_write(fptr, "save_bool(ch == \'", space);
 			re_write(fptr, ch_to_str(re->op.charExp), 0);
 			re_write(fptr, "\');\n", 0);
 			break;
 
 		case re_exp::dot_exp:
-			re_write(fptr, "save_bool(scan() != EOF);\n", space);
+			re_write(fptr, "save_bool(ch != EOF);\n", space);
 			break;
 
 		case re_exp::range_exp:
-			re_write(fptr, "ch = scan();\n", space);
 			re_write(fptr, "save_bool(ch >= \'", space);
 			re_write(fptr, ch_to_str(re->op.rangeExp.min), 0);
 			re_write(fptr, "\' && ch <= \'", 0);
@@ -1507,9 +1506,10 @@ void re_conv_rec(re_exp* re, stringstream *fptr, int space)
 
 			re_write(fptr, "if (!load_bool()) {\n", space + 1);
 			re_write(fptr, "load_pos();\n", space + 2);
-			re_write(fptr, "break;\n", space + 1);
-			re_write(fptr, "} else {\n", space + 2);
-			re_write(fptr, "save_pos();\n", space + 2);
+			re_write(fptr, "break;\n", space + 2);
+			re_write(fptr, "} else {\n", space + 1);
+			re_write(fptr, "update_pos();\n", space + 2);
+			re_write(fptr, "ch = scan();\n", space + 2);
 			re_write(fptr, "inc_counter();\n", space + 2);
 			re_write(fptr, "}\n", space + 1);
 
@@ -1539,20 +1539,35 @@ void re_conv_rec(re_exp* re, stringstream *fptr, int space)
 
 			if (iter) {
 				if (iter->next) {
-					re_write(fptr, "do {\n", space);		
+					re_write(fptr, "do {\n", space);
+					re_write(fptr, "if (ch == EOF) {\n", space + 1);
+					re_write(fptr, "save_bool(false);\n", space + 2);
+					re_write(fptr, "break;\n", space + 2);
+					re_write(fptr, "}\n", space + 1);
 					while (iter) {
 						re_conv_rec(iter->elem, fptr, space + 1);
-						re_write(fptr, "if (", space + 1);
-						re_write(fptr, pol ? "" : "!", 0);
-						re_write(fptr, "load_bool()) {\n", 0);
-						re_write(fptr, "save_bool(true);\n", space + 2);
+						re_write(fptr, "if (load_bool()) {\n", space + 1);
+						re_write(fptr, "save_bool(", space + 2);
+						re_write(fptr, pol ? "true);\n" : "false);\n", 0);
 						re_write(fptr, "break;\n", space + 2);
-						re_write(fptr, "}\n", space + 1);
-						iter = iter->next;
+						if (iter->next) {
+							re_write(fptr, "}\n", space + 1);
+						} else {
+							re_write(fptr, "} save_bool(", space + 1);
+							re_write(fptr, pol ? "false);\n" : "true);\n", 0);
+							re_write(fptr, "} while (0);\n", space);
+						} iter = iter->next;
 					}
+				} else {
+					re_write(fptr, "if (ch == EOF) {\n", space);
 					re_write(fptr, "save_bool(false);\n", space + 1);
-					re_write(fptr, "} while (0);\n", space);
-				} else re_conv_rec(iter->elem, fptr, space);
+					re_write(fptr, "} else {\n", space);
+					re_conv_rec(iter->elem, fptr, space + 1);
+					re_write(fptr, "save_bool(", space + 1);
+					re_write(fptr, pol ? "" : "!", 0);
+					re_write(fptr, "load_bool());\n", 0);
+					re_write(fptr, "}\n", space);
+				}
 			}
 
 			break;
@@ -1596,7 +1611,10 @@ void re_conv_rec(re_exp* re, stringstream *fptr, int space)
 						re_write(fptr, "if (!load_bool()) {\n", space + 1);
 						re_write(fptr, "save_bool(false);\n", space + 2);
 						re_write(fptr, "break;\n", space + 2);
-						re_write(fptr, "}\n", space + 1);
+						if (iter->next) {
+							re_write(fptr, "} ch = scan();\n", space + 1);
+						}
+						else re_write(fptr, "}\n", space + 1);
 						iter = iter->next;
 					}
 					re_write(fptr, "save_bool(true);\n", space + 1);

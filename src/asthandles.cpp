@@ -360,9 +360,12 @@ vector<int> HandleFinder::backtrack_state(int result_state, string trigger_lit) 
     return res;
 }
 
-std::vector<string> HandleFinder::get_all_terms_and_nterms() {
+std::vector<string> HandleFinder::get_all_terms_and_nterms() 
+{
     std::vector<string> ret = {"S*", "$"};
-    for (auto x : _lst) {
+    
+    for (auto x : _lst) 
+    {
         bool found = false;
         for (auto y : ret) {
             if (x->getLeft()->getName() == y) {
@@ -388,5 +391,6 @@ std::vector<string> HandleFinder::get_all_terms_and_nterms() {
                 ret.push_back(name);
         }
     }
+    
     return ret;
 }
