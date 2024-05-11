@@ -555,15 +555,15 @@ int main(int argc, char** argv)
 		return EXIT_FAILURE;
 	}
 
-	ptgenum tok;
+	/*ptgenum tok;
 	do {
 		tok = ptglex();
 		printf("%s\n", ptgenum_string(tok));
-	} while (tok != P_TOK_END);
+	} while (tok != P_TOK_END);*/
 
-	/*ptgast* ast;
+	ptgast* ast;
 	ast = ptg_parse();
-    if (ast) printf(ptgast_str(ast, 0));*/
+    if (ast) printf(ptgast_str(ast, 0));
 
 	return EXIT_SUCCESS;
 }
