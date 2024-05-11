@@ -34,4 +34,6 @@ typedef struct ptgast {
     } op;
 } ptgast;
 
+char* ptgast_str(ptgast*, int);
+
 #endif

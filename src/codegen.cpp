@@ -510,6 +510,89 @@ void CodeGenerator::generate()
                 /* break state */
                 break;
             }
+
+            case 5:
+            {
+                /* loop through all groupings */
+                for (i = 0; i < _astgroups.size(); ++i) 
+                {
+                    auto groupitm = _astgroups[i][0].second;
+                    auto rhsitems = groupitm->getRight()->getChildren();
+
+                    /* don't bother with empties */
+                    if (rhsitems.size() == 1 && rhsitems[0]->getId() == "empty") continue;
+
+                    /* print out case statement */
+                    ofile << "\t\t\tcase " << std::to_string(i) << ":\n\t\t\t{\n";
+
+                    /* each node should first print out its name */
+                    ofile << "\t\t\t\taddspacing(&str, INDENT);\n";
+                    ofile << "\t\t\t\tm_string_concat(&str, \"" << _astgroupnames[i] << ":\\n\");\n\n";
+
+                    /* if singleton, depends on whether item is char or ast* */
+                    if (rhsitems.size() == 1) 
+                    {
+                        auto single = rhsitems[0];
+                        
+                        // if item is ast*, just get its own string representation and add it
+                        if (single->getId() == "lit") 
+                        {
+                            ofile << "\t\t\t\ttmp = ptgast_str(ast->op.";
+                            ofile << _astgroupnames[i] << ", INDENT + 1);\n";
+                            ofile << "\t\t\t\tm_string_concat(&str, tmp);\n\n";
+                        }
+                        // otherwise, just add token name
+                        else 
+                        if (single->getId() == "tok") 
+                        {
+                            ofile << "\t\t\t\tif (ast->op.";
+                            ofile << _astgroupnames[i] << ") {\n";
+                            ofile << "\t\t\t\t\taddspacing(&str, INDENT + 1);\n";
+                            ofile << "\t\t\t\t\tm_string_concat(&str, ast->op.";
+                            ofile << _astgroupnames[i] << ");\n";
+                            ofile << "\t\t\t\t\tm_string_push(&str, '\\n');\n\t\t\t\t}\n\n";
+                        }
+                    }
+
+                    /* much of the same thing, though use tokcount and nodecount here */
+                    else 
+                    {
+                        int tokcount  = 0;
+                        int nodecount = 0;
+
+                        for (k = 0; k < rhsitems.size(); ++k)
+                        {
+                            auto rhsitem = rhsitems[k];
+
+                            if (rhsitem->getId() == "lit") 
+                            {
+                                ofile << "\t\t\t\ttmp = ptgast_str(ast->op.";
+                                ofile << _astgroupnames[i] << ".node";
+                                ofile << std::to_string(nodecount++) << ", INDENT + 1);\n";
+                                ofile << "\t\t\t\tm_string_concat(&str, tmp);\n\n";
+                            }
+                            else 
+                            if (rhsitem->getId() == "tok") 
+                            {
+                                ofile << "\t\t\t\tif (ast->op.";
+                                ofile << _astgroupnames[i] << ".tok";
+                                ofile << std::to_string(tokcount) << ") {\n";
+                                ofile << "\t\t\t\t\taddspacing(&str, INDENT + 1);\n";
+                                ofile << "\t\t\t\t\tm_string_concat(&str, ast->op.";
+                                ofile << _astgroupnames[i] << ".tok";
+                                ofile << std::to_string(tokcount++) << ");\n";
+                                ofile << "\t\t\t\t\tm_string_push(&str, '\\n');\n\t\t\t\t}\n\n";
+                            }
+                        }
+                    }
+
+                    /* exit case statement */
+                    ofile << "\t\t\t\tbreak;\n\t\t\t}\n";
+                }
+
+                /* break state */
+                break;
+            }
         }
 
         /* we always increment state */
