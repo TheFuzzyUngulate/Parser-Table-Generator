@@ -293,7 +293,7 @@ void CodeGenerator::generate()
                                 ofile << "\t\t\t" << innerline << "\n";
                             } 
                             
-                            ofile << "\t\t\tif (load_bool())\n";
+                            ofile << "\t\t\tif (load_bool() && (jmp == sc->ptr))\n";
                             ofile << "\t\t\t\tptg_tokret(" << _elementtoks["#" + opt.first] << ")\n";
                         }
                         
