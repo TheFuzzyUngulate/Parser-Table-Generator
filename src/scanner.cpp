@@ -116,7 +116,7 @@ void Scanner::prescan()
                         dirs.ignored.insert('\n');
                     } else if (str == "\\r") {
                         dirs.ignored.insert('\r');
-                    } else if (str == "\\ ") {
+                    } else if (str == "\\w") {
                         dirs.ignored.insert(' ');
                     } else if (str == "\\t") {
                         dirs.ignored.insert('\t');
@@ -178,7 +178,7 @@ Tokens Scanner::lex()
                         do {
                             if (ch == '\\') {
                                 ch = get();
-                                if (ch == ' ') {
+                                if (ch == 'w') {
                                     lexeme += ' ';
                                     ch = get();
                                 } else if (ch == '{') {

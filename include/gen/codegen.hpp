@@ -9,18 +9,21 @@
 #include "../parser/parser.hpp"
 #include "../ast/asthandles.hpp"
 #include "../regex/regprocess.hpp"
+#include "../utilities/directives.hpp"
+#include "../utilities/general_utils.hpp"
 
 typedef std::vector<std::pair<std::string, std::string>> regexlib;
 typedef std::deque<std::deque<std::pair<int, Rule*>>> astsorting;
 
 class CodeGenerator {
     public:
-        CodeGenerator(HandleFinder *h, std::set<std::string> alphabet, deque<Rule*> rules, deque<reglit> regexes, std::string filename) {
-            _hf       = h;
-            _fname    = filename;
-            _rules    = rules;
-            _regexes  = regexes;
-            _elements = alphabet;
+        CodeGenerator(HandleFinder *h, std::set<std::string> alphabet, s_dirs dirs, deque<Rule*> rules, deque<reglit> regexes, std::string filename) {
+            _hf         = h;
+            _fname      = filename;
+            _rules      = rules;
+            _regexes    = regexes;
+            _elements   = alphabet;
+            _directives = dirs;
 
             auto tokcount = 1;
             for (auto x : _elements) 
@@ -60,6 +63,7 @@ class CodeGenerator {
         HandleFinder *_hf;
         std::string _fname;
         deque<Rule*> _rules;
+        s_dirs _directives;
         deque<reglit> _regexes;
         astsorting _astgroups;
         std::deque<std::string> _astgroupnames;

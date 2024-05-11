@@ -22,7 +22,11 @@ ID         [A-Za-z][A-Za-z0-9]* {
     BREAK break
 }
 INT        [0-9]+
-STRING     "([\ !#-&\(-\[\]-\}]|\\[tnr"'])*"
+STRING     "([\w!#-&\(-\[\]-\}]|\\[tnr"'])*"
+
+%ignore \w
+%ignore \t
+%ignore \n
 
 %%
 

@@ -95,19 +95,22 @@ class Scanner {
         {
             if (!dirs.trs.empty()) 
             {
-                auto top = dirs.trs.front();
-                if (lineno == top.first)
+                while (true)
                 {
-                    dirs.trs.pop_front();
-                    if (top.second) {
-                        dirs.state++;
-                        unlex(ENDFILE);
-                    }
-                    char ch = get();
-                    do {
-                        ch = get(); 
-                    } while (ch != '\n');
-                    lineno++;
+                    auto top = dirs.trs.front();
+                    if (lineno == top.first)
+                    {
+                        dirs.trs.pop_front();
+                        if (top.second) {
+                            dirs.state++;
+                            unlex(ENDFILE);
+                        }
+                        char ch = get();
+                        do {
+                            ch = get(); 
+                        } while (ch != '\n');
+                        lineno++;
+                    } else break;
                 }
             }
         }

@@ -1458,8 +1458,6 @@ re_exp* re_parse::compute()
 	*(f) << string((space), '\t') << (str);\
 } while (0);
 
-#define ch_to_str(ch) ((ch) == '\n' ? "\\n" : ((ch) == '\t' ? "\\t" : ((ch) == '\r' ? "\\r" : ((ch) == '\\' ? "\\\\" : ((ch) == '\"' ? "\\\"" : ((ch) == '\'' ? "\\\'" : string(1, (ch))))))))
-
 void re_conv_rec(re_exp* re, stringstream *fptr, int space)
 {
 	int k         = 0;

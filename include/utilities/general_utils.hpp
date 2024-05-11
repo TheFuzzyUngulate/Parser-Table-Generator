@@ -7,6 +7,8 @@
 #include <unistd.h>
 #include <string>
 
+#define ch_to_str(ch) ((ch) == '\n' ? "\\n" : ((ch) == '\t' ? "\\t" : ((ch) == '\r' ? "\\r" : ((ch) == '\\' ? "\\\\" : ((ch) == '\"' ? "\\\"" : ((ch) == '\'' ? "\\\'" : std::string(1, (ch))))))))
+
 inline bool islit(std::string str) {
     if (!isalpha(str[1])) return false;
     for (int i = 1; i < str.size(); ++i)

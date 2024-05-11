@@ -162,9 +162,7 @@ void CodeGenerator::generate()
 
                 /* add an identifier for each groupname */
                 for (i = 0; i < _astgroupnames.size(); ++i) {
-                    ofile << "\t\tPTGAST_" << _astgroupnames[i]
-                          << ((i != _astgroupnames.size() - 1) ? "," : "")
-                          << "\n";
+                    ofile << "\t\tPTGAST_" << _astgroupnames[i] << ",\n";
                 }
 
                 /* break state */
@@ -252,7 +250,30 @@ void CodeGenerator::generate()
 
             case 1:
             {
-                /* use regular expressions */
+                /* ignore symbols that should be ignored */
+                if (!_directives.ignored.empty())
+                {
+                    i = 0;
+                    ofile << "\twhile (";
+                    for (auto gno : _directives.ignored)
+                    {
+                        ofile << "ch == \'" << ch_to_str(gno) << "\'";
+                        if (i == _directives.ignored.size() - 1)
+                            ofile << ") {\n";
+                        else ofile << " || ";
+                        i++;
+                    }
+                    ofile << "\t\tupdate_pos();\n";
+                    ofile << "\t\tch = scan();\n\t}\n";
+                }
+
+                /* break state */
+                break;
+            }
+
+            case 2:
+            {
+                /* generate string statements */
                 for (i = 0; i < _regexes.size(); ++i)
                 {
                     /* get item */
@@ -316,7 +337,7 @@ void CodeGenerator::generate()
                 break;
             }
 
-            case 2:
+            case 3:
             {
                 /* add rule count */
                 ofile << "#define P_RULE_COUNT "
@@ -334,7 +355,7 @@ void CodeGenerator::generate()
                 break;
             }
 
-            case 3:
+            case 4:
             {
                 /* declare transitions */
 
@@ -425,7 +446,7 @@ void CodeGenerator::generate()
                 break;
             }
 
-            case 4:
+            case 5:
             {
                 /* loop through all rules */
                 for (i = 0; i < _rules.size(); ++i)
@@ -460,6 +481,9 @@ void CodeGenerator::generate()
                         for (j = rhsitems.size() - 1; j >= 0; j--) {
                             ofile << "\t\t\t\t\t\tptgast* newast" << j << " = *(ptgast**)m_stack_pop(&nodes);\n";
                         }
+
+                        /* dynamically allocate new ast */
+                        ofile << "\t\t\t\t\t\tnewast = (ptgast*)malloc(sizeof(ptgast));\n";
 
                         /* aesthetic newline and newast type declaration */
                         ofile << "\t\t\t\t\t\tnewast->id = PTGAST_" << gname << ";\n";
@@ -511,7 +535,7 @@ void CodeGenerator::generate()
                 break;
             }
 
-            case 5:
+            case 6:
             {
                 /* loop through all groupings */
                 for (i = 0; i < _astgroups.size(); ++i) 

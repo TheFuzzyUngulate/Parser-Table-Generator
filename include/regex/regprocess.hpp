@@ -8,6 +8,8 @@
 #include <sstream>
 #include <string.h>
 
+#include "..\utilities\general_utils.hpp"
+
 using   std::vector,
         std::string,
         std::ifstream,

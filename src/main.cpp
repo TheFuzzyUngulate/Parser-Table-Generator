@@ -104,7 +104,7 @@ int main(int argc, char **argv) {
             });
         }
         
-        CodeGenerator cgen = CodeGenerator(&hfind, alphabet, res, regexes, flags.output_file);
+        CodeGenerator cgen = CodeGenerator(&hfind, alphabet, sc->sdir(), res, regexes, flags.output_file);
         cgen.generate();
     }
 
