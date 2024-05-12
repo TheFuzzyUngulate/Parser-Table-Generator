@@ -66,8 +66,10 @@ inline const char* tokname(int tok) {
 class Scanner {
     public:
         Scanner(std::fstream *fptr) {
-            file       = fptr;
+            file = fptr;
             dirs.state = 0;
+            dirs.ateof = '\0';
+            dirs.nodecollapse = false;
             prescan();
         }
 

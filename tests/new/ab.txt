@@ -6,6 +6,8 @@ plus     \+
 
 %start E
 
+%ignore \w
+
 E  => T T_ ;
 
 T  => a | b ;

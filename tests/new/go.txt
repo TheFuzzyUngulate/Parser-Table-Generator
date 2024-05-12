@@ -1,15 +1,18 @@
 ELEMENT                 [A-Z]+
-STRING                  "([\ !#-&\(-\[\]-\}]|\\[tnr"'])*"
+STRING                  "([\w!#-&\(-\[\]-\}]|\\[tnr"'])*"
 COLON                   :
 ATTRIBUTE               [a-z]+
 ADDRESS                 @[0-9]+
-LBRACK                  \[
-RBRACK                  \]
+LBRACK                  \{
+RBRACK                  \}
 COMMA                   ,
 DIRECTIVE               #[A-Za-z]+
 ELLIPSIS                \.\.\.
 
 %%
+%ignore \w
+%ignore \t
+%ignore \n
 
 %start start
 
@@ -19,7 +22,7 @@ item      => struct
            | directive
            ;
 
-struct    => ELEMENT COLON { attribute };
+struct    => ELEMENT COLON LBRACK { attribute } RBRACK ;
 
 attribute => ATTRIBUTE COLON litlist;
 

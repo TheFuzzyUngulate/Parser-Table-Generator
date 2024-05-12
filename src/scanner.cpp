@@ -129,6 +129,48 @@ void Scanner::prescan()
                         }
                     }
                 }
+                else
+                if (str == "ateof")
+                {
+                    // eliminate spaces before the next argument
+                    while (!line.empty()) {
+                        ch = line[0];
+                        line.erase(line.begin());
+                        if (ch == 0 || !isspace(ch) || ch == '\n') break;
+                    }
+
+                    str.clear();
+                    
+                    str.push_back(ch);
+                    while (!line.empty()) {
+                        if (isspace(ch) && ch != ' ') break;
+                        ch = line[0];
+                        line.erase(line.begin());
+                        str.push_back(ch);
+                    }
+
+                    if (str == "\\n") {
+                        dirs.ateof = '\n';
+                    } else if (str == "\\r") {
+                        dirs.ateof = '\r';
+                    } else if (str == "\\w") {
+                        dirs.ateof = ' ';
+                    } else if (str == "\\t") {
+                        dirs.ateof = '\t';
+                    } else {
+                        if (str.size() == 1) {
+                            dirs.ateof = str[0];
+                        } else {
+                            cout << "suggested " << str << std::endl;
+                            scan_err("invalid ignore char suggested.\n");
+                        }
+                    }
+                }
+                else
+                if (str == "nodecollapse")
+                {
+                    dirs.nodecollapse = true;
+                }
             }
         }
     }

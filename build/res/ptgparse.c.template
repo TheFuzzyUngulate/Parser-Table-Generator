@@ -167,14 +167,14 @@ char** m_string_split(m_string* m, int* len, char delim)
 typedef struct
 ptg_sc
 {
-    int ptr;               // pointer val starting at -1
+    int ptr;               // moving file pointer
+    int spt;               // static file lexeme
     unsigned int line;     // current line number
     unsigned int column;   // current column number
     struct {
-        m_stack  lexeme;   // current lexeme
-        m_stack  chbuf;    // unget buffer
-        m_stack  tokbuf;   // unlex buffer
-        ptgenum lasttok;  // last token returned by lex
+        m_stack chbuf;     // unget buffer
+        m_stack tokbuf;    // unlex buffer
+        ptgenum lasttok;   // last token returned by lex
     } prog;
     struct {
         m_stack seeks;     // saved positions for seek
@@ -195,18 +195,16 @@ char scan()
     } else {
         fseek(ptg_infile, ++(sc->ptr), SEEK_SET);
         ch = fgetc(ptg_infile);
-        sc->column++;
         fseek(ptg_infile, sc->ptr, SEEK_SET);
         if (ch == EOF) 
             return EOF;
     }
-    
+
     if (ch == '\n') {
         sc->line++;
         sc->column = 0;
-    }
+    } else sc->column++;
 
-    m_stack_push(&(sc->prog.lexeme), &ch);
     return ch;
 }
 
@@ -214,16 +212,12 @@ void save_pos() {
     m_stack_push(&(sc->check.seeks), &(sc->ptr));
 }
 
-void load_pos() {
-    int lexcompt = ftell(ptg_infile);
-
+void load_pos() 
+{
     if (sc->check.seeks.count > 0)
     {
-        int p   = *(int*)m_stack_pop(&(sc->check.seeks));
+        int p = *(int*)m_stack_pop(&(sc->check.seeks));
         sc->ptr = p;
-        lexcompt -= p;
-        for (int i = 0; i < lexcompt; ++i)
-            m_stack_pop(&(sc->prog.lexeme));
     }
     else {
         fprintf(stderr, "error: no seek positions have been saved.\n");
@@ -242,7 +236,8 @@ void update_pos() {
 
 void get_pos() {
     if (sc->check.seeks.count > 0) {
-        sc->ptr = *(int*)m_stack_tos(sc->check.seeks);
+        int p = *(int*)m_stack_tos(sc->check.seeks);
+        sc->ptr = p;
     } else {
         fprintf(stderr, "error: no seek positions have been saved.\n");
         exit(EXIT_FAILURE);
@@ -291,19 +286,26 @@ int inc_counter() {
 
 #define ptg_tokret(val) do {\
     sc->prog.lasttok = (val);\
+	printf("%s, %s.\n", ptgenum_string(val), ptg_lexeme());\
     return (val);\
 } while(0);
 
-char* ptg_lexeme() {
-    char* res = (char*)malloc((sc->prog.lexeme.count + 1) * sizeof(char));
-    memcpy(res, sc->prog.lexeme.content, sc->prog.lexeme.count * sizeof(char));
-    res[sc->prog.lexeme.count] = '\0';
+char* ptg_lexeme()
+{
+	int len = sc->ptr - sc->spt; 
+    char *res = (char*)malloc((len + 1) * sizeof(char));
+    fseek(ptg_infile, sc->spt + 1, SEEK_SET);
+    for (int i = 0; i < len; ++i)
+        res[i] = fgetc(ptg_infile);
+    
+    res[len] = '\0';
+    fseek(ptg_infile, sc->ptr, SEEK_SET);
     return res;
 }
 
 #define ptgvrberr(...) do {\
     fprintf(stderr, __VA_ARGS__);\
-    fprintf(stderr, " at (%d:%d)\n", sc->line, sc->column);\
+    fprintf(stderr, " %s at (%d:%d)\n", ptg_lexeme(), sc->line, sc->column);\
     exit(EXIT_FAILURE);\
 } while (0)
 
@@ -312,25 +314,22 @@ ptglex()
 {
     int ch;
     int jmp;
+    int bptr;
     if (sc == NULL)
     {
         sc = (ptg_sc*)malloc(sizeof(ptg_sc));
 
-        sc->ptr    = -1;
         sc->line   = 0;
+        sc->ptr    = -1;
         sc->column = 0;
+        sc->spt    = -1;
 
-        sc->prog.lexeme = m_stack_init(char);
         sc->prog.chbuf  = m_stack_init(char);
         sc->prog.tokbuf = m_stack_init(ptgenum);
 
         sc->check.seeks    = m_stack_init(int);
         sc->check.answers  = m_stack_init(bool);
         sc->check.counters = m_stack_init(int);
-    }
-
-    if (sc->prog.lexeme.count > 0) {
-        m_stack_clear(&(sc->prog.lexeme));
     }
 
     if (sc->prog.tokbuf.count > 0) {
@@ -343,20 +342,18 @@ ptglex()
     m_stack_clear(&(sc->check.counters));
 
     save_pos();
-    ch = scan();
 /* stop */
+    sc->ptr--;
+    update_pos();
+    sc->spt = sc->ptr;
 
     while (1)
     {
-        if (ch == EOF) {
+        if (scan() == EOF) {
             ptg_tokret(P_TOK_END); 
-        } else {
-			get_pos();
-			ch = scan();
-		}
+        } else get_pos();
 
 /* stop */
-        else ptgvrberr("invalid character found");
     }
 }
 
@@ -558,7 +555,6 @@ int main(int argc, char** argv)
 	/*ptgenum tok;
 	do {
 		tok = ptglex();
-		printf("%s\n", ptgenum_string(tok));
 	} while (tok != P_TOK_END);*/
 
 	ptgast* ast;

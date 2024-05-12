@@ -254,17 +254,18 @@ void CodeGenerator::generate()
                 if (!_directives.ignored.empty())
                 {
                     i = 0;
-                    ofile << "\twhile (";
+                    ofile << "\tdo {\n";
+                    ofile << "\t\tch = scan();\n";
+                    ofile << "\t\tupdate_pos();\n";
+                    ofile << "\t} while (ch != EOF && (";
                     for (auto gno : _directives.ignored)
                     {
                         ofile << "ch == \'" << ch_to_str(gno) << "\'";
                         if (i == _directives.ignored.size() - 1)
-                            ofile << ") {\n";
+                            ofile << "));\n";
                         else ofile << " || ";
                         i++;
                     }
-                    ofile << "\t\tupdate_pos();\n";
-                    ofile << "\t\tch = scan();\n\t}\n";
                 }
 
                 /* break state */
@@ -304,7 +305,6 @@ void CodeGenerator::generate()
                         for (auto opt : subst)
                         {
                             ofile << "\t\t\tget_pos();\n";
-                            ofile << "\t\t\tch = scan();\n";
 
                             iss.clear();
                             innerline.clear();
@@ -322,15 +322,12 @@ void CodeGenerator::generate()
                     }
                     
                     /* in any case, give the option of returning the suitable token */
-                    ofile << "\t\t\tptg_tokret(" << _elementtoks["#" + name] << ")\n\t\t}\n";
+                    ofile << "\t\t\tptg_tokret(" << _elementtoks["#" + name] << ")\n\t\t} ";
 
                     /* behavior here varies depending on whether this is the last */
                     if (i < _regexes.size() - 1) {
-                        ofile << "\t\telse {\n";
-                        ofile << "\t\t\tget_pos();\n";
-                        ofile << "\t\t\tch = scan();\n";
-                        ofile << "\t\t}\n\n";
-                    }
+                        ofile << "else get_pos();\n\n";
+                    } else ofile << "else ptgvrberr(\"invalid character found\");\n";
                 }
 
                 /* break state */
@@ -482,41 +479,48 @@ void CodeGenerator::generate()
                             ofile << "\t\t\t\t\t\tptgast* newast" << j << " = *(ptgast**)m_stack_pop(&nodes);\n";
                         }
 
-                        /* dynamically allocate new ast */
-                        ofile << "\t\t\t\t\t\tnewast = (ptgast*)malloc(sizeof(ptgast));\n";
-
-                        /* aesthetic newline and newast type declaration */
-                        ofile << "\t\t\t\t\t\tnewast->id = PTGAST_" << gname << ";\n";
-
-                        /* if there is only one rhs item, it is stored as a singleton, if you recall */
-                        if (rhsitems.size() == 1)
-                        {
-                            auto rhsitem = rhsitems[0];
-                            if (rhsitem->getId() == "lit") {
-                                ofile << "\t\t\t\t\t\tnewast->op." << gname << " = newast0;\n";
-                            }
-                            else if (rhsitem->getId() == "tok") {
-                                ofile << "\t\t\t\t\t\tnewast->op." << gname << " = newast0->op.atom;\n";
-                            }
+                        /* if there is only one rhs, and its child is lit, and directives is nocollapse */
+                        if (_directives.nodecollapse && rhsitems.size() == 1 && rhsitems[0]->getId() == "lit") {
+                            ofile << "\t\t\t\t\t\tnewast = newast0;\n";
                         }
-
                         else
                         {
-                            /* store and maintain the tallies */
-                            int tokcount  = 0;
-                            int nodecount = 0;
+                            /* dynamically allocate new ast */
+                            ofile << "\t\t\t\t\t\tnewast = (ptgast*)malloc(sizeof(ptgast));\n";
 
-                            /* construct newast by adding everything to its suitable place */
-                            for (j = 0; j < rhsitems.size(); ++j) 
+                            /* aesthetic newline and newast type declaration */
+                            ofile << "\t\t\t\t\t\tnewast->id = PTGAST_" << gname << ";\n";
+
+                            /* if there is only one rhs item, it is stored as a singleton, if you recall */
+                            if (rhsitems.size() == 1)
                             {
-                                auto rhsitem = rhsitems[j];
-                                
-                                ofile << "\t\t\t\t\t\tnewast->op." << gname << ".";
+                                auto rhsitem = rhsitems[0];
                                 if (rhsitem->getId() == "lit") {
-                                    ofile << "node" << nodecount++ << " = newast" << j << ";\n";
+                                    ofile << "\t\t\t\t\t\tnewast->op." << gname << " = newast0;\n";
                                 }
                                 else if (rhsitem->getId() == "tok") {
-                                    ofile << "tok" << tokcount++ << " = newast" << j << "->op.atom;\n";
+                                    ofile << "\t\t\t\t\t\tnewast->op." << gname << " = newast0->op.atom;\n";
+                                }
+                            }
+
+                            else
+                            {
+                                /* store and maintain the tallies */
+                                int tokcount  = 0;
+                                int nodecount = 0;
+
+                                /* construct newast by adding everything to its suitable place */
+                                for (j = 0; j < rhsitems.size(); ++j) 
+                                {
+                                    auto rhsitem = rhsitems[j];
+                                    
+                                    ofile << "\t\t\t\t\t\tnewast->op." << gname << ".";
+                                    if (rhsitem->getId() == "lit") {
+                                        ofile << "node" << nodecount++ << " = newast" << j << ";\n";
+                                    }
+                                    else if (rhsitem->getId() == "tok") {
+                                        ofile << "tok" << tokcount++ << " = newast" << j << "->op.atom;\n";
+                                    }
                                 }
                             }
                         }

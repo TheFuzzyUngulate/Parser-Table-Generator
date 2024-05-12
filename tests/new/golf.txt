@@ -11,6 +11,10 @@ DIV        /
 LAND       &&
 LOR        \|\|
 LNEG       ~
+LEQ        ==
+LNEQ       ~=
+LLT        <
+LGT        >
 ASSIGNOP   =
 ID         [A-Za-z][A-Za-z0-9]* {
     VAR var
@@ -27,6 +31,7 @@ STRING     "([\w!#-&\(-\[\]-\}]|\\[tnr"'])*"
 %ignore \w
 %ignore \t
 %ignore \n
+%nodecollapse
 
 %%
 
@@ -86,8 +91,8 @@ ReturnStmt => RETURN [ Expression ];
 
 BreakStmt => BREAK;
 
-Start => { TopLevelDecl SEMICOLON };
+Start => { TopLevelDecl };
 
 UnaryOp => MINUS | LNEG ;
 
-BinaryOp => PLUS | MINUS | MULT | DIV | LAND | LOR ;
+BinaryOp => PLUS | MINUS | MULT | DIV | LAND | LOR | LEQ | LGT | LLT | LNEQ ;

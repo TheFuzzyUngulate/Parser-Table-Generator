@@ -453,8 +453,8 @@ bool first_sets(deque<Rule*> asts, FollowSetMap &frstset, FollowSetMap &folwset)
         auto rhs_first      = rhs_items.at(0);
         auto rhs_first_name = std::string();
 
-        if (rhs_first->getId() == "lit") {
-            
+        if (rhs_first->getId() == "lit") 
+        {
             // add epsilon cover of first set
             for (k = 0; k < rhs_items.size(); ++k) {
                 rhs_first_name = ((Literal*)rhs_items.at(k))->getName();
@@ -475,6 +475,7 @@ bool first_sets(deque<Rule*> asts, FollowSetMap &frstset, FollowSetMap &folwset)
         else if (rhs_first->getId() == "tok") {
             rhs_first_name = ((Literal*)rhs_first)->getName();
             frstset[left].insert(rhs_first_name);
+            frstset["#" + rhs_first_name].insert("#" + rhs_first_name);
         }
         else {
             if (rhs_first->getId() == "empty") {

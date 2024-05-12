@@ -1,76 +1,92 @@
-LPAR       (
-RPAR       )
-ID         [A-Za-z][A-Za-z0-9]*
+LPAR       \(
+RPAR       \)
+LBRACE     \{
+RBRACE     \}
+
+ID  [A-Za-z][A-Za-z0-9]* {
+    IF if
+    FOR for
+    ELSE else
+    RETURN return
+    BREAK break
+    IN in
+}
 INT        [0-9]+
-STRING     "([^"]|\\["\\ntbrafv0])+"
-PLUS       +
-MINUS      -
-MULT       *
-COMMA      ,
+STRING     "([\w!#-&\(-\[\]-\}]|\\[tnr"'])*"
+PLUS       \+
+MINUS      \-
+MULT       \*
 DIV        /
-SPACE      [\ ]+
+MOD        %
+COMMA      ,
 ASSIGN     =
-LAND       and|&&
-LOR        or|\|\|
-LNEG       not|~
-LNEQ       !=
-BREAK      \n|\0
-IN         in
-ELLIPSIS   ...
-IF         if
-FOR        for
-ELSE       else
-RETURN     return
-BREAK      break
+AND        and|&&
+OR         or|\|\|
+NEG        not|~
+EQ         is|==
+NEQ        ~=
+GEQ        >=
+GT         >
+LEQ        <=
+LT         <
+BREAK      ;
+ELLIPSIS   \.\.\.
 
 %%
+%ignore \w
+%ignore \t
+%ignore \n
+%nodecollapse
 
-%start start
+%start Start
 
-type     => typename ;
-typename => ID ;
+Start => { TopLevelDecl } ;
+TopLevelDecl => VarDecl BREAK | FuncDecl ;
 
-block => { SPACE statement BREAK } ;
+VarDecl => Type Name ;
+Name => ID ;
+Type => ID ;
 
-topleveldecl  => vardecl | funcdecl ;
-vardecl       => type ID [ ASSIGN literal ];
-funcdecl      => type functionname signature functionbody ;
-functionname  => ID ;
-functionbody  => block ;
+FuncDecl => Type Name Args Block ;
+Args => LPAR [ ArgDecl { COMMA ArgDecl } ] RPAR ;
+ArgDecl => Type Name ;
 
-signature     => parameters ;
-parameters    => LPAR [ parameterlist ] RPAR ;
-parameterlist => parameterdecl { COMMA parameterdecl } ;
-parameterdecl => type ID ;
+Block => LBRACE { Statement BREAK } RBRACE ;
 
-operand     => literal | operandname | LPAR expression RPAR ;
-literal     => INT | STRING ;
-operandname => ID ;
-primaryexpr => operand | primaryexpr arguments ;
+Statement => VarDecl | SimpleStmt | ReturnStmt | BreakStmt | IfStmt | ForStmt ;
 
-arguments      => LPAR [ expressionlist ] RPAR ;
-expressionlist => expression { COMMA expression } ;
+SimpleStmt => EmptyStmt | Expression | Assignment ;
+EmptyStmt => empty ;
 
-expression => multexpr { boolop expression } ;
-multexpr   => addexpr { multop multexpr } ;
-addexpr    => primexpr { addop addexpr } ;
-primexpr   => INT | LPAR expression RPAR | primop primexpr ;
+Expression => CompExpr { BoolOp Expression } ;
+CompExpr => MultExpr { CompOp CompExpr } ;
+MultExpr => AddExpr { MultOp MultExpr } ;
+AddExpr => UnaryExpr { AddOp AddExpr } ;
 
-addop  => PLUS | MINUS ;
-multop => MULT | DIV ;
-boolop => LAND | LOR | LNEQ ;
-primop => LNEG | MINUS ;
+UnaryExpr => PrimaryExpr | UnaryOp UnaryExpr ;
 
-statement => vardecl | simplestmt | returnstmt | breakstmt | ifstmt | forstmt ;
+PrimaryExpr => FuncCall | Operand ;
+FuncCall => Name LPAR ExpressionList RPAR ;
 
-simplestmt     => [ expressionstmt | assignment ] ;
-expressionstmt => expression ;
-assignment     => expression ASSIGN expression ;
-ifstmt         => IF expression block [ ELSE ifstmt | ELSE block ] ;
-forstmt        => FOR [ condition ] block ;
-condition      => expression | vardecl IN rangexpr ;
-rangexpr       => expression ELLIPSIS expression ;
-returnstmt     => RETURN [ expression ] ;
-breakstmt      => BREAK ;
+ExpressionList => [ Expression { COMMA Expression } ] ;
 
-start => { topleveldecl };
+Operand => Literal | Name | LPAR Expression RPAR ;
+Literal => INT | STRING | List ;
+List => LBRACE ListExpr RBRACE ;
+ListExpr => ExpressionList | Expression ELLIPSIS [ Expression ] ;
+
+UnaryOp => MINUS | NEG ;
+AddOp => PLUS | MINUS ;
+MultOp => MULT | DIV | MOD ;
+CompOp => NEG | GEQ | GT | LEQ | LT | IN ;
+BoolOp => AND | OR ;
+
+Assignment => Expression ASSIGN Expression ;
+
+ReturnStmt => RETURN [ Expression ] ;
+
+BreakStmt => BREAK ;
+
+IfStmt => IF Expression Block [ ELSE IfStmt | ELSE Block ] ;
+
+ForStmt => FOR Expression Block ;

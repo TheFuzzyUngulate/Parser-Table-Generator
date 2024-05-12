@@ -16,7 +16,8 @@ s_dirs
     std::string start;                    // name of starting state
     std::set<char> ignored;               // characters to be ignored.
     std::deque<std::pair<int, bool>> trs; // lines to be ignored by scanner
-    int ateof;                            // token to be thrown before EOF
+    char ateof;                           // token to be thrown before EOF
+    bool nodecollapse;                    // bool, indicates whether node collapse occurs in tree formation
 }
 s_dirs;
 

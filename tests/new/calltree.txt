@@ -1,6 +1,6 @@
 LPAR      \(
 RPAR      \)
-STRING    "([\ !#-&\(-\[\]-\}]|\\[tnr"'])*"
+STRING    "([\w!#-&\(-\[\]-\}]|\\[tnr"'])*"
 INTEGER   [0-9]+
 ID        [A-Za-z]+
 COMMA     ,
