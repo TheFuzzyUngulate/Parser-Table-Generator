@@ -26,8 +26,8 @@ void run_error(const char* ch) {
     exit(-1);
 }
 
-int main(int argc, char **argv) {
-
+int main(int argc, char **argv)
+{
     vector<string> arguments(argv, argv+argc);
     struct flags flags = handle_args(arguments);
 
@@ -61,8 +61,10 @@ int main(int argc, char **argv) {
     auto alphabet = proc.get_alphabet();
 
     // if our ateof is not in alphabet, throw error
-    if (alphabet.find("#" + sc->sdir().ateof) == alphabet.end()) {
-        run_error("ateof argument must be a valid token");
+    if (sc->sdir().ateof != "") {
+        if (alphabet.find("#" + sc->sdir().ateof) == alphabet.end()) {
+            run_error("ateof argument must be a valid token");
+        }
     }
 
     // add all tokens, even unused ones
