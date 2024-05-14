@@ -274,6 +274,24 @@ void CodeGenerator::generate()
 
             case 2:
             {
+                /* set initial statement */
+                ofile << "\t\tif (scan() == EOF) {\n";
+                
+                if (_directives.ateof.empty())
+                {
+                    ofile << "\t\t\tptg_tokret(P_TOK_END);\n";
+                }
+                else
+                {
+                    ofile << "\t\t\tif (!sc->ateof) {\n";
+                    ofile << "\t\t\t\tsc->ateof = true;\n";
+                    ofile << "\t\t\t\tptgunlex(P_TOK_END);\n";
+                    ofile << "\t\t\t\tptg_tokret(" << _elementtoks["#" + _directives.ateof] << ");\n";
+                    ofile << "\t\t\t} else ptg_tokret(P_TOK_END);\n";
+                }
+                
+                ofile << "\t\t} else get_pos();\n\n";
+
                 /* generate string statements */
                 for (i = 0; i < _regexes.size(); ++i)
                 {
@@ -505,11 +523,10 @@ void CodeGenerator::generate()
 
                             else
                             {
-                                /* store and maintain the tallies */
+                                /** store and maintain the tallies
                                 int tokcount  = 0;
                                 int nodecount = 0;
-
-                                /* construct newast by adding everything to its suitable place */
+\
                                 for (j = 0; j < rhsitems.size(); ++j) 
                                 {
                                     auto rhsitem = rhsitems[j];
@@ -521,6 +538,72 @@ void CodeGenerator::generate()
                                     else if (rhsitem->getId() == "tok") {
                                         ofile << "tok" << tokcount++ << " = newast" << j << "->op.atom;\n";
                                     }
+                                }*/
+
+                                if (_directives.nodecollapse)
+                                {
+                                    /* newline for aesthetic reasons */
+                                    ofile << "\n\t\t\t\t\t\t";
+
+                                    /* for each item, if it is the only non-null, change newast to it */
+                                    for (j = 0; j < rhsitems.size(); ++j)
+                                    {
+                                        auto rhsitem = rhsitems[j];
+
+                                        ofile << "if (newast" << j << " && ";
+                                        
+                                        for (k = 0; k < rhsitems.size(); ++k) {
+                                            if (k == j) continue;
+                                            auto rhsitem2 = rhsitems[k];
+                                            ofile << "!newast" << k << ((k == rhsitems.size() - 1 || (j == rhsitems.size() - 1 && k == rhsitems.size() - 2)) ? "" : " && ");
+                                        }
+
+                                        ofile << ") newast = newast" << j << ";\n\t\t\t\t\t\telse ";
+
+                                        if (j == rhsitems.size() - 1) 
+                                        {
+                                            ofile << "{\n";
+
+                                            int tokcount = 0;
+                                            int nodecount = 0;
+
+                                            /* construct newast by adding everything to its suitable place */
+                                            for (k = 0; k < rhsitems.size(); ++k) 
+                                            {
+                                                auto rhsitem2 = rhsitems[k];
+                                                
+                                                ofile << "\t\t\t\t\t\t\tnewast->op." << gname << ".";
+                                                if (rhsitem2->getId() == "lit") {
+                                                    ofile << "node" << nodecount++ << " = newast" << k << ";\n";
+                                                }
+                                                else if (rhsitem2->getId() == "tok") {
+                                                    ofile << "tok" << tokcount++ << " = newast" << k << "->op.atom;\n";
+                                                }
+                                            }
+
+                                            ofile << "\t\t\t\t\t\t}\n\n";
+                                        }
+                                    }
+                                } 
+                                else 
+                                {
+                                    int tokcount  = 0;
+                                    int nodecount = 0;
+
+                                    for (j = 0; j < rhsitems.size(); ++j) 
+                                    {
+                                        auto rhsitem = rhsitems[j];
+                                        
+                                        ofile << "\t\t\t\t\t\tnewast->op." << gname << ".";
+                                        if (rhsitem->getId() == "lit") {
+                                            ofile << "node" << nodecount++ << " = newast" << j << ";\n";
+                                        }
+                                        else if (rhsitem->getId() == "tok") {
+                                            ofile << "tok" << tokcount++ << " = newast" << j << "->op.atom;\n";
+                                        }
+                                    }
+                                    
+                                    ofile << "\n";
                                 }
                             }
                         }

@@ -132,6 +132,10 @@ void Scanner::prescan()
                 else
                 if (str == "ateof")
                 {
+                    if (!dirs.ateof.empty()) {
+                        scan_warn("only one ateof character may be set");
+                    }
+
                     // eliminate spaces before the next argument
                     while (!line.empty()) {
                         ch = line[0];
@@ -149,22 +153,7 @@ void Scanner::prescan()
                         str.push_back(ch);
                     }
 
-                    if (str == "\\n") {
-                        dirs.ateof = '\n';
-                    } else if (str == "\\r") {
-                        dirs.ateof = '\r';
-                    } else if (str == "\\w") {
-                        dirs.ateof = ' ';
-                    } else if (str == "\\t") {
-                        dirs.ateof = '\t';
-                    } else {
-                        if (str.size() == 1) {
-                            dirs.ateof = str[0];
-                        } else {
-                            cout << "suggested " << str << std::endl;
-                            scan_err("invalid ignore char suggested.\n");
-                        }
-                    }
+                    dirs.ateof = str;
                 }
                 else
                 if (str == "nodecollapse")

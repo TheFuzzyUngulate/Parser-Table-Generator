@@ -68,7 +68,7 @@ class Scanner {
         Scanner(std::fstream *fptr) {
             file = fptr;
             dirs.state = 0;
-            dirs.ateof = '\0';
+            dirs.ateof = "";
             dirs.nodecollapse = false;
             prescan();
         }

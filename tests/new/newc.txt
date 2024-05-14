@@ -2,14 +2,16 @@ LPAR       \(
 RPAR       \)
 LBRACE     \{
 RBRACE     \}
-
-ID  [A-Za-z][A-Za-z0-9]* {
-    IF if
-    FOR for
-    ELSE else
+LBRACK     \[
+RBRACK     \]
+ID         [A-Za-z][A-Za-z0-9]*
+{
+    IF     if
+    FOR    for
+    ELSE   else
     RETURN return
-    BREAK break
-    IN in
+    BREAK  break
+    IN     in
 }
 INT        [0-9]+
 STRING     "([\w!#-&\(-\[\]-\}]|\\[tnr"'])*"
@@ -19,17 +21,17 @@ MULT       \*
 DIV        /
 MOD        %
 COMMA      ,
-ASSIGN     =
 AND        and|&&
 OR         or|\|\|
 NEG        not|~
 EQ         is|==
+ASSIGN     =
 NEQ        ~=
 GEQ        >=
 GT         >
 LEQ        <=
 LT         <
-BREAK      ;
+SEMICOLON  ;
 ELLIPSIS   \.\.\.
 
 %%
@@ -41,47 +43,87 @@ ELLIPSIS   \.\.\.
 %start Start
 
 Start => { TopLevelDecl } ;
-TopLevelDecl => VarDecl BREAK | FuncDecl ;
+
+TopLevelDecl => VarDecl SEMICOLON | FuncDecl ;
 
 VarDecl => Type Name ;
+
 Name => ID ;
+
 Type => ID ;
 
 FuncDecl => Type Name Args Block ;
+
 Args => LPAR [ ArgDecl { COMMA ArgDecl } ] RPAR ;
+
 ArgDecl => Type Name ;
 
-Block => LBRACE { Statement BREAK } RBRACE ;
+Block => LBRACE { Statement } RBRACE ;
 
-Statement => VarDecl | SimpleStmt | ReturnStmt | BreakStmt | IfStmt | ForStmt ;
+Statement => BrackStmt SEMICOLON | IfStmt | ForStmt ;
 
-SimpleStmt => EmptyStmt | Expression | Assignment ;
+BrackStmt => VarDecl | EmptyStmt | Expression | ReturnStmt | BreakStmt ;
+
 EmptyStmt => empty ;
 
-Expression => CompExpr { BoolOp Expression } ;
-CompExpr => MultExpr { CompOp CompExpr } ;
-MultExpr => AddExpr { MultOp MultExpr } ;
-AddExpr => UnaryExpr { AddOp AddExpr } ;
+Expression => Expr8 ASSIGN Expression
+       | Expr8
+       ;
 
-UnaryExpr => PrimaryExpr | UnaryOp UnaryExpr ;
+Expr8 => Expr7 OR Expr8
+       | Expr7
+       ;
 
-PrimaryExpr => FuncCall | Operand ;
-FuncCall => Name LPAR ExpressionList RPAR ;
+Expr7 => Expr6 AND Expr7
+       | Expr6
+       ;
+
+Expr6 => Expr5 EQ Expr6
+       | Expr5 NEQ Expr6
+       | Expr5
+       ;
+
+Expr5 => Expr4 GEQ Expr5
+       | Expr4 GT Expr5
+       | Expr4 LEQ Expr5
+       | Expr4 LT Expr5
+       | Expr4
+       ;
+
+Expr4 => Expr3 PLUS Expr4
+       | Expr3 MINUS Expr4
+       | Expr3
+       ;
+
+Expr3 => Expr2 MULT Expr3
+       | Expr2 DIV Expr3
+       | Expr2 MOD Expr3
+       | Expr2
+       ;
+
+Expr2 => MINUS Expr2
+       | NEG Expr2
+       | Expr1
+       ;
+
+Expr1 => Expr1 Args
+       | Expr1 Index
+       | Operand
+       ;
+
+Args => LPAR ExpressionList RPAR ;
+
+Index => LBRACK [ Operand ] RBRACK ;
+
+Operand => Literal | Name | LPAR Expression RPAR ;
 
 ExpressionList => [ Expression { COMMA Expression } ] ;
 
-Operand => Literal | Name | LPAR Expression RPAR ;
 Literal => INT | STRING | List ;
+
 List => LBRACE ListExpr RBRACE ;
-ListExpr => ExpressionList | Expression ELLIPSIS [ Expression ] ;
 
-UnaryOp => MINUS | NEG ;
-AddOp => PLUS | MINUS ;
-MultOp => MULT | DIV | MOD ;
-CompOp => NEG | GEQ | GT | LEQ | LT | IN ;
-BoolOp => AND | OR ;
-
-Assignment => Expression ASSIGN Expression ;
+ListExpr => ExpressionList [ COMMA ELLIPSIS ] ;
 
 ReturnStmt => RETURN [ Expression ] ;
 

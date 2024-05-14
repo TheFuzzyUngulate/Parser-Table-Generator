@@ -169,6 +169,7 @@ ptg_sc
 {
     int ptr;               // moving file pointer
     int spt;               // static file lexeme
+    bool ateof;            // detect whether reached EOF
     unsigned int line;     // current line number
     unsigned int column;   // current column number
     struct {
@@ -323,6 +324,7 @@ ptglex()
         sc->ptr    = -1;
         sc->column = 0;
         sc->spt    = -1;
+        sc->ateof  = false;
 
         sc->prog.chbuf  = m_stack_init(char);
         sc->prog.tokbuf = m_stack_init(ptgenum);
@@ -349,10 +351,6 @@ ptglex()
 
     while (1)
     {
-        if (scan() == EOF) {
-            ptg_tokret(P_TOK_END); 
-        } else get_pos();
-
 /* stop */
     }
 }

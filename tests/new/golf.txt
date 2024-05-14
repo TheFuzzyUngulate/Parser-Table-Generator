@@ -2,7 +2,7 @@ LPAR       \(
 RPAR       \)
 LBRACE     \{
 RBRACE     \}
-SEMICOLON  ;
+NEWLINE    \n
 COMMA      ,
 PLUS       \+
 MINUS      \-
@@ -30,7 +30,7 @@ STRING     "([\w!#-&\(-\[\]-\}]|\\[tnr"'])*"
 
 %ignore \w
 %ignore \t
-%ignore \n
+%ateof NEWLINE
 %nodecollapse
 
 %%
@@ -42,9 +42,9 @@ TypeName  => ID;
 
 Block => LBRACE StatementList RBRACE;
 
-StatementList => { Statement SEMICOLON };
+StatementList => { Statement NEWLINE };
 Declaration   => VarDecl;
-TopLevelDecl  => Declaration | FunctionDecl;
+TopLevelDecl  => [ Declaration | FunctionDecl ] ;
 
 VarDecl     => VAR VarSpec;
 VarSpec     => ID Type;
@@ -71,9 +71,9 @@ ExpressionList => Expression { COMMA Expression };
 Expression => UnaryExpr | Expression BinaryOp Expression;
 UnaryExpr  => PrimaryExpr | UnaryOp UnaryExpr;
 
-Statement => Declaration | SimpleStmt | ReturnStmt | BreakStmt | Block | IfStmt | ForStmt;
+Statement => Declaration | SimpleStmt | ReturnStmt | BreakStmt | Block | IfStmt | ForStmt ;
 
-SimpleStmt => EmptyStmt | ExpressionStmt | Assignment;
+SimpleStmt => EmptyStmt | ExpressionStmt | Assignment ;
 
 EmptyStmt => empty;
 
@@ -91,7 +91,7 @@ ReturnStmt => RETURN [ Expression ];
 
 BreakStmt => BREAK;
 
-Start => { TopLevelDecl };
+Start => { TopLevelDecl NEWLINE } ;
 
 UnaryOp => MINUS | LNEG ;
 

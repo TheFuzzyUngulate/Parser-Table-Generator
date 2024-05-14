@@ -255,18 +255,45 @@ std::pair<bool, deque<Rule*>> ASTProcessor::trans2(deque<Rule*> start) {
 
         int i = 0;
         for (; i < nodes.size(); i++) {
-            // S => A [B] C becomes S => A S' and S' => B C | C
-            // of course, if the preset is empty, then it's just S => B C | C for S => [B] C
+            // S => A [B] C becomes S => A S' C and S' => B | empty
+            // this doesn't change with the preset being empty LOL, cares.
 
-            if (nodes[i]->getId() == "opt-expr") {
+            if (nodes[i]->getId() == "opt-expr") 
+            {
                 not_changed = false;
                 OptExpr* mynode = (OptExpr*)nodes[i];
                 Literal* mylitr = new Literal(litem->getName() + '\'', Tokens::RULE);
                 RuleList* inner = mynode->getExpr();
                 auto innerlist = inner->getChildren();
 
-                deque<AST*> list1 = {};
+                if (nodes.size() == 1)
+                {
+                    deque<AST*> list;
+                    list.insert(list.begin(), innerlist.begin(), innerlist.end());
+                    endlist.push_back(new Rule(litem, new RuleList(list)));
+                    endlist.push_back(new Rule(litem, new RuleList(new EmptyAST())));
+                }
+
+                else
+                {
+                    deque<AST*> list1;
+                    list1.insert(list1.end(), nodes.begin(), nodes.begin()+i);
+                    list1.push_back(mylitr);
+                    list1.insert(list1.end(), nodes.begin()+i+1, nodes.end());
+                    endlist.push_back(new Rule(litem, new RuleList(list1)));
+
+                    deque<AST*> or1;
+                    or1.insert(or1.begin(), innerlist.begin(), innerlist.end());
+                    endlist.push_back(new Rule(mylitr, new RuleList(or1)));
+                    endlist.push_back(new Rule(mylitr, new RuleList(new EmptyAST())));
+                }
+
+                break;
+
+                /*deque<AST*> list1 = {};
                 list1.insert(list1.end(), nodes.begin(), nodes.begin()+i);
+                list1.push_back(mylitr);
+                list1.insert(list1.end(), nodes.begin()+i+1, nodes.end());
                 if (list1.size() > 0) {
                     list1.push_back(mylitr);
                     endlist.push_back(new Rule(litem, new RuleList(list1)));
@@ -284,7 +311,7 @@ std::pair<bool, deque<Rule*>> ASTProcessor::trans2(deque<Rule*> start) {
                     endlist.push_back(new Rule(mylitr, new RuleList(orexpr)));
                 else
                     endlist.push_back(new Rule(litem, new RuleList(orexpr)));
-                break;
+                break;*/
             }
         }
         if (i == nodes.size())

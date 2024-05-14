@@ -60,6 +60,11 @@ int main(int argc, char **argv) {
     // get alphabet
     auto alphabet = proc.get_alphabet();
 
+    // if our ateof is not in alphabet, throw error
+    if (alphabet.find("#" + sc->sdir().ateof) == alphabet.end()) {
+        run_error("ateof argument must be a valid token");
+    }
+
     // add all tokens, even unused ones
     for (auto tok : pr->scitems()) {
         alphabet.insert("#" + std::get<0>(tok));

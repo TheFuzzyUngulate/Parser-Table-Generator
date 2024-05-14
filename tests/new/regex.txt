@@ -1,15 +1,21 @@
-LBRACK		[
-RBRACK		]
-PLUS		     +
-MINUS		-
-TIMES		*
-QUESTION	     ?
-BAR		     |
-SLASH		\\
-CAP		     ^
-LPAREN		(
-RPAREN		)
-CHAR		     woo
+LBRACK		 \[
+RBRACK		 \]
+PLUS		      \+
+MINUS		 \-
+TIMES	      \*
+NEWLINE_CHAR    n
+CRETURN_CHAR    r
+TABULATE_CHAR   t
+QUESTION	      ?
+BAR		      \|
+SLASH		 \\
+CAP		      ^
+LPAREN		 \(
+RPAREN		 \)
+LBRACE          \{
+RBRACE          \}
+CHAR		      [\w!#-&\(-\[\]-\}]
+DOT             \.
 
 %%
 
@@ -17,17 +23,19 @@ CHAR		     woo
 
 re   => [ exp { BAR exp } ] ;
 
-exp  => sub { exp } ;
+exp  => msub { msub } ;
 
-sub  => elm [ QUESTION | PLUS | TIMES ]
+msub => sub [ QUESTION | PLUS | TIMES ] ;
+
+sub  => elm
      | LBRACK slc RBRACK
      | LPAREN re RPAREN
      ;
 
-elm  => CHAR
+elm  => fch
      | CAP
      | MINUS
-     | esc
+     | DOT
      ;
 
 esc  => SLASH QUESTION
@@ -41,11 +49,22 @@ esc  => SLASH QUESTION
      | SLASH CAP
      | SLASH LPAREN
      | SLASH RPAREN
+     | SLASH DOT
+     | SLASH NEWLINE_CHAR
+     | SLASH CRETURN_CHAR
+     | SLASH TABULATE_CHAR
      ;
 
 slc => [ CAP ] sli { sli } ;
 
-sli => CHAR 
-     | esc 
-     | CHAR MINUS CHAR 
+sli => fch 
+     | fch MINUS fch
+     | DOT
+     ;
+
+fch => CHAR
+     | TABULATE_CHAR
+     | NEWLINE_CHAR
+     | CRETURN_CHAR
+     | esc
      ;
