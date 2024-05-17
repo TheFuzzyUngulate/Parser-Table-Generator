@@ -1,31 +1,39 @@
-LBRACK		 \[
-RBRACK		 \]
-PLUS		      \+
-MINUS		 \-
-TIMES	      \*
-NEWLINE_CHAR    n
-CRETURN_CHAR    r
-TABULATE_CHAR   t
-QUESTION	      ?
-BAR		      \|
-SLASH		 \\
-CAP		      ^
-LPAREN		 \(
-RPAREN		 \)
-LBRACE          \{
-RBRACE          \}
-CHAR		      [\w!#-&\(-\[\]-\}]
-DOT             \.
+"\["                     return(LBRACK)
+"\]"                     return(RBRACK)
+"\+"                     return(PLUS)
+"\-"                     return(MINUS)
+"\*"                     return(TIMES)
+"n"                      return(NEWLINE_CHAR)
+"r"                      return(CRETURN_CHAR)
+"t"                      return(TABULATE_CHAR)
+"\?"                     return(QUESTION)
+"\|"                     return(BAR)
+"\\"                     return(SLASH)
+"^"                      return(CAP)
+"\("                     return(LPAREN)
+"\)"                     return(RPAREN)
+"{"                      return(LBRACE)
+"}"                      return(RBRACE)
+"[ !#-&\(-\[\]-}]"       return(CHAR)
+"\."                     return(DOT)
+"0"                      return(ZERO)
 
 %%
+%nodecollapse
 
 %start re
 
 re   => [ exp { BAR exp } ] ;
 
-exp  => msub { msub } ;
+exp  => msub 
+     | msub exp
+     ;
 
-msub => sub [ QUESTION | PLUS | TIMES ] ;
+msub => sub 
+     | sub QUESTION
+     | sub PLUS
+     | sub TIMES
+     ;
 
 sub  => elm
      | LBRACK slc RBRACK
@@ -53,6 +61,7 @@ esc  => SLASH QUESTION
      | SLASH NEWLINE_CHAR
      | SLASH CRETURN_CHAR
      | SLASH TABULATE_CHAR
+     | SLASH ZERO
      ;
 
 slc => [ CAP ] sli { sli } ;
@@ -66,5 +75,6 @@ fch => CHAR
      | TABULATE_CHAR
      | NEWLINE_CHAR
      | CRETURN_CHAR
+     | ZERO
      | esc
      ;

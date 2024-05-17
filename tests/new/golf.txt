@@ -1,40 +1,36 @@
-LPAR       \(
-RPAR       \)
-LBRACE     \{
-RBRACE     \}
-NEWLINE    \n
-COMMA      ,
-PLUS       \+
-MINUS      \-
-MULT       \*
-DIV        /
-LAND       &&
-LOR        \|\|
-LNEG       ~
-LEQ        ==
-LNEQ       ~=
-LLT        <
-LGT        >
-ASSIGNOP   =
-ID         [A-Za-z][A-Za-z0-9]* {
-    VAR var
-    IF if
-    ELSE else
-    FUNC func
-    FOR for
-    RETURN return
-    BREAK break
-}
-INT        [0-9]+
-STRING     "([\w!#-&\(-\[\]-\}]|\\[tnr"'])*"
+LPAR:      "\("   ;
+RPAR:      "\)"   ;
+LBRACE:    "{"    ;
+RBRACE:    "}"    ;
+SEMICOLON: ";"    ;
+COMMA:     ","    ;
+PLUS:      "\+"   ;
+MINUS:     "\-"   ;
+MULT:      "\*"   ;
+DIV:       "/"    ;
+LAND:      "&&"   ;
+LOR:       "\|\|" ;
+LNEG:      "~"    ;
+LEQ:       "=="   ;
+LNEQ:      "~="   ;
+LLT:       "<"    ;
+LGT:       ">"    ;
+ASSIGNOP:  "="    ;
+VAR:       "var"  ;
+IF:        "if"   ;
+ELSE:      "else" ;
+FUNC:      "func" ;
+FOR:       "for"  ;
+BREAK:     "break" ;
+RETURN:    "return" ;
+ID:        "[A-Za-z][A-Za-z0-9]*" ;
+INT:       "[0-9]+" ;
+STRING:    "\"([ !#-&\(-\[\]-}]|\\[tnr\"\'])*\"" ;
+SPACE:     "[ \t\n\r]" , skip ;
+EOF:       "\0", after NEWLINE ;
 
-%ignore \w
-%ignore \t
-%ateof NEWLINE
 %nodecollapse
-
 %%
-
 %start Start
 
 Type      => TypeName;
@@ -42,12 +38,13 @@ TypeName  => ID;
 
 Block => LBRACE StatementList RBRACE;
 
-StatementList => { Statement NEWLINE };
+StatementList => { Statement };
 Declaration   => VarDecl;
 TopLevelDecl  => [ Declaration | FunctionDecl ] ;
 
 VarDecl     => VAR VarSpec;
-VarSpec     => ID Type;
+VarSpec     => VarName Type;
+VarName     => ID;
 
 FunctionDecl => FUNC FunctionName Signature FunctionBody;
 FunctionName => ID;
@@ -91,7 +88,7 @@ ReturnStmt => RETURN [ Expression ];
 
 BreakStmt => BREAK;
 
-Start => { TopLevelDecl NEWLINE } ;
+Start => { TopLevelDecl SEMICOLON } ;
 
 UnaryOp => MINUS | LNEG ;
 

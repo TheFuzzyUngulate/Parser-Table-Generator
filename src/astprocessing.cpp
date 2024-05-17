@@ -254,9 +254,19 @@ std::pair<bool, deque<Rule*>> ASTProcessor::trans2(deque<Rule*> start) {
         deque<AST*> nodes = rlist->getChildren();
 
         int i = 0;
-        for (; i < nodes.size(); i++) {
-            // S => A [B] C becomes S => A S' C and S' => B | empty
-            // this doesn't change with the preset being empty LOL, cares.
+        for (; i < nodes.size(); i++) 
+        {
+            /**
+             * Three ways to handle this:
+             * 
+             *   1. S => A [B] C becomes S => A S' and S' => B C | C
+             *   2. S => A [B] C becomes S => A S' C and S' => B | empty
+             *   3. S => A [B] C becomes S => A B C and S => A C
+             * 
+             * The third is better if your language can handle left recursion,
+             * since it creates less states. We are using LALR(1), so we can handle
+             * left-recursion just fine.
+             */
 
             if (nodes[i]->getId() == "opt-expr") 
             {
@@ -266,28 +276,18 @@ std::pair<bool, deque<Rule*>> ASTProcessor::trans2(deque<Rule*> start) {
                 RuleList* inner = mynode->getExpr();
                 auto innerlist = inner->getChildren();
 
-                if (nodes.size() == 1)
-                {
-                    deque<AST*> list;
-                    list.insert(list.begin(), innerlist.begin(), innerlist.end());
-                    endlist.push_back(new Rule(litem, new RuleList(list)));
-                    endlist.push_back(new Rule(litem, new RuleList(new EmptyAST())));
-                }
+                deque<AST*> or1;
+                or1.insert(or1.end(), nodes.begin(), nodes.begin()+i);
+                or1.insert(or1.end(), innerlist.begin(), innerlist.end());
+                or1.insert(or1.end(), nodes.begin()+i+1, nodes.end());
+                endlist.push_back(new Rule(litem, new RuleList(or1)));
 
-                else
-                {
-                    deque<AST*> list1;
-                    list1.insert(list1.end(), nodes.begin(), nodes.begin()+i);
-                    list1.push_back(mylitr);
-                    list1.insert(list1.end(), nodes.begin()+i+1, nodes.end());
-                    endlist.push_back(new Rule(litem, new RuleList(list1)));
-
-                    deque<AST*> or1;
-                    or1.insert(or1.begin(), innerlist.begin(), innerlist.end());
-                    endlist.push_back(new Rule(mylitr, new RuleList(or1)));
-                    endlist.push_back(new Rule(mylitr, new RuleList(new EmptyAST())));
-                }
-
+                deque<AST*> or2;
+                or2.insert(or2.end(), nodes.begin(), nodes.begin()+i);
+                or2.insert(or2.end(), nodes.begin()+i+1, nodes.end());
+                if (or2.empty()) or2.push_back(new EmptyAST());
+                endlist.push_back(new Rule(litem, new RuleList(or2)));
+                
                 break;
 
                 /*deque<AST*> list1 = {};

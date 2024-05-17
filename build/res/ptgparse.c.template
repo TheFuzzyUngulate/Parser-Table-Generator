@@ -6,21 +6,12 @@
 #include <stdarg.h>
 /* stop */
 
-typedef struct
-m_stack
-{
-    int    count;
-    size_t size;
-    void*  content;
-    int    capacity;
-}
-m_stack;
-#define m_stack_tos(stack) (stack.content + (stack.size * (stack.count - 1)))
+#define ptg_stack_tos(stack) (stack.content + (stack.size * (stack.count - 1)))
 
-m_stack
-_m_stack_init(size_t size)
+ptg_stack
+_ptg_stack_init(size_t size)
 {
-    m_stack m;
+    ptg_stack m;
 
     m.count    = 0;
     m.size     = size;
@@ -30,9 +21,9 @@ _m_stack_init(size_t size)
     return m;
 }
 
-#define m_stack_init(t) (_m_stack_init(sizeof(t)))
+#define ptg_stack_init(t) (_ptg_stack_init(sizeof(t)))
 
-void m_stack_push(m_stack* m, void* item)
+void ptg_stack_push(ptg_stack* m, void* item)
 {
     if (m->count == m->capacity) {
         m->capacity = m->capacity * 3 / 2;
@@ -42,7 +33,7 @@ void m_stack_push(m_stack* m, void* item)
     m->count++;
 }
 
-void* m_stack_pop(m_stack* m)
+void* ptg_stack_pop(ptg_stack* m)
 {
     if (m->count > 0) {
         void* item = malloc(m->size);
@@ -52,7 +43,7 @@ void* m_stack_pop(m_stack* m)
     } else return NULL;
 }
 
-void m_stack_clear(m_stack* m)
+void ptg_stack_clear(ptg_stack* m)
 {
     if (m->count > 0) {
         m->capacity = 2;
@@ -61,142 +52,47 @@ void m_stack_clear(m_stack* m)
     }
 }
 
-typedef struct
-m_string
+ptg_sc* ptg_sc_init(const char *filename)
 {
-    char* str;
-    size_t len;
-}
-m_string;
+    ptg_sc* sc;
+    FILE* fptr;
 
-m_string m_string_init()
-{
-    m_string m;
+	fptr = fopen(filename, "r");
+	if (fptr == NULL) {
+		fprintf(stderr, "fopen: couldn't open file \"%s\".\n", filename);
+	    exit(EXIT_FAILURE);
+	}
 
-    m.len = 0;
-    m.str = (char*)calloc(128, 1);
+    sc = (ptg_sc*)malloc(sizeof(ptg_sc));
 
-    return m;
-}
+    sc->line   = 0;
+    sc->ptr    = -1;
+    sc->column = 0;
+    sc->spt    = -1;
+    sc->ateof  = false;
+    sc->file   = fptr;
+    sc->state  = 0;
 
-void m_string_push(m_string* m, char ch)
-{
-    if ((m->len + 2) % 128 == 0) {
-        m->str = (char*)realloc(m->str, (m->len + 1) + 128);
-        memset(m->str + m->len + 1, 0, 128);
-    }
-    *(m->str + m->len) = ch;
-    m->len++;
-}
+    sc->prog.chbuf  = ptg_stack_init(char);
+    sc->prog.tokbuf = ptg_stack_init(ptgenum);
 
-void m_string_concat(m_string* m, char* str)
-{
-    char* buf;
-    size_t al;
-    size_t bl;
-    size_t tl;
+    sc->check.seeks    = ptg_stack_init(int);
+    sc->check.answers  = ptg_stack_init(bool);
+    sc->check.counters = ptg_stack_init(int);
 
-    al = (m->len + 1);
-    if (al % 128 != 0) {
-        al &= ~((1 << 7) - 1);
-        al += 128; 
-    }
-
-    bl = strlen(str);
-    
-    tl = al + bl;
-    if (tl % 128 != 0) {
-        tl &= ~((1 << 7) - 1);
-        tl += 128;
-    }
-    
-    buf = (char*)calloc(tl, 1);
-    memcpy(buf, m->str, m->len);
-    memcpy(buf + m->len, str, bl);
-    free(m->str);
-    m->str = buf;
-    m->len = m->len + bl;
+    return sc;
 }
 
-char* m_string_get(m_string* m)
-{
-    char* buf = (char*)calloc(m->len + 1, 1);
-    memcpy(buf, m->str, m->len);
-    return buf;
-}
-
-void m_string_clear(m_string* m)
-{
-    free(m->str);
-    m->len = 0;
-    m->str = (char*)calloc(128, 1);
-}
-
-char** m_string_split(m_string* m, int* len, char delim)
-{
-    int k = 0;
-    char** res = NULL;
-    m_string tmp = m_string_init();
-
-    for (char* ptr = m->str; *ptr != '\0'; ++ptr) {
-        if (*ptr == delim) {
-            k++;
-            if (!res) res = (char**)malloc(sizeof(char*) * k);
-            else res = (char**)realloc(res, sizeof(char*) * k);
-            res[k-1] = m_string_get(&tmp);
-            m_string_clear(&tmp);
-        } else m_string_push(&tmp, *ptr);
-    }
-
-    if (tmp.len > 0) {
-        k++;
-        if (!res) res = (char**)malloc(sizeof(char*) * k);
-        else res = (char**)realloc(res, sizeof(char*) * k);
-        res[k-1] = m_string_get(&tmp);
-        m_string_clear(&tmp);
-    }
-
-    *len = k;
-    return res;
-}
-
-#define m_string_getline(m, len) m_string_split(m, len, '\n')
-
-// static FILE* ptg_infile = NULL;
-
-typedef struct
-ptg_sc
-{
-    int ptr;               // moving file pointer
-    int spt;               // static file lexeme
-    bool ateof;            // detect whether reached EOF
-    unsigned int line;     // current line number
-    unsigned int column;   // current column number
-    struct {
-        m_stack chbuf;     // unget buffer
-        m_stack tokbuf;    // unlex buffer
-        ptgenum lasttok;   // last token returned by lex
-    } prog;
-    struct {
-        m_stack seeks;     // saved positions for seek
-        m_stack answers;   // saved answers for answer checking
-        m_stack counters;  // saved counters for future updates
-    } check;
-}
-ptg_sc;
-
-static ptg_sc* sc = NULL;
-
-char scan() 
+char scan(ptg_sc *sc)
 {
     char ch;
     
     if (sc->prog.chbuf.count > 0) {
-        ch = *(char*)m_stack_pop(&(sc->prog.chbuf));
+        ch = *(char*)ptg_stack_pop(&(sc->prog.chbuf));
     } else {
-        fseek(ptg_infile, ++(sc->ptr), SEEK_SET);
-        ch = fgetc(ptg_infile);
-        fseek(ptg_infile, sc->ptr, SEEK_SET);
+        fseek(sc->file, ++(sc->ptr), SEEK_SET);
+        ch = fgetc(sc->file);
+        fseek(sc->file, sc->ptr, SEEK_SET);
         if (ch == EOF) 
             return EOF;
     }
@@ -209,15 +105,15 @@ char scan()
     return ch;
 }
 
-void save_pos() {
-    m_stack_push(&(sc->check.seeks), &(sc->ptr));
+void save_pos(ptg_sc *sc) {
+    ptg_stack_push(&(sc->check.seeks), &(sc->ptr));
 }
 
-void load_pos() 
+void load_pos(ptg_sc *sc) 
 {
     if (sc->check.seeks.count > 0)
     {
-        int p = *(int*)m_stack_pop(&(sc->check.seeks));
+        int p = *(int*)ptg_stack_pop(&(sc->check.seeks));
         sc->ptr = p;
     }
     else {
@@ -226,18 +122,18 @@ void load_pos()
     }
 }
 
-void update_pos() {
+void update_pos(ptg_sc *sc) {
     if (sc->check.seeks.count > 0) {
-        *(int*)m_stack_tos(sc->check.seeks) = sc->ptr;
+        *(int*)ptg_stack_tos(sc->check.seeks) = sc->ptr;
     } else {
         fprintf(stderr, "error: no seek positions have been saved.\n");
         exit(EXIT_FAILURE);
     }
 }
 
-void get_pos() {
+void get_pos(ptg_sc *sc) {
     if (sc->check.seeks.count > 0) {
-        int p = *(int*)m_stack_tos(sc->check.seeks);
+        int p = *(int*)ptg_stack_tos(sc->check.seeks);
         sc->ptr = p;
     } else {
         fprintf(stderr, "error: no seek positions have been saved.\n");
@@ -245,108 +141,94 @@ void get_pos() {
     }
 }
 
-char unscan(char ch) {
-    m_stack_push(&(sc->prog.chbuf), &ch);
+char unscan(ptg_sc *sc, char ch) {
+    ptg_stack_push(&(sc->prog.chbuf), &ch);
 }
 
-void save_bool(bool q) {
-    m_stack_push(&(sc->check.answers), &q);
+void save_bool(ptg_sc *sc, bool q) {
+    ptg_stack_push(&(sc->check.answers), &q);
 }
 
-bool load_bool() {
+bool load_bool(ptg_sc *sc) {
     if (sc->check.answers.count > 0) {
-        return *(bool*)m_stack_pop(&(sc->check.answers));
+        return *(bool*)ptg_stack_pop(&(sc->check.answers));
     } else {
         fprintf(stderr, "error: no answers have been saved.\n");
         exit(EXIT_FAILURE);
     }
 }
 
-void new_counter() {
+void new_counter(ptg_sc *sc) {
     int q = 0;
-    m_stack_push(&(sc->check.counters), &q);
+    ptg_stack_push(&(sc->check.counters), &q);
 }
 
-int count() {
+int count(ptg_sc *sc) {
     if (sc->check.counters.count > 0) {
-        return *(int*)m_stack_pop(&(sc->check.counters));
+        return *(int*)ptg_stack_pop(&(sc->check.counters));
     } else {
         fprintf(stderr, "error: no counters have been saved.\n");
         exit(EXIT_FAILURE);
     }
 }
 
-int inc_counter() {
+int inc_counter(ptg_sc *sc) {
     if (sc->check.counters.count > 0) {
-        ++(*(int*)m_stack_tos(sc->check.counters));
+        ++(*(int*)ptg_stack_tos(sc->check.counters));
     } else {
         fprintf(stderr, "error: no counters have been saved.\n");
         exit(EXIT_FAILURE);
     }
 }
 
-#define ptg_tokret(val) do {\
+/*#define ptg_tokret(sc, val) do {\
     sc->prog.lasttok = (val);\
 	printf("%s, %s.\n", ptgenum_string(val), ptg_lexeme());\
     return (val);\
+} while(0);*/
+
+#define ptg_tokret(val) do {\
+    sc->prog.lasttok = (val);\
+    return (val);\
 } while(0);
 
-char* ptg_lexeme()
+char* ptg_lexeme(ptg_sc *sc)
 {
 	int len = sc->ptr - sc->spt; 
     char *res = (char*)malloc((len + 1) * sizeof(char));
-    fseek(ptg_infile, sc->spt + 1, SEEK_SET);
+    fseek(sc->file, sc->spt + 1, SEEK_SET);
     for (int i = 0; i < len; ++i)
-        res[i] = fgetc(ptg_infile);
+        res[i] = fgetc(sc->file);
     
     res[len] = '\0';
-    fseek(ptg_infile, sc->ptr, SEEK_SET);
+    fseek(sc->file, sc->ptr, SEEK_SET);
     return res;
 }
 
-#define ptgvrberr(...) do {\
+#define ptgvrberr(sc, ...) do {\
     fprintf(stderr, __VA_ARGS__);\
-    fprintf(stderr, " %s at (%d:%d)\n", ptg_lexeme(), sc->line, sc->column);\
+    fprintf(stderr, " %s at (%d:%d)\n", ptg_lexeme(sc), sc->line, sc->column);\
     exit(EXIT_FAILURE);\
 } while (0)
 
 ptgenum
-ptglex()
+ptglex(ptg_sc* sc)
 {
     int ch;
     int jmp;
     int bptr;
-    if (sc == NULL)
-    {
-        sc = (ptg_sc*)malloc(sizeof(ptg_sc));
-
-        sc->line   = 0;
-        sc->ptr    = -1;
-        sc->column = 0;
-        sc->spt    = -1;
-        sc->ateof  = false;
-
-        sc->prog.chbuf  = m_stack_init(char);
-        sc->prog.tokbuf = m_stack_init(ptgenum);
-
-        sc->check.seeks    = m_stack_init(int);
-        sc->check.answers  = m_stack_init(bool);
-        sc->check.counters = m_stack_init(int);
-    }
 
     if (sc->prog.tokbuf.count > 0) {
-        ptgenum tok = *(ptgenum*)m_stack_pop(&(sc->prog.tokbuf));
+        ptgenum tok = *(ptgenum*)ptg_stack_pop(&(sc->prog.tokbuf));
         return tok;
     }
 
-    m_stack_clear(&(sc->check.seeks));
-    m_stack_clear(&(sc->check.answers));
-    m_stack_clear(&(sc->check.counters));
+    ptg_stack_clear(&(sc->check.seeks));
+    ptg_stack_clear(&(sc->check.answers));
+    ptg_stack_clear(&(sc->check.counters));
 
-    save_pos();
+    save_pos(sc);
 /* stop */
-    sc->ptr--;
-    update_pos();
     sc->spt = sc->ptr;
 
     while (1)
@@ -355,8 +237,8 @@ ptglex()
     }
 }
 
-void ptgunlex(ptgenum tok) {
-    m_stack_push(&(sc->prog.tokbuf), &tok);
+void ptgunlex(ptg_sc *sc, ptgenum tok) {
+    ptg_stack_push(&(sc->prog.tokbuf), &tok);
 }
 
 /* stop */
@@ -417,11 +299,11 @@ ptg_table_init()
     return table;
 }
 
-ptgast* ptg_parse()
+ptgast* ptg_parse(ptg_sc *sc)
 {
     // stacks
-    m_stack nodes  = m_stack_init(ptgast*);
-    m_stack states = m_stack_init(int);
+    ptg_stack nodes  = ptg_stack_init(ptgast*);
+    ptg_stack states = ptg_stack_init(int);
 
     // table stuff
     ptg_tdata next   = {0};
@@ -434,8 +316,8 @@ ptgast* ptg_parse()
     ptgast* newast = NULL;
     
     // parser initialization
-    a = ptglex();
-    m_stack_push(&states, &state);
+    a = ptglex(sc);
+    ptg_stack_push(&states, &state);
 
     while (1)
     {
@@ -444,7 +326,7 @@ ptgast* ptg_parse()
             exit(EXIT_FAILURE);
         }
 
-        state  = *(int*)m_stack_tos(states);
+        state  = *(int*)ptg_stack_tos(states);
         newast = NULL;
         next   = ptg_table_next(table, state, a);
 
@@ -452,18 +334,18 @@ ptgast* ptg_parse()
         {
             case PTGSHIFT:
                 // push state to stack
-                m_stack_push(&states, &(next.op.shift));
+                ptg_stack_push(&states, &(next.op.shift));
 
                 // create new ast, which is an ATOM
                 newast = (ptgast*)malloc(sizeof(ptgast));
                 newast->id = PTGASTATOM;
-                newast->op.atom = ptg_lexeme();
+/* stop */
 
                 // push new ast
-                m_stack_push(&nodes, &newast);
+                ptg_stack_push(&nodes, &newast);
                 
                 // get new token
-                a = ptglex();
+                a = ptglex(sc);
 
                 // break
                 break;
@@ -476,15 +358,15 @@ ptgast* ptg_parse()
                 }
 
                 // push ast
-                m_stack_push(&nodes, &newast);
+                ptg_stack_push(&nodes, &newast);
 
                 // pop states
                 for (int i = 0; i < next.op.reduce.count; ++i)
-                    m_stack_pop(&states);
+                    ptg_stack_pop(&states);
 
                 // simulate goto step
                 tmpa  = next.op.reduce.lhs_tok;
-                state = *(int*)m_stack_tos(states);
+                state = *(int*)ptg_stack_tos(states);
                 next  = ptg_table_next(table, state, tmpa);
                 
                 // if goto step fails, error (of course)
@@ -494,15 +376,15 @@ ptgast* ptg_parse()
                 }
                 
                 // otherwise, push goto state
-                m_stack_push(&states, &(next.op.sgoto));
+                ptg_stack_push(&states, &(next.op.sgoto));
                 break;
 
             case PTGGOTO:
-                m_stack_push(&states, &(next.op.sgoto));
+                ptg_stack_push(&states, &(next.op.sgoto));
                 break;
 
             case PTGACCEPT:
-                newast = *(ptgast**)m_stack_pop(&nodes);
+                newast = *(ptgast**)ptg_stack_pop(&nodes);
                 return newast;
 
             case PTG_ERROR:
@@ -514,26 +396,17 @@ ptgast* ptg_parse()
 
 #define SPACING_COUNT 2
 
-#define addspacing(str, compt) do {\
+#define addspacing(compt) do {\
 	for (int i = 0; i < (compt)*SPACING_COUNT; ++i)\
-		m_string_push((str), ' ');\
+		putchar(' ');\
 } while (0);
 
-char* ptgast_str(ptgast* ast, int INDENT)
+void ptgast_str(ptgast* ast, int INDENT)
 {
-    char* tmp;
-    m_string str;
-    str = m_string_init();
-
     if (ast)
     {
-        switch (ast->id)
-        {
 /* stop */
-        }
     }
-
-    return m_string_get(&str);
 }
 
 // this is for testing scanner
@@ -544,20 +417,13 @@ int main(int argc, char** argv)
 		return EXIT_FAILURE;
 	}
 
-	ptg_infile = fopen(argv[1], "r");
-	if (ptg_infile == NULL) {
-		fprintf(stderr, "couldn't open file.\n");
-		return EXIT_FAILURE;
-	}
+    ptg_sc *sc;
+    ptgenum tok;
+    ptgast* ast;
 
-	/*ptgenum tok;
-	do {
-		tok = ptglex();
-	} while (tok != P_TOK_END);*/
-
-	ptgast* ast;
-	ast = ptg_parse();
-    if (ast) printf(ptgast_str(ast, 0));
+    sc  = ptg_sc_init(argv[1]);
+    ast = ptg_parse(sc);
+    ptgast_str(ast, 0);
 
 	return EXIT_SUCCESS;
 }

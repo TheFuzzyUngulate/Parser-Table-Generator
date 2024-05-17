@@ -60,19 +60,9 @@ int main(int argc, char **argv)
     // get alphabet
     auto alphabet = proc.get_alphabet();
 
-    // if our ateof is not in alphabet, throw error
-    if (sc->sdir().ateof != "") {
-        if (alphabet.find("#" + sc->sdir().ateof) == alphabet.end()) {
-            run_error("ateof argument must be a valid token");
-        }
-    }
-
     // add all tokens, even unused ones
     for (auto tok : pr->scitems()) {
-        alphabet.insert("#" + std::get<0>(tok));
-        for (auto sub : std::get<2>(tok)) {
-            alphabet.insert("#" + sub.first);
-        }
+        alphabet.insert("#" + tok.name);
     }
 
     // new handlefinder stuff
@@ -93,22 +83,10 @@ int main(int argc, char **argv)
     if (flags.PRODUCE_GENERATOR) 
     {
         // change regexes to tuple list    
-        deque<reglit> regexes;
+        deque<pair<reglit, string>> regexes;
         auto fake = pr->scitems();
-        for (auto item : fake) 
-        {
-            regopts opts;
-            for (auto q : std::get<2>(item)) {
-                opts.push_front({
-                    q.first,
-                    re_conv(q.second, 0)
-                });
-            }
-            regexes.push_back({
-                std::get<0>(item),
-                re_conv(std::get<1>(item), 0),
-                opts
-            });
+        for (auto item : fake) {
+            regexes.push_back({item, re_conv(item.regstr, 0)});
         }
         
         CodeGenerator cgen = CodeGenerator(&hfind, alphabet, sc->sdir(), res, regexes, flags.output_file);

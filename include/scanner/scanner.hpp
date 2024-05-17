@@ -17,9 +17,16 @@
 using std::cout, std::cerr, std::string, std::vector, std::make_pair;
 
 enum Tokens {
-    LIT = 0,
+    ID,
+    COLON,
+    COMMA,
+    LIT,
     ARROW,
     BREAK,
+    SKIP,
+    GOTO,
+    IN,
+    AFTER,
     EMPTY,
     BAR,
     TOK,
@@ -31,32 +38,50 @@ enum Tokens {
     NEWLINE,
     ENDFILE,
     START,
+    START1,
     RULE,
+    OPTS,
     RULES,
     RULES1,
-    RULESEL
+    RULESEL,
+    COMS,
+    COMS1,
+    COMM
 };
 
 inline const char* tokname(int tok) {
-    switch(tok) {
+    switch (tok)
+    {
+        case Tokens::ID: return "id";
+        case Tokens::COLON: return ":";
+        case Tokens::COMMA: return ",";
         case Tokens::LIT: return "lit";
+        case Tokens::ARROW: return "=>";
+        case Tokens::BREAK: return "break";
+        case Tokens::SKIP: return "skip";
+        case Tokens::GOTO: return "goto";
+        case Tokens::IN: return "in";
+        case Tokens::AFTER: return "after";
+        case Tokens::EMPTY: return "empty";
+        case Tokens::BAR: return "|";
         case Tokens::TOK: return "tok";
         case Tokens::LOPT: return "[";
         case Tokens::ROPT: return "]";
         case Tokens::LREP: return "{";
         case Tokens::RREP: return "}";
-        case Tokens::ARROW: return "=>";
-        case Tokens::BREAK: return "linebreak";
-        case Tokens::EMPTY: return "empty";
-        case Tokens::ENDFILE: return "EOF";
-        case Tokens::BAR: return "|";
-        case Tokens::START: return "$start";
-        case Tokens::RULE: return "$rule";
-        case Tokens::RULES: return "$rules";
-        case Tokens::RULES1: return "$rules\'";
-        case Tokens::RULESEL: return "$rule_element";
-        case Tokens::NEWLINE: return "newline";
         case Tokens::STRING: return "string";
+        case Tokens::NEWLINE: return "newline";
+        case Tokens::ENDFILE: return "EOF";
+        case Tokens::START: return "$START";
+        case Tokens::START1: return "$START\'";
+        case Tokens::OPTS: return "$OPTS";
+        case Tokens::RULE: return "$RULE";
+        case Tokens::RULES: return "$RULES";
+        case Tokens::RULES1: return "$RULES\'";
+        case Tokens::RULESEL: return "$RULSEL";
+        case Tokens::COMS: return "$COMS";
+        case Tokens::COMS1: return "$COMS\'";
+        case Tokens::COMM: return "$COMM";
         default:
             std::cerr << "Unknown token\n";
             exit(-1);

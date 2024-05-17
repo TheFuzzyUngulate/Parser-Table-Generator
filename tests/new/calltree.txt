@@ -1,13 +1,12 @@
-LPAR      \(
-RPAR      \)
-STRING    "([\w!#-&\(-\[\]-\}]|\\[tnr"'])*"
-INTEGER   [0-9]+
-ID        [A-Za-z]+
-COMMA     ,
-DOT       .
+LPAR    :  "\(" ;
+RPAR    :  "\)" ;
+STRING  :  "\"([ !#-&\(-\[\]-}]|\\[tnr\"\'])*\"" ;
+INTEGER :  "[0-9]+" ;
+ID      :  "[A-Za-z]+" ;
+COMMA   :  "," ;
+SPACE   :  "[ \t\r\n]" , skip ;
 
 %%
-
 %start expr
 
 expr => STRING

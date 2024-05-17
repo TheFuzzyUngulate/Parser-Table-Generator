@@ -17,23 +17,62 @@ ptgenum_string(ptgenum tok) {
 /* stop */
 }
 
-static FILE* ptg_infile = NULL;
+typedef struct
+ptg_stack
+{
+    int    count;
+    size_t size;
+    void*  content;
+    int    capacity;
+}
+ptg_stack;
 
-char* ptg_lexeme();
-ptgenum ptglex();
-void ptgunlex(ptgenum tok);
+typedef struct
+ptg_sc
+{
+    int ptr;               // moving file pointer
+    int spt;               // static file lexeme
+    int state;             // scanner state
+    bool ateof;            // detect whether reached EOF
+    FILE* file;            // pointer to file
+    unsigned int line;     // current line number
+    unsigned int column;   // current column number
+    struct {
+        ptg_stack chbuf;     // unget buffer
+        ptg_stack tokbuf;    // unlex buffer
+        ptgenum lasttok;     // last token returned by lex
+    } prog;
+    struct {
+        ptg_stack seeks;     // saved positions for seek
+        ptg_stack answers;   // saved answers for answer checking
+        ptg_stack counters;  // saved counters for future updates
+    } check;
+}
+ptg_sc;
+
+ptgenum ptglex(ptg_sc*);
+char* ptg_lexeme(ptg_sc*);
+void ptgunlex(ptg_sc*, ptgenum);
+ptg_sc* ptg_sc_init(const char*);
 
 typedef struct ptgast {
     enum {
 /* stop */
         PTGASTATOM
     } id;
-    union {
-        char* atom;
 /* stop */
-    } op;
 } ptgast;
 
-char* ptgast_str(ptgast*, int);
+static inline char*
+ptgast_type(ptgast* ast)
+{
+    switch (ast->id)
+    {
+/* stop */
+    }
+}
+
+ptgast* ptg_parse(ptg_sc*);
+void ptgast_str(ptgast*, int);
 
 #endif

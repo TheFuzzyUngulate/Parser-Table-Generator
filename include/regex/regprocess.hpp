@@ -34,73 +34,75 @@ static inline void re_comp_print(struct re_comp*, int);
 } while (0);
 
 typedef enum re_tk {
-	P_START_LIT,
-	P_TOK_END,
-	P_LIT_re,
-	P_LIT_exp,
-	P_LIT_re_BAR,
 	P_TOK_BAR,
-	P_LIT_msub,
-	P_LIT_exp_BAR,
-	P_LIT_sub,
-	P_LIT_msub_BAR,
-	P_TOK_QUESTION,
-	P_TOK_PLUS,
-	P_TOK_TIMES,
-	P_LIT_elm,
-	P_TOK_LBRACK,
-	P_LIT_slc,
-	P_TOK_RBRACK,
-	P_TOK_LPAREN,
-	P_TOK_RPAREN,
-	P_LIT_fch,
 	P_TOK_CAP,
-	P_TOK_MINUS,
-	P_TOK_DOT,
-	P_LIT_esc,
-	P_TOK_SLASH,
-	P_TOK_NEWLINE_CHAR,
+	P_TOK_CHAR,
 	P_TOK_CRETURN_CHAR,
+	P_TOK_DOT,
+	P_TOK_LBRACE,
+	P_TOK_LBRACK,
+	P_TOK_LPAREN,
+	P_TOK_MINUS,
+	P_TOK_NEWLINE_CHAR,
+	P_TOK_PLUS,
+	P_TOK_QUESTION,
+	P_TOK_RBRACK,
+	P_TOK_RPAREN,
+	P_TOK_SLASH,
 	P_TOK_TABULATE_CHAR,
-	P_LIT_sli,
+	P_TOK_TIMES,
+	P_TOK_ZERO,
+	P_TOK_END,
+	P_START_LIT,
+	P_LIT_elm,
+	P_LIT_esc,
+	P_LIT_exp,
+	P_LIT_exp_BAR,
+	P_LIT_fch,
+	P_LIT_msub,
+	P_LIT_re,
+	P_LIT_re_BAR,
+	P_LIT_slc,
 	P_LIT_slc_BAR,
-	P_TOK_CHAR
+	P_LIT_sli,
+	P_LIT_sub
 } re_tk;
 
 static inline const char*
 re_tk_string(re_tk tok) {
 	switch (tok) {
-		case P_START_LIT: return "S*";
-		case P_TOK_END: return "$";
-		case P_LIT_re: return "re";
-		case P_LIT_exp: return "exp";
-		case P_LIT_re_BAR: return "re'";
 		case P_TOK_BAR: return "#BAR";
-		case P_LIT_msub: return "msub";
-		case P_LIT_exp_BAR: return "exp'";
-		case P_LIT_sub: return "sub";
-		case P_LIT_msub_BAR: return "msub'";
-		case P_TOK_QUESTION: return "#QUESTION";
-		case P_TOK_PLUS: return "#PLUS";
-		case P_TOK_TIMES: return "#TIMES";
-		case P_LIT_elm: return "elm";
-		case P_TOK_LBRACK: return "#LBRACK";
-		case P_LIT_slc: return "slc";
-		case P_TOK_RBRACK: return "#RBRACK";
-		case P_TOK_LPAREN: return "#LPAREN";
-		case P_TOK_RPAREN: return "#RPAREN";
-		case P_LIT_fch: return "fch";
 		case P_TOK_CAP: return "#CAP";
-		case P_TOK_MINUS: return "#MINUS";
-		case P_TOK_DOT: return "#DOT";
-		case P_LIT_esc: return "esc";
-		case P_TOK_SLASH: return "#SLASH";
-		case P_TOK_NEWLINE_CHAR: return "#NEWLINE_CHAR";
-		case P_TOK_CRETURN_CHAR: return "#CRETURN_CHAR";
-		case P_TOK_TABULATE_CHAR: return "#TABULATE_CHAR";
-		case P_LIT_sli: return "sli";
-		case P_LIT_slc_BAR: return "slc'";
 		case P_TOK_CHAR: return "#CHAR";
+		case P_TOK_CRETURN_CHAR: return "#CRETURN_CHAR";
+		case P_TOK_DOT: return "#DOT";
+		case P_TOK_LBRACE: return "#LBRACE";
+		case P_TOK_LBRACK: return "#LBRACK";
+		case P_TOK_LPAREN: return "#LPAREN";
+		case P_TOK_MINUS: return "#MINUS";
+		case P_TOK_NEWLINE_CHAR: return "#NEWLINE_CHAR";
+		case P_TOK_PLUS: return "#PLUS";
+		case P_TOK_QUESTION: return "#QUESTION";
+		case P_TOK_RBRACK: return "#RBRACK";
+		case P_TOK_RPAREN: return "#RPAREN";
+		case P_TOK_SLASH: return "#SLASH";
+		case P_TOK_TABULATE_CHAR: return "#TABULATE_CHAR";
+		case P_TOK_TIMES: return "#TIMES";
+		case P_TOK_ZERO: return "#ZERO";
+		case P_TOK_END: return "$";
+		case P_START_LIT: return "S*";
+		case P_LIT_elm: return "elm";
+		case P_LIT_esc: return "esc";
+		case P_LIT_exp: return "exp";
+		case P_LIT_exp_BAR: return "exp'";
+		case P_LIT_fch: return "fch";
+		case P_LIT_msub: return "msub";
+		case P_LIT_re: return "re";
+		case P_LIT_re_BAR: return "re'";
+		case P_LIT_slc: return "slc";
+		case P_LIT_slc_BAR: return "slc'";
+		case P_LIT_sli: return "sli";
+		case P_LIT_sub: return "sub";
 		default: return "?";
 	}
 }

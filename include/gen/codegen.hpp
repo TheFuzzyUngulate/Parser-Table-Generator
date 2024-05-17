@@ -17,7 +17,7 @@ typedef std::deque<std::deque<std::pair<int, Rule*>>> astsorting;
 
 class CodeGenerator {
     public:
-        CodeGenerator(HandleFinder *h, std::set<std::string> alphabet, s_dirs dirs, deque<Rule*> rules, deque<reglit> regexes, std::string filename) {
+        CodeGenerator(HandleFinder *h, std::set<std::string> alphabet, s_dirs dirs, deque<Rule*> rules, deque<pair<reglit, string>> regexes, std::string filename) {
             _hf         = h;
             _fname      = filename;
             _rules      = rules;
@@ -35,7 +35,7 @@ class CodeGenerator {
                     _elementtoks[x] = "P_START_LIT";
                 else {
                     if (x.at(0) == '#') {
-                        if (islit(x.substr(1)))
+                        if (islit(x))
                             _elementtoks[x] = "P_TOK_" + x.substr(1);
                         else _elementtoks[x] = "P_TOK_" + std::to_string(tokcount++);
                     }
@@ -64,7 +64,7 @@ class CodeGenerator {
         std::string _fname;
         deque<Rule*> _rules;
         s_dirs _directives;
-        deque<reglit> _regexes;
+        deque<pair<reglit, string>> _regexes;
         astsorting _astgroups;
         std::deque<std::string> _astgroupnames;
         std::set<std::string> _elements;

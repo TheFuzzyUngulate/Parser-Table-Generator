@@ -1,15 +1,11 @@
-a        a|A
-b        b|B
-plus     \+
+plus  : "\+" ;
+a     : "a|A" ;
+b     : "b|B" ;
+space : "[ \t\r\n]" , skip ;
 
 %%
-
 %start E
 
-%ignore \w
-
 E  => T T_ ;
-
 T  => a | b ;
-
 T_ => [ plus T T_ ] ;

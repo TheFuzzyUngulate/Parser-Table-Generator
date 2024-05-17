@@ -99,7 +99,6 @@ void CodeGenerator::generate()
     std::string line;
     std::string name;
     std::string regex;
-    regopts subst;
     std::string delim;
     std::ifstream templ;
     std::ofstream ofile;
@@ -171,50 +170,77 @@ void CodeGenerator::generate()
 
             case 3:
             {
-                /* loop through all groupings */
-                for (i = 0; i < _astgroups.size(); ++i) {
-                    auto groupitm = _astgroups[i][0].second;
-                    auto rhsitems = groupitm->getRight()->getChildren();
+                if (_directives.treeimpl == "union")
+                {
+                    /* declare it as a union */
+                    ofile << "\tunion {\n\t\tchar* atom;\n";
 
-                    /* if singleton, use either ptgast or string datatype */
-                    if (rhsitems.size() == 1) {
-                        auto single = rhsitems[0];
-                        if (single->getId() != "empty") {
-                            if (single->getId() == "lit") {
-                                auto singlit = (Literal*)single;
-                                ofile << "\t\tstruct ptgast* " << _astgroupnames[i] << ";\n";
-                            }
-                            else 
-                            if (single->getId() == "tok") {
-                                auto singlit = (Literal*)single;
-                                ofile << "\t\tchar* " << _astgroupnames[i] << ";\n";
-                            }
-                        }
-                    }
+                    /* loop through all groupings */
+                    for (i = 0; i < _astgroups.size(); ++i) {
+                        auto groupitm = _astgroups[i][0].second;
+                        auto rhsitems = groupitm->getRight()->getChildren();
 
-                    /* otherwise, you have to create a compound struct */
-                    else {
-                        ofile << "\t\tstruct {\n";
-
-                        int tokcount  = 0;
-                        int nodecount = 0;
-
-                        for (auto rhsitem : rhsitems)
-                        {
-                            if (rhsitem->getId() == "lit") {
-                                auto singlit = (Literal*)rhsitem;
-                                ofile << "\t\t\tstruct ptgast* node" << std::to_string(nodecount++) << ";\n";
-                            }
-                            else 
-                            if (rhsitem->getId() == "tok") {
-                                auto singlit = (Literal*)rhsitem;
-                                ofile << "\t\t\tchar* tok" << std::to_string(tokcount++) << ";\n";
+                        /* if singleton, use either ptgast or string datatype */
+                        if (rhsitems.size() == 1) {
+                            auto single = rhsitems[0];
+                            if (single->getId() != "empty") {
+                                if (single->getId() == "lit") {
+                                    auto singlit = (Literal*)single;
+                                    ofile << "\t\tstruct ptgast* " << _astgroupnames[i] << ";\n";
+                                }
+                                else 
+                                if (single->getId() == "tok") {
+                                    auto singlit = (Literal*)single;
+                                    ofile << "\t\tchar* " << _astgroupnames[i] << ";\n";
+                                }
                             }
                         }
 
-                        ofile << "\t\t} " << _astgroupnames[i] << ";\n";
+                        /* otherwise, you have to create a compound struct */
+                        else {
+                            ofile << "\t\tstruct {\n";
+
+                            int tokcount  = 0;
+                            int nodecount = 0;
+
+                            for (auto rhsitem : rhsitems)
+                            {
+                                if (rhsitem->getId() == "lit") {
+                                    auto singlit = (Literal*)rhsitem;
+                                    ofile << "\t\t\tstruct ptgast* node" << std::to_string(nodecount++) << ";\n";
+                                }
+                                else 
+                                if (rhsitem->getId() == "tok") {
+                                    auto singlit = (Literal*)rhsitem;
+                                    ofile << "\t\t\tchar* tok" << std::to_string(tokcount++) << ";\n";
+                                }
+                            }
+
+                            ofile << "\t\t} " << _astgroupnames[i] << ";\n";
+                        }
                     }
+
+                    ofile << "\t} op;\n";
+
+                } else if (_directives.treeimpl == "" || _directives.treeimpl == "list")
+                {
+                    ofile << "\tchar* value;\n";
+                    ofile << "\tunsigned int count;\n";
+                    ofile << "\tstruct ptgast **children;\n";
                 }
+
+                /* break state */
+                break;
+            }
+
+            case 4:
+            {
+                for (i = 0; i < _astgroups.size(); ++i) {
+                    ofile << "\t\tcase PTGAST_" << _astgroupnames[i] << ": ";
+                    ofile << "return \"" << _astgroupnames[i] << "\";\n";
+                }
+                ofile << "\t\tcase PTGASTATOM: return \"atom\";\n";
+                ofile << "\t\tdefault: return \"unknown\";\n";
             }
         }
 
@@ -255,8 +281,8 @@ void CodeGenerator::generate()
                 {
                     i = 0;
                     ofile << "\tdo {\n";
-                    ofile << "\t\tch = scan();\n";
-                    ofile << "\t\tupdate_pos();\n";
+                    ofile << "\t\tch = scan(sc);\n";
+                    ofile << "\t\tupdate_pos(sc);\n";
                     ofile << "\t} while (ch != EOF && (";
                     for (auto gno : _directives.ignored)
                     {
@@ -266,6 +292,8 @@ void CodeGenerator::generate()
                         else ofile << " || ";
                         i++;
                     }
+                    ofile << "\tsc->ptr--;\n";
+                    ofile << "\tupdate_pos(sc);\n";
                 }
 
                 /* break state */
@@ -275,78 +303,96 @@ void CodeGenerator::generate()
             case 2:
             {
                 /* set initial statement */
-                ofile << "\t\tif (scan() == EOF) {\n";
-                
-                if (_directives.ateof.empty())
-                {
-                    ofile << "\t\t\tptg_tokret(P_TOK_END);\n";
-                }
-                else
-                {
-                    ofile << "\t\t\tif (!sc->ateof) {\n";
-                    ofile << "\t\t\t\tsc->ateof = true;\n";
-                    ofile << "\t\t\t\tptgunlex(P_TOK_END);\n";
-                    ofile << "\t\t\t\tptg_tokret(" << _elementtoks["#" + _directives.ateof] << ");\n";
-                    ofile << "\t\t\t} else ptg_tokret(P_TOK_END);\n";
-                }
-                
-                ofile << "\t\t} else get_pos();\n\n";
+                /*ofile << "\t\tif (scan(sc) == EOF) {\n";
+                ofile << "\t\t\tptg_tokret(P_TOK_END);\n";
+                ofile << "\t\t} else get_pos(sc);\n\n";*/
 
-                /* generate string statements */
+                /* create map containing states */
+                int scount = 0;
+                std::map<string, int> states;
+                states["INITIAL"] = scount++;
+                std::map<string, deque<pair<reglit, string>>> stategroups;
+
                 for (i = 0; i < _regexes.size(); ++i)
                 {
-                    /* get item */
-                    auto item = _regexes[i];
-
-                    /* get items and values */
-                    name  = std::get<0>(item);
-                    regex = std::get<1>(item);
-                    subst = std::get<2>(item);
-
-                    /* convert string to input string stream */
-                    std::string innerline;
-                    std::istringstream iss(regex);
-                    
-                    /* C code in regex should be printed line by line */
-                    while (std::getline(iss, innerline)) {
-                        ofile << "\t\t" << innerline << "\n";
-                    }
-
-                    /* return if positive, else keep going */
-                    ofile << "\t\tif (load_bool()) {\n";
-                    
-                    /* handle, possibly, subset types */
-                    if (subst.size() > 0) 
-                    {
-                        ofile << "\t\t\tjmp = sc->ptr;\n";
-
-                        for (auto opt : subst)
-                        {
-                            ofile << "\t\t\tget_pos();\n";
-
-                            iss.clear();
-                            innerline.clear();
-                            iss = std::istringstream(opt.second);
-
-                            while (std::getline(iss, innerline)) {
-                                ofile << "\t\t\t" << innerline << "\n";
-                            } 
-                            
-                            ofile << "\t\t\tif (load_bool() && (jmp == sc->ptr))\n";
-                            ofile << "\t\t\t\tptg_tokret(" << _elementtoks["#" + opt.first] << ")\n";
-                        }
-                        
-                        ofile << "\t\t\tsc->ptr = jmp;\n";
-                    }
-                    
-                    /* in any case, give the option of returning the suitable token */
-                    ofile << "\t\t\tptg_tokret(" << _elementtoks["#" + name] << ")\n\t\t} ";
-
-                    /* behavior here varies depending on whether this is the last */
-                    if (i < _regexes.size() - 1) {
-                        ofile << "else get_pos();\n\n";
-                    } else ofile << "else ptgvrberr(\"invalid character found\");\n";
+                    auto item = _regexes[i].first;
+                    auto code = _regexes[i].second;
+                    if (!item.state.empty()) {
+                        if (states.find(item.state) == states.end()) {
+                            states[item.state] = scount++;
+                            stategroups[item.state] = {{item, code}};
+                        } else stategroups[item.state].push_back({item, code});
+                    } else stategroups["INITIAL"].push_back({item, code});
                 }
+                
+                ofile << "\t\tswitch (sc->state)\n\t\t{\n";
+
+                for (auto stategroup : stategroups)
+                {
+                    bool foundeof = false;
+
+                    ofile << "\t\t\tcase " << states[stategroup.first] << ":\n\t\t\t{\n";
+
+                    for (int i = 0; i < stategroup.second.size(); ++i)
+                    {
+                        /* get item */
+                        auto item = stategroup.second[i].first;
+                        auto code = stategroup.second[i].second;
+
+                        /* if regex string you see is '\0' specifically, then eof was found */
+                        if (item.regstr == "\\0") 
+                            foundeof = true;
+
+                        std::string inner;
+                        std::istringstream iss(code);
+
+                        while (std::getline(iss, inner)) {
+                            ofile << "\t\t\t\t" << inner << "\n";
+                        }
+
+                        inner.clear();
+                        iss.clear();
+
+                        /* return if positive, else keep going */
+                        ofile << "\t\t\t\tif (load_bool(sc)) {\n";
+
+                        /* if it asks you to go to another state, do that */
+                        if (item.newstate != "")
+                            ofile << "\t\t\t\t\tsc->state = " << states[stategroup.first] << ";\n";
+
+                        /* if it asks you to save anything, do that */
+                        if (item.pretok != "") {
+                            ofile << "\t\t\t\t\tptgunlex(sc, " << _elementtoks["#" + item.name] << ");\n";
+                            ofile << "\t\t\t\t\tptg_tokret(" << _elementtoks["#" + item.pretok] << ");\n";
+                        } else {
+                            if (!item.skip)
+                                ofile << "\t\t\t\t\tptg_tokret(" << _elementtoks["#" + item.name] << ");\n";
+                            else {
+                                ofile << "\t\t\t\t\tupdate_pos(sc);\n";
+                                ofile << "\t\t\t\t\tsc->spt = sc->ptr;\n";
+                                ofile << "\t\t\t\t\tbreak;\n";
+                            }
+                        }
+
+                        /* behavior here varies depending on whether this is the last */
+                        if (i < stategroup.second.size() - 1) {
+                            ofile << "\t\t\t\t} else get_pos(sc);\n\n";
+                        }
+                    }
+
+                    /* set EOF statement if none given */
+                    if (!foundeof) {
+                        ofile << "\t\t\t\t} else get_pos(sc);\n\n";
+                        ofile << "\t\t\t\tif (scan(sc) == EOF) {\n";
+                        ofile << "\t\t\t\t\tptg_tokret(P_TOK_END);\n";
+                    }
+
+                    ofile << "\t\t\t\t} else ptgvrberr(sc, \"invalid character found\");\n\n";
+                    ofile << "\t\t\t\tbreak;\n";
+                    ofile << "\t\t\t}\n";
+                }
+                
+                ofile << "\t\t}\n";
 
                 /* break state */
                 break;
@@ -463,6 +509,21 @@ void CodeGenerator::generate()
 
             case 5:
             {
+                if (_directives.treeimpl == "union") {
+                    ofile << "\t\t\t\tnewast->op.atom = ptg_lexeme(sc);\n";
+                }
+                else if (_directives.treeimpl == "list" || _directives.treeimpl == "") {
+                    ofile << "\t\t\t\tnewast->value = ptg_lexeme(sc);\n";
+                    ofile << "\t\t\t\tnewast->count = 0;\n";
+                    ofile << "\t\t\t\tnewast->children = NULL;\n";
+                }
+
+                /* break state */
+                break;
+            }
+
+            case 6:
+            {
                 /* loop through all rules */
                 for (i = 0; i < _rules.size(); ++i)
                 {
@@ -494,7 +555,7 @@ void CodeGenerator::generate()
 
                         /* write gets for everything in rhs from nodestack IN REVERSE ORDER */
                         for (j = rhsitems.size() - 1; j >= 0; j--) {
-                            ofile << "\t\t\t\t\t\tptgast* newast" << j << " = *(ptgast**)m_stack_pop(&nodes);\n";
+                            ofile << "\t\t\t\t\t\tptgast* newast" << j << " = *(ptgast**)ptg_stack_pop(&nodes);\n";
                         }
 
                         /* if there is only one rhs, and its child is lit, and directives is nocollapse */
@@ -509,101 +570,165 @@ void CodeGenerator::generate()
                             /* aesthetic newline and newast type declaration */
                             ofile << "\t\t\t\t\t\tnewast->id = PTGAST_" << gname << ";\n";
 
-                            /* if there is only one rhs item, it is stored as a singleton, if you recall */
-                            if (rhsitems.size() == 1)
-                            {
-                                auto rhsitem = rhsitems[0];
-                                if (rhsitem->getId() == "lit") {
-                                    ofile << "\t\t\t\t\t\tnewast->op." << gname << " = newast0;\n";
-                                }
-                                else if (rhsitem->getId() == "tok") {
-                                    ofile << "\t\t\t\t\t\tnewast->op." << gname << " = newast0->op.atom;\n";
-                                }
-                            }
+                            /* if mode being used is union mode, it's quite the involved ordeal */
 
-                            else
+                            if (_directives.treeimpl == "union")
                             {
-                                /** store and maintain the tallies
-                                int tokcount  = 0;
-                                int nodecount = 0;
-\
-                                for (j = 0; j < rhsitems.size(); ++j) 
+                                /* if there is only one rhs item, it is stored as a singleton, if you recall */
+                                if (rhsitems.size() == 1)
                                 {
-                                    auto rhsitem = rhsitems[j];
-                                    
-                                    ofile << "\t\t\t\t\t\tnewast->op." << gname << ".";
+                                    auto rhsitem = rhsitems[0];
                                     if (rhsitem->getId() == "lit") {
-                                        ofile << "node" << nodecount++ << " = newast" << j << ";\n";
+                                        ofile << "\t\t\t\t\t\tnewast->op." << gname << " = newast0;\n";
                                     }
                                     else if (rhsitem->getId() == "tok") {
-                                        ofile << "tok" << tokcount++ << " = newast" << j << "->op.atom;\n";
-                                    }
-                                }*/
-
-                                if (_directives.nodecollapse)
-                                {
-                                    /* newline for aesthetic reasons */
-                                    ofile << "\n\t\t\t\t\t\t";
-
-                                    /* for each item, if it is the only non-null, change newast to it */
-                                    for (j = 0; j < rhsitems.size(); ++j)
-                                    {
-                                        auto rhsitem = rhsitems[j];
-
-                                        ofile << "if (newast" << j << " && ";
-                                        
-                                        for (k = 0; k < rhsitems.size(); ++k) {
-                                            if (k == j) continue;
-                                            auto rhsitem2 = rhsitems[k];
-                                            ofile << "!newast" << k << ((k == rhsitems.size() - 1 || (j == rhsitems.size() - 1 && k == rhsitems.size() - 2)) ? "" : " && ");
-                                        }
-
-                                        ofile << ") newast = newast" << j << ";\n\t\t\t\t\t\telse ";
-
-                                        if (j == rhsitems.size() - 1) 
-                                        {
-                                            ofile << "{\n";
-
-                                            int tokcount = 0;
-                                            int nodecount = 0;
-
-                                            /* construct newast by adding everything to its suitable place */
-                                            for (k = 0; k < rhsitems.size(); ++k) 
-                                            {
-                                                auto rhsitem2 = rhsitems[k];
-                                                
-                                                ofile << "\t\t\t\t\t\t\tnewast->op." << gname << ".";
-                                                if (rhsitem2->getId() == "lit") {
-                                                    ofile << "node" << nodecount++ << " = newast" << k << ";\n";
-                                                }
-                                                else if (rhsitem2->getId() == "tok") {
-                                                    ofile << "tok" << tokcount++ << " = newast" << k << "->op.atom;\n";
-                                                }
-                                            }
-
-                                            ofile << "\t\t\t\t\t\t}\n\n";
-                                        }
+                                        ofile << "\t\t\t\t\t\tnewast->op." << gname << " = newast0->op.atom;\n";
                                     }
                                 } 
                                 else 
                                 {
-                                    int tokcount  = 0;
-                                    int nodecount = 0;
-
-                                    for (j = 0; j < rhsitems.size(); ++j) 
+                                    if (_directives.nodecollapse)
                                     {
-                                        auto rhsitem = rhsitems[j];
-                                        
-                                        ofile << "\t\t\t\t\t\tnewast->op." << gname << ".";
-                                        if (rhsitem->getId() == "lit") {
-                                            ofile << "node" << nodecount++ << " = newast" << j << ";\n";
+                                        /* newline for aesthetic reasons */
+                                        ofile << "\n\t\t\t\t\t\t";
+
+                                        /* for each item, if it is the only non-null, change newast to it */
+                                        for (j = 0; j < rhsitems.size(); ++j)
+                                        {
+                                            auto rhsitem = rhsitems[j];
+
+                                            ofile << "if (newast" << j << " && ";
+                                            
+                                            for (k = 0; k < rhsitems.size(); ++k) {
+                                                if (k == j) continue;
+                                                auto rhsitem2 = rhsitems[k];
+                                                ofile << "!newast" << k << ((k == rhsitems.size() - 1 || (j == rhsitems.size() - 1 && k == rhsitems.size() - 2)) ? "" : " && ");
+                                            }
+
+                                            ofile << ") newast = newast" << j << ";\n\t\t\t\t\t\telse ";
+
+                                            if (j == rhsitems.size() - 1) 
+                                            {
+                                                ofile << "{\n";
+
+                                                int tokcount = 0;
+                                                int nodecount = 0;
+
+                                                /* construct newast by adding everything to its suitable place */
+                                                for (k = 0; k < rhsitems.size(); ++k) 
+                                                {
+                                                    auto rhsitem2 = rhsitems[k];
+                                                    
+                                                    ofile << "\t\t\t\t\t\t\tnewast->op." << gname << ".";
+                                                    if (rhsitem2->getId() == "lit") {
+                                                        ofile << "node" << nodecount++ << " = newast" << k << ";\n";
+                                                    }
+                                                    else if (rhsitem2->getId() == "tok") {
+                                                        ofile << "tok" << tokcount++ << " = newast" << k << "->op.atom;\n";
+                                                    }
+                                                }
+
+                                                ofile << "\t\t\t\t\t\t}\n\n";
+                                            }
                                         }
-                                        else if (rhsitem->getId() == "tok") {
-                                            ofile << "tok" << tokcount++ << " = newast" << j << "->op.atom;\n";
+                                    } 
+                                    else 
+                                    {
+                                        int tokcount  = 0;
+                                        int nodecount = 0;
+
+                                        for (j = 0; j < rhsitems.size(); ++j) 
+                                        {
+                                            auto rhsitem = rhsitems[j];
+                                            
+                                            ofile << "\t\t\t\t\t\tnewast->op." << gname << ".";
+                                            if (rhsitem->getId() == "lit") {
+                                                ofile << "node" << nodecount++ << " = newast" << j << ";\n";
+                                            }
+                                            else if (rhsitem->getId() == "tok") {
+                                                ofile << "tok" << tokcount++ << " = newast" << j << "->op.atom;\n";
+                                            }
+                                        }
+                                        
+                                        ofile << "\n";
+                                    }
+                                }
+                            } 
+                            else if (_directives.treeimpl == "" || _directives.treeimpl == "list") 
+                            {
+                                /* if size of items is 1 and the only item is a token */
+                                /* if there is only one rhs item, it is stored as a singleton, if you recall */
+                                if (rhsitems.size() == 1)
+                                {
+                                    if (_directives.nodecollapse) {
+                                        if (rhsitems[0]->getId() == "lit") {
+                                            ofile << "\t\t\t\t\t\tnewast = newast0;\n";
+                                        } else if (rhsitems[0]->getId() == "tok") {
+                                            ofile << "\t\t\t\t\t\tnewast->value = newast0->value;\n";
+                                            ofile << "\t\t\t\t\t\tnewast->count = 0;\n";
+                                            ofile << "\t\t\t\t\t\tnewast->children = NULL;\n";
                                         }
                                     }
-                                    
-                                    ofile << "\n";
+                                    else 
+                                    {
+                                        ofile << "\t\t\t\t\t\tnewast->value = NULL;\n";
+                                        ofile << "\t\t\t\t\t\tnewast->count = 1;\n";
+                                        ofile << "\t\t\t\t\t\tnewast->children = (ptgast**)malloc(newast->count * sizeof(ptgast*));\n";
+                                        ofile << "\t\t\t\t\t\tnewast->children[0] = newast0;\n";
+                                    }
+                                } 
+                                else 
+                                {
+                                    if (_directives.nodecollapse)
+                                    {
+                                        /* newline for aesthetic reasons */
+                                        ofile << "\n\t\t\t\t\t\t";
+
+                                        /* for each item, if it is the only non-null, change newast to it */
+                                        for (j = 0; j < rhsitems.size(); ++j)
+                                        {
+                                            auto rhsitem = rhsitems[j];
+
+                                            ofile << "if (newast" << j << " && ";
+                                            
+                                            for (k = 0; k < rhsitems.size(); ++k) {
+                                                if (k == j) continue;
+                                                auto rhsitem2 = rhsitems[k];
+                                                ofile << "!newast" << k << ((k == rhsitems.size() - 1 || (j == rhsitems.size() - 1 && k == rhsitems.size() - 2)) ? "" : " && ");
+                                            }
+
+                                            ofile << ") newast = newast" << j << ";\n\t\t\t\t\t\telse ";
+
+                                            if (j == rhsitems.size() - 1) 
+                                            {
+                                                ofile << "{\n";
+
+                                                ofile << "\t\t\t\t\t\t\tnewast->value = NULL;\n";
+                                                ofile << "\t\t\t\t\t\t\tnewast->count = " << rhsitems.size() << ";\n";
+                                                ofile << "\t\t\t\t\t\t\tnewast->children = (ptgast**)malloc(newast->count * sizeof(ptgast*));\n";
+
+                                                /* construct newast by adding everything to its suitable place */
+                                                for (k = 0; k < rhsitems.size(); ++k) {
+                                                    ofile << "\t\t\t\t\t\t\tnewast->children[" << k << "] = newast" << k << ";\n";
+                                                }
+
+                                                ofile << "\t\t\t\t\t\t}\n\n";
+                                            }
+                                        }
+                                    } 
+                                    else 
+                                    {
+                                        ofile << "\t\t\t\t\t\tnewast->value = NULL;\n";
+                                        ofile << "\t\t\t\t\t\tnewast->count = " << rhsitems.size() << ";\n";
+                                        ofile << "\t\t\t\t\t\tnewast->children = (ptgast**)malloc(newast->count * sizeof(ptgast*));\n";
+                                        
+                                        /* construct newast by adding everything to its suitable place */
+                                        for (k = 0; k < rhsitems.size(); ++k) {
+                                            ofile << "\t\t\t\t\t\tnewast->children[" << k << "] = newast" << k << ";\n";
+                                        }
+                                        
+                                        ofile << "\n";
+                                    }
                                 }
                             }
                         }
@@ -622,83 +747,103 @@ void CodeGenerator::generate()
                 break;
             }
 
-            case 6:
+            case 7:
             {
-                /* loop through all groupings */
-                for (i = 0; i < _astgroups.size(); ++i) 
+                if (_directives.treeimpl == "union")
                 {
-                    auto groupitm = _astgroups[i][0].second;
-                    auto rhsitems = groupitm->getRight()->getChildren();
+                    /* declare switch statement */
+                    ofile << "\t\tswitch (ast->id)\n\t\t{\n";
 
-                    /* don't bother with empties */
-                    if (rhsitems.size() == 1 && rhsitems[0]->getId() == "empty") continue;
-
-                    /* print out case statement */
-                    ofile << "\t\t\tcase " << std::to_string(i) << ":\n\t\t\t{\n";
-
-                    /* each node should first print out its name */
-                    ofile << "\t\t\t\taddspacing(&str, INDENT);\n";
-                    ofile << "\t\t\t\tm_string_concat(&str, \"" << _astgroupnames[i] << ":\\n\");\n\n";
-
-                    /* if singleton, depends on whether item is char or ast* */
-                    if (rhsitems.size() == 1) 
+                    /* loop through all groupings */
+                    for (i = 0; i < _astgroups.size(); ++i) 
                     {
-                        auto single = rhsitems[0];
-                        
-                        // if item is ast*, just get its own string representation and add it
-                        if (single->getId() == "lit") 
-                        {
-                            ofile << "\t\t\t\ttmp = ptgast_str(ast->op.";
-                            ofile << _astgroupnames[i] << ", INDENT + 1);\n";
-                            ofile << "\t\t\t\tm_string_concat(&str, tmp);\n\n";
-                        }
-                        // otherwise, just add token name
-                        else 
-                        if (single->getId() == "tok") 
-                        {
-                            ofile << "\t\t\t\tif (ast->op.";
-                            ofile << _astgroupnames[i] << ") {\n";
-                            ofile << "\t\t\t\t\taddspacing(&str, INDENT + 1);\n";
-                            ofile << "\t\t\t\t\tm_string_concat(&str, ast->op.";
-                            ofile << _astgroupnames[i] << ");\n";
-                            ofile << "\t\t\t\t\tm_string_push(&str, '\\n');\n\t\t\t\t}\n\n";
-                        }
-                    }
+                        auto groupitm = _astgroups[i][0].second;
+                        auto rhsitems = groupitm->getRight()->getChildren();
 
-                    /* much of the same thing, though use tokcount and nodecount here */
-                    else 
-                    {
-                        int tokcount  = 0;
-                        int nodecount = 0;
+                        /* don't bother with empties */
+                        if (rhsitems.size() == 1 && rhsitems[0]->getId() == "empty") continue;
 
-                        for (k = 0; k < rhsitems.size(); ++k)
+                        /* print out case statement */
+                        ofile << "\t\t\tcase " << std::to_string(i) << ":\n\t\t\t{\n";
+
+                        /* each node should first print out its name */
+                        ofile << "\t\t\t\taddspacing(INDENT);\n";
+                        ofile << "\t\t\t\tprintf(\"" << _astgroupnames[i] << ":\\n\");\n\n";
+
+                        /* if singleton, depends on whether item is char or ast* */
+                        if (rhsitems.size() == 1) 
                         {
-                            auto rhsitem = rhsitems[k];
-
-                            if (rhsitem->getId() == "lit") 
+                            auto single = rhsitems[0];
+                            
+                            // if item is ast*, just get its own string representation and add it
+                            if (single->getId() == "lit") 
                             {
-                                ofile << "\t\t\t\ttmp = ptgast_str(ast->op.";
-                                ofile << _astgroupnames[i] << ".node";
-                                ofile << std::to_string(nodecount++) << ", INDENT + 1);\n";
-                                ofile << "\t\t\t\tm_string_concat(&str, tmp);\n\n";
+                                ofile << "\t\t\t\tptgast_str(ast->op.";
+                                ofile << _astgroupnames[i] << ", INDENT + 1);\n";
                             }
+                            // otherwise, just add token name
                             else 
-                            if (rhsitem->getId() == "tok") 
+                            if (single->getId() == "tok") 
                             {
                                 ofile << "\t\t\t\tif (ast->op.";
-                                ofile << _astgroupnames[i] << ".tok";
-                                ofile << std::to_string(tokcount) << ") {\n";
-                                ofile << "\t\t\t\t\taddspacing(&str, INDENT + 1);\n";
-                                ofile << "\t\t\t\t\tm_string_concat(&str, ast->op.";
-                                ofile << _astgroupnames[i] << ".tok";
-                                ofile << std::to_string(tokcount++) << ");\n";
-                                ofile << "\t\t\t\t\tm_string_push(&str, '\\n');\n\t\t\t\t}\n\n";
+                                ofile << _astgroupnames[i] << ") {\n";
+                                ofile << "\t\t\t\t\taddspacing(INDENT + 1);\n";
+                                ofile << "\t\t\t\t\tprintf(\"%s\\n\", ast->op.";
+                                ofile << _astgroupnames[i] << ");\n\t\t\t\t}\n\n";
                             }
                         }
+
+                        /* much of the same thing, though use tokcount and nodecount here */
+                        else 
+                        {
+                            int tokcount  = 0;
+                            int nodecount = 0;
+
+                            for (k = 0; k < rhsitems.size(); ++k)
+                            {
+                                auto rhsitem = rhsitems[k];
+
+                                if (rhsitem->getId() == "lit") 
+                                {
+                                    ofile << "\t\t\t\tptgast_str(ast->op.";
+                                    ofile << _astgroupnames[i] << ".node";
+                                    ofile << std::to_string(nodecount++) << ", INDENT + 1);\n";
+                                }
+                                else 
+                                if (rhsitem->getId() == "tok") 
+                                {
+                                    ofile << "\t\t\t\tif (ast->op.";
+                                    ofile << _astgroupnames[i] << ".tok";
+                                    ofile << std::to_string(tokcount) << ") {\n";
+                                    ofile << "\t\t\t\t\taddspacing(INDENT + 1);\n";
+                                    ofile << "\t\t\t\t\tprintf(\"%s\\n\", ast->op.";
+                                    ofile << _astgroupnames[i] << ".tok";
+                                    ofile << std::to_string(tokcount++) << ");\n\t\t\t\t}\n\n";
+                                }
+                            }
+                        }
+
+                        /* exit case statement */
+                        ofile << "\t\t\t\tbreak;\n\t\t\t}\n";
                     }
 
-                    /* exit case statement */
-                    ofile << "\t\t\t\tbreak;\n\t\t\t}\n";
+                    /* exit switch statement */
+                    ofile << "\t\t}\n";
+                }
+                else
+                if (_directives.treeimpl == "list" || _directives.treeimpl == "")
+                {
+                    ofile << "\t\taddspacing(INDENT);\n";
+                    ofile << "\t\tprintf(ptgast_type(ast));\n\n";
+
+                    ofile << "\t\tif (ast->value) {\n";
+                    ofile << "\t\t\tprintf(\", value: %s.\\n\", ast->value);\n";
+                    ofile << "\t\t} else printf(\":\\n\");\n\n";
+                    
+                    ofile << "\t\tfor (int i = 0; i < ast->count; ++i) {\n";
+                    ofile << "\t\t\tptgast* child = ast->children[i];\n";
+                    ofile << "\t\t\tptgast_str(child, INDENT + 1);\n";
+                    ofile << "\t\t}\n";
                 }
 
                 /* break state */

@@ -24,12 +24,8 @@ void Parser::parse_illegal_transition_err(Tokens t_tos, Tokens t_cur) {
 bool Parser::sc_exists(string name)
 {
     for (auto scitem : _scitems) {
-        if (std::get<0>(scitem) == name)
+        if (scitem.name == name)
             return true;
-        for (auto subs : std::get<2>(scitem)) {
-            if (std::get<0>(subs) == name)
-                return true;
-        }
     } return false;
 }
 
@@ -46,17 +42,28 @@ void Parser::sc_parse()
     pitem tos;
     Tokens a;
     ParserTable tb;
-    vector<reglit> nodes;
     vector<pitem> stack;
+    vector<vector<reglit>> nodes;
 
-    tb[{START, ENDFILE}] = {};
-    tb[{START, STRING}] = vector<Tokens>{RULE, START};
-    tb[{RULE, STRING}] = vector{STRING, STRING, RULES1};
-    tb[{RULES1, LOPT}] = vector{LOPT, RULES, ROPT};
-    tb[{RULES1, STRING}] = {};
-    tb[{RULES1, ENDFILE}] = {};
-    tb[{RULES, STRING}] = vector<Tokens>{STRING, STRING, RULES};
-    tb[{RULES, ROPT}] = {};
+    tb[{Tokens::START, Tokens::ID}] = {RULE, START1};
+    tb[{Tokens::START1, Tokens::ID}] = {RULE, START1};
+    tb[{Tokens::START1, Tokens::ENDFILE}] = {};
+    tb[{Tokens::RULE, Tokens::ID}] = {ID, COLON, STRING, OPTS, BREAK};
+    tb[{Tokens::OPTS, Tokens::COMMA}] = {COMMA, COMS};
+    tb[{Tokens::OPTS, Tokens::BREAK}] = {};
+    tb[{Tokens::COMS, Tokens::IN}] = {COMM, COMS1};
+    tb[{Tokens::COMS, Tokens::SKIP}] = {COMM, COMS1};
+    tb[{Tokens::COMS, Tokens::GOTO}] = {COMM, COMS1};
+    tb[{Tokens::COMS, Tokens::AFTER}] = {COMM, COMS1};
+    tb[{Tokens::COMS1, Tokens::IN}] = {COMM, COMS1};
+    tb[{Tokens::COMS1, Tokens::SKIP}] = {COMM, COMS1};
+    tb[{Tokens::COMS1, Tokens::GOTO}] = {COMM, COMS1};
+    tb[{Tokens::COMS1, Tokens::AFTER}] = {COMM, COMS1};
+    tb[{Tokens::COMS1, Tokens::BREAK}] = {};
+    tb[{Tokens::COMM, Tokens::IN}] = {IN, ID};
+    tb[{Tokens::COMM, Tokens::SKIP}] = {SKIP};
+    tb[{Tokens::COMM, Tokens::GOTO}] = {GOTO, ID};
+    tb[{Tokens::COMM, Tokens::AFTER}] = {AFTER, ID};
 
     stack.push_back(pitem{.id = pitem::LIT, .op = {.lit = ENDFILE}});
     stack.push_back(pitem{.id = pitem::NONLIT, .op = {.nonlit = START}});
@@ -77,9 +84,17 @@ void Parser::sc_parse()
         switch (tos.id)
         {
             case pitem::LIT:
-                if (tos.op.lit == a) {
+                if (tos.op.lit == a)
+                {
                     auto lexs  = sc->getlexeme();
-                    nodes.push_back({"", lexs, {}});
+                    nodes.push_back({(reglit) {
+                        .name    = lexs,
+                        .regstr  = "",
+                        .skip    = false,
+                        .state   = "",
+                        .newstate = "",
+                        .pretok   = ""
+                    }});
                     if (_flags.PARSER_TRACE)
                         cout << "  terms.push(\"\", " << tokname(a) << ").\n";
                     a = sc->lex();
@@ -114,36 +129,70 @@ void Parser::sc_parse()
                 break;
 
             case pitem::REDUCTION:
+            {
                 switch (tos.op.reduce.tag)
                 {
                     case START:
                     {
-                        if (tos.op.reduce.count == 0) {
-                            nodes.push_back({"", "", {}});
+                        auto c = nodes.back(); // Start'
+                        nodes.pop_back();
+                        auto b = nodes.back()[0]; // Rule
+                        nodes.pop_back();
+
+                        c.push_back(b);
+                        _scitems.insert(_scitems.begin(), c.rbegin(), c.rend());
+
+                        if (_flags.PARSER_TRACE) {
+                            cout << "  final.push({";
+                            if (c.size() > 0) {
+                                cout << "\n";
+                                for (auto item : c) {
+                                    cout << "    {" << item.name
+                                            << ", " << item.regstr
+                                            << ", " << item.skip
+                                            << ", " << item.state
+                                            << ", " << item.newstate 
+                                            << ", " << item.pretok << "}\n";
+                                }
+                            } cout << "})\n";
+                        }
+
+                        break;
+                    }
+
+                    case START1:
+                    {
+                        if (tos.op.reduce.count == 0) 
+                        {
+                            nodes.push_back({});
                             if (_flags.PARSER_TRACE)
                                 cout << "  terms.push({}).\n";
                         }
                         else
                         if (tos.op.reduce.count == 2) 
                         {
+                            auto c = nodes.back(); // Start'
                             nodes.pop_back();
-                            reglit b = nodes.back();  // Rule
+                            auto b = nodes.back()[0]; // Rule
                             nodes.pop_back();
-                            if (!std::get<0>(b).empty()) {
-                                _scitems.push_front(b);
-                                if (_flags.PARSER_TRACE) {
-                                    auto subs = std::get<2>(b);
-                                    cout << "  result: {";
-                                    cout << std::get<0>(b) << ", " << std::get<1>(b) << ", {";
-                                    for (int i = 0; i < subs.size(); ++i) {
-                                        cout << "(" << subs[i].first << ", " << subs[i].second << ")";
-                                        if (i < subs.size() - 1) cout << ", ";
-                                    } cout << "}}\n";
-                                }
+
+                            c.push_back(b);
+                            nodes.push_back(c);
+
+                            if (_flags.PARSER_TRACE) {
+                                cout << "  terms.push({";
+                                if (c.size() > 0) {
+                                    cout << "\n";
+                                    for (auto item : c) {
+                                        cout << "    {" << item.name
+                                             << ", " << item.regstr
+                                             << ", " << item.skip
+                                             << ", " << item.state
+                                             << ", " << item.newstate 
+                                             << ", " << item.pretok << "}\n";
+                                    }
+                                } cout << "})\n";
                             }
-                            nodes.push_back({"", "", {}});
-                            if (_flags.PARSER_TRACE)
-                                cout << "  terms.push({}).\n";
                         }
 
                         break;
@@ -151,72 +200,210 @@ void Parser::sc_parse()
 
                     case RULE:
                     {
-                        if (tos.op.reduce.count == 3)
-                        {
-                            reglit  x = nodes.back();  // Rule'
-                            regopts a = std::get<2>(x);
-                            nodes.pop_back();
-                            reglit  b = nodes.back();  // STRING
-                            nodes.pop_back();
-                            reglit  c = nodes.back();  // STRING
-                            nodes.pop_back();
-                            nodes.push_back({std::get<1>(c), std::get<1>(b), a});
-                            if (_flags.PARSER_TRACE)
-                                cout << "  terms.push({" << std::get<1>(c) << ", " << std::get<1>(b) << "}).\n";
-                        }
+                        nodes.pop_back();
+                        auto opts = nodes.back()[0];
+                        nodes.pop_back();
+                        auto str = nodes.back()[0].name;
+                        nodes.pop_back();
+                        nodes.pop_back();
+                        auto id = nodes.back()[0].name;
+                        nodes.pop_back();
 
-                        break;
-                    }
+                        opts.name   = id;
+                        opts.regstr = str;
 
-                    case RULES1:
-                    {
-                        if (tos.op.reduce.count == 3)
-                        {
-                            nodes.pop_back();
-                            reglit a = nodes.back();  // Rules
-                            nodes.pop_back();
-                            nodes.pop_back();
-                            nodes.push_back({"", "", std::get<2>(a)});
-                            if (_flags.PARSER_TRACE)
-                                cout << "  terms.push({...}).\n";
-                        }
-                        else
-                        if (tos.op.reduce.count == 0) {
-                            nodes.push_back({"", "", {}});
-                            if (_flags.PARSER_TRACE)
-                                cout << "  terms.push({}).\n";
+                        nodes.push_back({opts});
+
+                        if (_flags.PARSER_TRACE) {
+                            cout << "  terms.push({";
+                            cout << opts.name;
+                            cout << ", " << opts.regstr;
+                            cout << ", " << opts.skip;
+                            cout << ", " << opts.state;
+                            cout << ", " << opts.newstate; 
+                            cout << ", " << opts.pretok << "})\n";
                         }
                         
                         break;
                     }
 
-                    case RULES:
+                    case OPTS:
                     {
-                        if (tos.op.reduce.count == 3)
+                        if (tos.op.reduce.count == 2)
                         {
-                            reglit  x = nodes.back();  // Rules
-                            regopts a = std::get<2>(x);
+                            auto coms = nodes.back()[0];
                             nodes.pop_back();
-                            reglit  b = nodes.back();  // STRING
                             nodes.pop_back();
-                            reglit  c = nodes.back();  // STRING
-                            nodes.pop_back();
-                            
-                            a.push_front({std::get<1>(c), std::get<1>(b)});
-                            nodes.push_back({"", "", a});
-                            if (_flags.PARSER_TRACE)
-                                cout << "  terms.push({\"\", \"\", a.push({" << std::get<1>(c) << ", " << std::get<1>(b) << "})}).\n";
+
+                            nodes.push_back({coms});
+
+                            if (_flags.PARSER_TRACE) {
+                                cout << "  terms.push({";
+                                cout << coms.name;
+                                cout << ", " << coms.regstr;
+                                cout << ", " << coms.skip;
+                                cout << ", " << coms.state;
+                                cout << ", " << coms.newstate; 
+                                cout << ", " << coms.pretok << "})\n";
+                            }
                         }
                         else
                         if (tos.op.reduce.count == 0) {
-                            nodes.push_back({"", "", {}});
+                            nodes.push_back({{(reglit) {
+                                .name    = "",
+                                .regstr  = "",
+                                .skip    = false,
+                                .state   = "",
+                                .newstate = "",
+                                .pretok   = ""
+                            }}});
                             if (_flags.PARSER_TRACE)
                                 cout << "  terms.push({}).\n";
                         }
+
+                        break;
+                    }
+
+                    case COMS:
+                    {
+                        auto coms = nodes.back()[0];
+                        nodes.pop_back();
+                        auto comm = nodes.back()[0];
+                        nodes.pop_back();
+
+                        if (comm.newstate != "")
+                            coms.newstate = comm.newstate;
+                        else
+                        if (comm.pretok != "")
+                            coms.pretok = comm.pretok;
+                        else
+                        if (comm.skip)
+                            coms.skip = true;
+                        else
+                        if (comm.state != "")
+                            coms.state = comm.state;
+
+                        nodes.push_back({coms});
+
+                        if (_flags.PARSER_TRACE) {
+                            cout << "  terms.push({";
+                            cout << coms.name;
+                            cout << ", " << coms.regstr;
+                            cout << ", " << coms.skip;
+                            cout << ", " << coms.state;
+                            cout << ", " << coms.newstate; 
+                            cout << ", " << coms.pretok << "})\n";
+                        }
                         
+                        break;
+                    }
+
+                    case COMS1:
+                    {
+                        if (tos.op.reduce.count == 2)
+                        {
+                            auto coms = nodes.back()[0];
+                            nodes.pop_back();
+                            auto comm = nodes.back()[0];
+                            nodes.pop_back();
+
+                            if (comm.newstate != "")
+                                coms.newstate = comm.newstate;
+                            else
+                            if (comm.pretok != "")
+                                coms.pretok = comm.pretok;
+                            else
+                            if (comm.skip)
+                                coms.skip = true;
+                            else
+                            if (comm.state != "")
+                                coms.state = comm.state;
+
+                            if (coms.skip && coms.pretok != "") {
+                                parse_err("after statement cannot co-occur with skip statement");
+                            } else nodes.push_back({coms});
+
+                            if (_flags.PARSER_TRACE) {
+                                cout << "  terms.push({";
+                                cout << coms.name;
+                                cout << ", " << coms.regstr;
+                                cout << ", " << coms.skip;
+                                cout << ", " << coms.state;
+                                cout << ", " << coms.newstate; 
+                                cout << ", " << coms.pretok << "})\n";
+                            }
+                        }
+                        else
+                        if (tos.op.reduce.count == 0) {
+                            nodes.push_back({{(reglit) {
+                                .name    = "",
+                                .regstr  = "",
+                                .skip    = false,
+                                .state   = "",
+                                .newstate = "",
+                                .pretok   = ""
+                            }}});
+                            if (_flags.PARSER_TRACE)
+                                cout << "  terms.push({}).\n";
+                        }
+
+                        break;
+                    }
+
+                    case COMM:
+                    {
+                        if (tos.op.reduce.count == 2)
+                        {
+                            auto id = nodes.back()[0].name;
+                            nodes.pop_back();
+                            auto keyw = nodes.back()[0].name;
+                            nodes.pop_back();
+
+                            string smoll;
+                            for (unsigned char ch : keyw)
+                                smoll += tolower(ch);
+
+                            reglit res = (reglit) {
+                                .name     = "",
+                                .regstr   = "",
+                                .skip     = false,
+                                .state    = smoll == "in" ? id : "",
+                                .newstate = smoll == "goto" ? id : "",
+                                .pretok   = smoll == "after" ? id : ""
+                            };
+
+                            nodes.push_back({res});
+
+                            if (_flags.PARSER_TRACE) {
+                                cout << "  terms.push({";
+                                cout << res.name;
+                                cout << ", " << res.regstr;
+                                cout << ", " << res.skip;
+                                cout << ", " << res.state;
+                                cout << ", " << res.newstate; 
+                                cout << ", " << res.pretok << "})\n";
+                            }
+                        }
+                        else
+                        if (tos.op.reduce.count == 1) 
+                        {
+                            nodes.pop_back();
+                            nodes.push_back({{(reglit) {
+                                .name    = "",
+                                .regstr  = "",
+                                .skip    = true,
+                                .state   = "",
+                                .newstate = "",
+                                .pretok   = ""
+                            }}});
+                            if (_flags.PARSER_TRACE)
+                                cout << "  terms.push({, , true, , , }).\n";
+                        }
+
                         break;
                     }
                 }
+            }
         }
     }
 
@@ -224,6 +411,23 @@ void Parser::sc_parse()
         cout << std::endl;
     
     sc->unlex(a);
+
+    for (auto tok : _scitems) {
+        int found  = false;
+        auto prosp = tok.pretok;
+        if (prosp == "") continue;
+        for (auto tok2 : _scitems) {
+            if (tok2.name == prosp) {
+                found = true;
+                break;
+            }
+        } if (!found) {
+            string err = "token \"";
+            err += prosp;
+            err += "\" in after statement doesn't exist";
+            parse_err(err.c_str());
+        }
+    }
 }
 
 void Parser::pr_parse()
@@ -236,9 +440,7 @@ void Parser::pr_parse()
 
     tb[{START, ENDFILE}] = vector<Tokens>();
     tb[{START, LIT}] = vector{RULE, START};
-    //tb[{START, BREAK}] = vector{RULE, START};
     tb[{RULE, LIT}] = vector{LIT, ARROW, RULES, BREAK};
-    //tb[{RULE, BREAK}] = vector{BREAK};
     tb[{RULES, LIT}] = vector{RULESEL, RULES1};
     tb[{RULES, EMPTY}] = vector{RULESEL, RULES1};
     tb[{RULES, LOPT}] = vector{RULESEL, RULES1};

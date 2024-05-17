@@ -104,6 +104,7 @@ re_tk re_scan::lex()
 			case 'n': return P_TOK_NEWLINE_CHAR;
 			case 'r': return P_TOK_CRETURN_CHAR;
 			case 't': return P_TOK_TABULATE_CHAR;
+			case '0': return P_TOK_ZERO;
 			case '.': return P_TOK_DOT;
 			case -1:  return P_TOK_END;
 			default:  return P_TOK_CHAR;
@@ -160,9 +161,9 @@ re_tk re_scan::lex()
  *         ;
  */
 
-#define P_RULE_COUNT 46
-#define P_STATE_COUNT 59
-#define P_ELEMENT_COUNT 31
+#define P_RULE_COUNT 47
+#define P_STATE_COUNT 60
+#define P_ELEMENT_COUNT 32
 
 #define GOTO   1
 #define ERROR  0
@@ -242,740 +243,808 @@ re_table_prepare()
 {
     re_pobj* table = (re_pobj*)calloc(P_STATE_COUNT * P_ELEMENT_COUNT, sizeof(re_pobj));
 
-	re_table_set(table, 0, P_TOK_CAP, { .action = SHIFT, .op = {.shift = 1}});
-	re_table_set(table, 0, P_TOK_CHAR, { .action = SHIFT, .op = {.shift = 2}});
-	re_table_set(table, 0, P_TOK_CRETURN_CHAR, { .action = SHIFT, .op = {.shift = 3}});
-	re_table_set(table, 0, P_TOK_DOT, { .action = SHIFT, .op = {.shift = 4}});
-	re_table_set(table, 0, P_TOK_LBRACK, { .action = SHIFT, .op = {.shift = 5}});
-	re_table_set(table, 0, P_TOK_LPAREN, { .action = SHIFT, .op = {.shift = 6}});
-	re_table_set(table, 0, P_TOK_MINUS, { .action = SHIFT, .op = {.shift = 7}});
-	re_table_set(table, 0, P_TOK_NEWLINE_CHAR, { .action = SHIFT, .op = {.shift = 8}});
-	re_table_set(table, 0, P_TOK_SLASH, { .action = SHIFT, .op = {.shift = 9}});
-	re_table_set(table, 0, P_TOK_TABULATE_CHAR, { .action = SHIFT, .op = {.shift = 10}});
-	re_table_set(table, 0, P_LIT_elm, { .action = GOTO, .op = {.sgoto = 11}});
-	re_table_set(table, 0, P_LIT_esc, { .action = GOTO, .op = {.sgoto = 12}});
-	re_table_set(table, 0, P_LIT_exp, { .action = GOTO, .op = {.sgoto = 13}});
-	re_table_set(table, 0, P_LIT_fch, { .action = GOTO, .op = {.sgoto = 14}});
-	re_table_set(table, 0, P_LIT_msub, { .action = GOTO, .op = {.sgoto = 15}});
-	re_table_set(table, 0, P_LIT_re, { .action = GOTO, .op = {.sgoto = 16}});
-	re_table_set(table, 0, P_LIT_sub, { .action = GOTO, .op = {.sgoto = 17}});
-	re_table_set(table, 5, P_TOK_CAP, { .action = SHIFT, .op = {.shift = 18}});
-	re_table_set(table, 5, P_TOK_CHAR, { .action = SHIFT, .op = {.shift = 2}});
-	re_table_set(table, 5, P_TOK_CRETURN_CHAR, { .action = SHIFT, .op = {.shift = 3}});
-	re_table_set(table, 5, P_TOK_DOT, { .action = SHIFT, .op = {.shift = 19}});
-	re_table_set(table, 5, P_TOK_NEWLINE_CHAR, { .action = SHIFT, .op = {.shift = 8}});
-	re_table_set(table, 5, P_TOK_SLASH, { .action = SHIFT, .op = {.shift = 9}});
-	re_table_set(table, 5, P_TOK_TABULATE_CHAR, { .action = SHIFT, .op = {.shift = 10}});
-	re_table_set(table, 5, P_LIT_esc, { .action = GOTO, .op = {.sgoto = 12}});
-	re_table_set(table, 5, P_LIT_fch, { .action = GOTO, .op = {.sgoto = 20}});
-	re_table_set(table, 5, P_LIT_slc, { .action = GOTO, .op = {.sgoto = 21}});
-	re_table_set(table, 5, P_LIT_sli, { .action = GOTO, .op = {.sgoto = 22}});
-	re_table_set(table, 6, P_TOK_CAP, { .action = SHIFT, .op = {.shift = 1}});
-	re_table_set(table, 6, P_TOK_CHAR, { .action = SHIFT, .op = {.shift = 2}});
-	re_table_set(table, 6, P_TOK_CRETURN_CHAR, { .action = SHIFT, .op = {.shift = 3}});
-	re_table_set(table, 6, P_TOK_DOT, { .action = SHIFT, .op = {.shift = 4}});
-	re_table_set(table, 6, P_TOK_LBRACK, { .action = SHIFT, .op = {.shift = 5}});
-	re_table_set(table, 6, P_TOK_LPAREN, { .action = SHIFT, .op = {.shift = 6}});
-	re_table_set(table, 6, P_TOK_MINUS, { .action = SHIFT, .op = {.shift = 7}});
-	re_table_set(table, 6, P_TOK_NEWLINE_CHAR, { .action = SHIFT, .op = {.shift = 8}});
-	re_table_set(table, 6, P_TOK_SLASH, { .action = SHIFT, .op = {.shift = 9}});
-	re_table_set(table, 6, P_TOK_TABULATE_CHAR, { .action = SHIFT, .op = {.shift = 10}});
-	re_table_set(table, 6, P_LIT_elm, { .action = GOTO, .op = {.sgoto = 11}});
-	re_table_set(table, 6, P_LIT_esc, { .action = GOTO, .op = {.sgoto = 12}});
-	re_table_set(table, 6, P_LIT_exp, { .action = GOTO, .op = {.sgoto = 13}});
-	re_table_set(table, 6, P_LIT_fch, { .action = GOTO, .op = {.sgoto = 14}});
-	re_table_set(table, 6, P_LIT_msub, { .action = GOTO, .op = {.sgoto = 15}});
-	re_table_set(table, 6, P_LIT_re, { .action = GOTO, .op = {.sgoto = 23}});
-	re_table_set(table, 6, P_LIT_sub, { .action = GOTO, .op = {.sgoto = 17}});
-	re_table_set(table, 9, P_TOK_BAR, { .action = SHIFT, .op = {.shift = 24}});
-	re_table_set(table, 9, P_TOK_CAP, { .action = SHIFT, .op = {.shift = 25}});
-	re_table_set(table, 9, P_TOK_CRETURN_CHAR, { .action = SHIFT, .op = {.shift = 26}});
-	re_table_set(table, 9, P_TOK_DOT, { .action = SHIFT, .op = {.shift = 27}});
-	re_table_set(table, 9, P_TOK_LBRACK, { .action = SHIFT, .op = {.shift = 28}});
-	re_table_set(table, 9, P_TOK_LPAREN, { .action = SHIFT, .op = {.shift = 29}});
-	re_table_set(table, 9, P_TOK_MINUS, { .action = SHIFT, .op = {.shift = 30}});
-	re_table_set(table, 9, P_TOK_NEWLINE_CHAR, { .action = SHIFT, .op = {.shift = 31}});
-	re_table_set(table, 9, P_TOK_PLUS, { .action = SHIFT, .op = {.shift = 32}});
-	re_table_set(table, 9, P_TOK_QUESTION, { .action = SHIFT, .op = {.shift = 33}});
-	re_table_set(table, 9, P_TOK_RBRACK, { .action = SHIFT, .op = {.shift = 34}});
-	re_table_set(table, 9, P_TOK_RPAREN, { .action = SHIFT, .op = {.shift = 35}});
-	re_table_set(table, 9, P_TOK_SLASH, { .action = SHIFT, .op = {.shift = 36}});
-	re_table_set(table, 9, P_TOK_TABULATE_CHAR, { .action = SHIFT, .op = {.shift = 37}});
-	re_table_set(table, 9, P_TOK_TIMES, { .action = SHIFT, .op = {.shift = 38}});
-	re_table_set(table, 13, P_TOK_BAR, { .action = SHIFT, .op = {.shift = 39}});
-	re_table_set(table, 13, P_LIT_re_BAR, { .action = GOTO, .op = {.sgoto = 40}});
-	re_table_set(table, 15, P_TOK_CAP, { .action = SHIFT, .op = {.shift = 1}});
-	re_table_set(table, 15, P_TOK_CHAR, { .action = SHIFT, .op = {.shift = 2}});
-	re_table_set(table, 15, P_TOK_CRETURN_CHAR, { .action = SHIFT, .op = {.shift = 3}});
-	re_table_set(table, 15, P_TOK_DOT, { .action = SHIFT, .op = {.shift = 4}});
-	re_table_set(table, 15, P_TOK_LBRACK, { .action = SHIFT, .op = {.shift = 5}});
-	re_table_set(table, 15, P_TOK_LPAREN, { .action = SHIFT, .op = {.shift = 6}});
-	re_table_set(table, 15, P_TOK_MINUS, { .action = SHIFT, .op = {.shift = 7}});
-	re_table_set(table, 15, P_TOK_NEWLINE_CHAR, { .action = SHIFT, .op = {.shift = 8}});
-	re_table_set(table, 15, P_TOK_SLASH, { .action = SHIFT, .op = {.shift = 9}});
-	re_table_set(table, 15, P_TOK_TABULATE_CHAR, { .action = SHIFT, .op = {.shift = 10}});
-	re_table_set(table, 15, P_LIT_elm, { .action = GOTO, .op = {.sgoto = 11}});
-	re_table_set(table, 15, P_LIT_esc, { .action = GOTO, .op = {.sgoto = 12}});
-	re_table_set(table, 15, P_LIT_exp_BAR, { .action = GOTO, .op = {.sgoto = 41}});
-	re_table_set(table, 15, P_LIT_fch, { .action = GOTO, .op = {.sgoto = 14}});
-	re_table_set(table, 15, P_LIT_msub, { .action = GOTO, .op = {.sgoto = 42}});
-	re_table_set(table, 15, P_LIT_sub, { .action = GOTO, .op = {.sgoto = 17}});
-	re_table_set(table, 17, P_TOK_PLUS, { .action = SHIFT, .op = {.shift = 43}});
-	re_table_set(table, 17, P_TOK_QUESTION, { .action = SHIFT, .op = {.shift = 44}});
-	re_table_set(table, 17, P_TOK_TIMES, { .action = SHIFT, .op = {.shift = 45}});
-	re_table_set(table, 17, P_LIT_msub_BAR, { .action = GOTO, .op = {.sgoto = 46}});
-	re_table_set(table, 18, P_TOK_CHAR, { .action = SHIFT, .op = {.shift = 2}});
-	re_table_set(table, 18, P_TOK_CRETURN_CHAR, { .action = SHIFT, .op = {.shift = 3}});
-	re_table_set(table, 18, P_TOK_DOT, { .action = SHIFT, .op = {.shift = 19}});
-	re_table_set(table, 18, P_TOK_NEWLINE_CHAR, { .action = SHIFT, .op = {.shift = 8}});
-	re_table_set(table, 18, P_TOK_SLASH, { .action = SHIFT, .op = {.shift = 9}});
-	re_table_set(table, 18, P_TOK_TABULATE_CHAR, { .action = SHIFT, .op = {.shift = 10}});
-	re_table_set(table, 18, P_LIT_esc, { .action = GOTO, .op = {.sgoto = 12}});
-	re_table_set(table, 18, P_LIT_fch, { .action = GOTO, .op = {.sgoto = 20}});
-	re_table_set(table, 18, P_LIT_sli, { .action = GOTO, .op = {.sgoto = 47}});
-	re_table_set(table, 20, P_TOK_MINUS, { .action = SHIFT, .op = {.shift = 48}});
-	re_table_set(table, 21, P_TOK_RBRACK, { .action = SHIFT, .op = {.shift = 49}});
-	re_table_set(table, 22, P_TOK_CHAR, { .action = SHIFT, .op = {.shift = 2}});
-	re_table_set(table, 22, P_TOK_CRETURN_CHAR, { .action = SHIFT, .op = {.shift = 3}});
-	re_table_set(table, 22, P_TOK_DOT, { .action = SHIFT, .op = {.shift = 19}});
-	re_table_set(table, 22, P_TOK_NEWLINE_CHAR, { .action = SHIFT, .op = {.shift = 8}});
-	re_table_set(table, 22, P_TOK_SLASH, { .action = SHIFT, .op = {.shift = 9}});
-	re_table_set(table, 22, P_TOK_TABULATE_CHAR, { .action = SHIFT, .op = {.shift = 10}});
-	re_table_set(table, 22, P_LIT_esc, { .action = GOTO, .op = {.sgoto = 12}});
-	re_table_set(table, 22, P_LIT_fch, { .action = GOTO, .op = {.sgoto = 20}});
-	re_table_set(table, 22, P_LIT_slc_BAR, { .action = GOTO, .op = {.sgoto = 50}});
-	re_table_set(table, 22, P_LIT_sli, { .action = GOTO, .op = {.sgoto = 51}});
-	re_table_set(table, 23, P_TOK_RPAREN, { .action = SHIFT, .op = {.shift = 52}});
-	re_table_set(table, 39, P_TOK_CAP, { .action = SHIFT, .op = {.shift = 1}});
-	re_table_set(table, 39, P_TOK_CHAR, { .action = SHIFT, .op = {.shift = 2}});
-	re_table_set(table, 39, P_TOK_CRETURN_CHAR, { .action = SHIFT, .op = {.shift = 3}});
-	re_table_set(table, 39, P_TOK_DOT, { .action = SHIFT, .op = {.shift = 4}});
-	re_table_set(table, 39, P_TOK_LBRACK, { .action = SHIFT, .op = {.shift = 5}});
-	re_table_set(table, 39, P_TOK_LPAREN, { .action = SHIFT, .op = {.shift = 6}});
-	re_table_set(table, 39, P_TOK_MINUS, { .action = SHIFT, .op = {.shift = 7}});
-	re_table_set(table, 39, P_TOK_NEWLINE_CHAR, { .action = SHIFT, .op = {.shift = 8}});
-	re_table_set(table, 39, P_TOK_SLASH, { .action = SHIFT, .op = {.shift = 9}});
-	re_table_set(table, 39, P_TOK_TABULATE_CHAR, { .action = SHIFT, .op = {.shift = 10}});
-	re_table_set(table, 39, P_LIT_elm, { .action = GOTO, .op = {.sgoto = 11}});
-	re_table_set(table, 39, P_LIT_esc, { .action = GOTO, .op = {.sgoto = 12}});
-	re_table_set(table, 39, P_LIT_exp, { .action = GOTO, .op = {.sgoto = 53}});
-	re_table_set(table, 39, P_LIT_fch, { .action = GOTO, .op = {.sgoto = 14}});
-	re_table_set(table, 39, P_LIT_msub, { .action = GOTO, .op = {.sgoto = 15}});
-	re_table_set(table, 39, P_LIT_sub, { .action = GOTO, .op = {.sgoto = 17}});
-	re_table_set(table, 42, P_TOK_CAP, { .action = SHIFT, .op = {.shift = 1}});
-	re_table_set(table, 42, P_TOK_CHAR, { .action = SHIFT, .op = {.shift = 2}});
-	re_table_set(table, 42, P_TOK_CRETURN_CHAR, { .action = SHIFT, .op = {.shift = 3}});
-	re_table_set(table, 42, P_TOK_DOT, { .action = SHIFT, .op = {.shift = 4}});
-	re_table_set(table, 42, P_TOK_LBRACK, { .action = SHIFT, .op = {.shift = 5}});
-	re_table_set(table, 42, P_TOK_LPAREN, { .action = SHIFT, .op = {.shift = 6}});
-	re_table_set(table, 42, P_TOK_MINUS, { .action = SHIFT, .op = {.shift = 7}});
-	re_table_set(table, 42, P_TOK_NEWLINE_CHAR, { .action = SHIFT, .op = {.shift = 8}});
-	re_table_set(table, 42, P_TOK_SLASH, { .action = SHIFT, .op = {.shift = 9}});
-	re_table_set(table, 42, P_TOK_TABULATE_CHAR, { .action = SHIFT, .op = {.shift = 10}});
-	re_table_set(table, 42, P_LIT_elm, { .action = GOTO, .op = {.sgoto = 11}});
-	re_table_set(table, 42, P_LIT_esc, { .action = GOTO, .op = {.sgoto = 12}});
-	re_table_set(table, 42, P_LIT_exp_BAR, { .action = GOTO, .op = {.sgoto = 54}});
-	re_table_set(table, 42, P_LIT_fch, { .action = GOTO, .op = {.sgoto = 14}});
-	re_table_set(table, 42, P_LIT_msub, { .action = GOTO, .op = {.sgoto = 42}});
-	re_table_set(table, 42, P_LIT_sub, { .action = GOTO, .op = {.sgoto = 17}});
-	re_table_set(table, 47, P_TOK_CHAR, { .action = SHIFT, .op = {.shift = 2}});
-	re_table_set(table, 47, P_TOK_CRETURN_CHAR, { .action = SHIFT, .op = {.shift = 3}});
-	re_table_set(table, 47, P_TOK_DOT, { .action = SHIFT, .op = {.shift = 19}});
-	re_table_set(table, 47, P_TOK_NEWLINE_CHAR, { .action = SHIFT, .op = {.shift = 8}});
-	re_table_set(table, 47, P_TOK_SLASH, { .action = SHIFT, .op = {.shift = 9}});
-	re_table_set(table, 47, P_TOK_TABULATE_CHAR, { .action = SHIFT, .op = {.shift = 10}});
-	re_table_set(table, 47, P_LIT_esc, { .action = GOTO, .op = {.sgoto = 12}});
-	re_table_set(table, 47, P_LIT_fch, { .action = GOTO, .op = {.sgoto = 20}});
-	re_table_set(table, 47, P_LIT_slc_BAR, { .action = GOTO, .op = {.sgoto = 55}});
-	re_table_set(table, 47, P_LIT_sli, { .action = GOTO, .op = {.sgoto = 51}});
-	re_table_set(table, 48, P_TOK_CHAR, { .action = SHIFT, .op = {.shift = 2}});
-	re_table_set(table, 48, P_TOK_CRETURN_CHAR, { .action = SHIFT, .op = {.shift = 3}});
-	re_table_set(table, 48, P_TOK_NEWLINE_CHAR, { .action = SHIFT, .op = {.shift = 8}});
-	re_table_set(table, 48, P_TOK_SLASH, { .action = SHIFT, .op = {.shift = 9}});
-	re_table_set(table, 48, P_TOK_TABULATE_CHAR, { .action = SHIFT, .op = {.shift = 10}});
-	re_table_set(table, 48, P_LIT_esc, { .action = GOTO, .op = {.sgoto = 12}});
-	re_table_set(table, 48, P_LIT_fch, { .action = GOTO, .op = {.sgoto = 56}});
-	re_table_set(table, 51, P_TOK_CHAR, { .action = SHIFT, .op = {.shift = 2}});
-	re_table_set(table, 51, P_TOK_CRETURN_CHAR, { .action = SHIFT, .op = {.shift = 3}});
-	re_table_set(table, 51, P_TOK_DOT, { .action = SHIFT, .op = {.shift = 19}});
-	re_table_set(table, 51, P_TOK_NEWLINE_CHAR, { .action = SHIFT, .op = {.shift = 8}});
-	re_table_set(table, 51, P_TOK_SLASH, { .action = SHIFT, .op = {.shift = 9}});
-	re_table_set(table, 51, P_TOK_TABULATE_CHAR, { .action = SHIFT, .op = {.shift = 10}});
-	re_table_set(table, 51, P_LIT_esc, { .action = GOTO, .op = {.sgoto = 12}});
-	re_table_set(table, 51, P_LIT_fch, { .action = GOTO, .op = {.sgoto = 20}});
-	re_table_set(table, 51, P_LIT_slc_BAR, { .action = GOTO, .op = {.sgoto = 57}});
-	re_table_set(table, 51, P_LIT_sli, { .action = GOTO, .op = {.sgoto = 51}});
-	re_table_set(table, 53, P_TOK_BAR, { .action = SHIFT, .op = {.shift = 39}});
-	re_table_set(table, 53, P_LIT_re_BAR, { .action = GOTO, .op = {.sgoto = 58}});
-	re_table_set(table, 0, P_TOK_END, {.action = REDUCE, .op = { .reduce = {3, 0, P_LIT_re}}});
-	re_table_set(table, 0, P_TOK_RPAREN, {.action = REDUCE, .op = { .reduce = {3, 0, P_LIT_re}}});
-	re_table_set(table, 1, P_TOK_END, {.action = REDUCE, .op = { .reduce = {16, 1, P_LIT_elm}}});
-	re_table_set(table, 1, P_TOK_BAR, {.action = REDUCE, .op = { .reduce = {16, 1, P_LIT_elm}}});
-	re_table_set(table, 1, P_TOK_CAP, {.action = REDUCE, .op = { .reduce = {16, 1, P_LIT_elm}}});
-	re_table_set(table, 1, P_TOK_CHAR, {.action = REDUCE, .op = { .reduce = {16, 1, P_LIT_elm}}});
-	re_table_set(table, 1, P_TOK_CRETURN_CHAR, {.action = REDUCE, .op = { .reduce = {16, 1, P_LIT_elm}}});
-	re_table_set(table, 1, P_TOK_DOT, {.action = REDUCE, .op = { .reduce = {16, 1, P_LIT_elm}}});
-	re_table_set(table, 1, P_TOK_LBRACK, {.action = REDUCE, .op = { .reduce = {16, 1, P_LIT_elm}}});
-	re_table_set(table, 1, P_TOK_LPAREN, {.action = REDUCE, .op = { .reduce = {16, 1, P_LIT_elm}}});
-	re_table_set(table, 1, P_TOK_MINUS, {.action = REDUCE, .op = { .reduce = {16, 1, P_LIT_elm}}});
-	re_table_set(table, 1, P_TOK_NEWLINE_CHAR, {.action = REDUCE, .op = { .reduce = {16, 1, P_LIT_elm}}});
-	re_table_set(table, 1, P_TOK_PLUS, {.action = REDUCE, .op = { .reduce = {16, 1, P_LIT_elm}}});
-	re_table_set(table, 1, P_TOK_QUESTION, {.action = REDUCE, .op = { .reduce = {16, 1, P_LIT_elm}}});
-	re_table_set(table, 1, P_TOK_RPAREN, {.action = REDUCE, .op = { .reduce = {16, 1, P_LIT_elm}}});
-	re_table_set(table, 1, P_TOK_SLASH, {.action = REDUCE, .op = { .reduce = {16, 1, P_LIT_elm}}});
-	re_table_set(table, 1, P_TOK_TABULATE_CHAR, {.action = REDUCE, .op = { .reduce = {16, 1, P_LIT_elm}}});
-	re_table_set(table, 1, P_TOK_TIMES, {.action = REDUCE, .op = { .reduce = {16, 1, P_LIT_elm}}});
-	re_table_set(table, 2, P_TOK_END, {.action = REDUCE, .op = { .reduce = {41, 1, P_LIT_fch}}});
-	re_table_set(table, 2, P_TOK_BAR, {.action = REDUCE, .op = { .reduce = {41, 1, P_LIT_fch}}});
-	re_table_set(table, 2, P_TOK_CAP, {.action = REDUCE, .op = { .reduce = {41, 1, P_LIT_fch}}});
-	re_table_set(table, 2, P_TOK_CHAR, {.action = REDUCE, .op = { .reduce = {41, 1, P_LIT_fch}}});
-	re_table_set(table, 2, P_TOK_CRETURN_CHAR, {.action = REDUCE, .op = { .reduce = {41, 1, P_LIT_fch}}});
-	re_table_set(table, 2, P_TOK_DOT, {.action = REDUCE, .op = { .reduce = {41, 1, P_LIT_fch}}});
-	re_table_set(table, 2, P_TOK_LBRACK, {.action = REDUCE, .op = { .reduce = {41, 1, P_LIT_fch}}});
-	re_table_set(table, 2, P_TOK_LPAREN, {.action = REDUCE, .op = { .reduce = {41, 1, P_LIT_fch}}});
-	re_table_set(table, 2, P_TOK_MINUS, {.action = REDUCE, .op = { .reduce = {41, 1, P_LIT_fch}}});
-	re_table_set(table, 2, P_TOK_NEWLINE_CHAR, {.action = REDUCE, .op = { .reduce = {41, 1, P_LIT_fch}}});
-	re_table_set(table, 2, P_TOK_PLUS, {.action = REDUCE, .op = { .reduce = {41, 1, P_LIT_fch}}});
-	re_table_set(table, 2, P_TOK_QUESTION, {.action = REDUCE, .op = { .reduce = {41, 1, P_LIT_fch}}});
-	re_table_set(table, 2, P_TOK_RBRACK, {.action = REDUCE, .op = { .reduce = {41, 1, P_LIT_fch}}});
-	re_table_set(table, 2, P_TOK_RPAREN, {.action = REDUCE, .op = { .reduce = {41, 1, P_LIT_fch}}});
-	re_table_set(table, 2, P_TOK_SLASH, {.action = REDUCE, .op = { .reduce = {41, 1, P_LIT_fch}}});
-	re_table_set(table, 2, P_TOK_TABULATE_CHAR, {.action = REDUCE, .op = { .reduce = {41, 1, P_LIT_fch}}});
-	re_table_set(table, 2, P_TOK_TIMES, {.action = REDUCE, .op = { .reduce = {41, 1, P_LIT_fch}}});
-	re_table_set(table, 3, P_TOK_END, {.action = REDUCE, .op = { .reduce = {44, 1, P_LIT_fch}}});
-	re_table_set(table, 3, P_TOK_BAR, {.action = REDUCE, .op = { .reduce = {44, 1, P_LIT_fch}}});
-	re_table_set(table, 3, P_TOK_CAP, {.action = REDUCE, .op = { .reduce = {44, 1, P_LIT_fch}}});
-	re_table_set(table, 3, P_TOK_CHAR, {.action = REDUCE, .op = { .reduce = {44, 1, P_LIT_fch}}});
-	re_table_set(table, 3, P_TOK_CRETURN_CHAR, {.action = REDUCE, .op = { .reduce = {44, 1, P_LIT_fch}}});
-	re_table_set(table, 3, P_TOK_DOT, {.action = REDUCE, .op = { .reduce = {44, 1, P_LIT_fch}}});
-	re_table_set(table, 3, P_TOK_LBRACK, {.action = REDUCE, .op = { .reduce = {44, 1, P_LIT_fch}}});
-	re_table_set(table, 3, P_TOK_LPAREN, {.action = REDUCE, .op = { .reduce = {44, 1, P_LIT_fch}}});
-	re_table_set(table, 3, P_TOK_MINUS, {.action = REDUCE, .op = { .reduce = {44, 1, P_LIT_fch}}});
-	re_table_set(table, 3, P_TOK_NEWLINE_CHAR, {.action = REDUCE, .op = { .reduce = {44, 1, P_LIT_fch}}});
-	re_table_set(table, 3, P_TOK_PLUS, {.action = REDUCE, .op = { .reduce = {44, 1, P_LIT_fch}}});
-	re_table_set(table, 3, P_TOK_QUESTION, {.action = REDUCE, .op = { .reduce = {44, 1, P_LIT_fch}}});
-	re_table_set(table, 3, P_TOK_RBRACK, {.action = REDUCE, .op = { .reduce = {44, 1, P_LIT_fch}}});
-	re_table_set(table, 3, P_TOK_RPAREN, {.action = REDUCE, .op = { .reduce = {44, 1, P_LIT_fch}}});
-	re_table_set(table, 3, P_TOK_SLASH, {.action = REDUCE, .op = { .reduce = {44, 1, P_LIT_fch}}});
-	re_table_set(table, 3, P_TOK_TABULATE_CHAR, {.action = REDUCE, .op = { .reduce = {44, 1, P_LIT_fch}}});
-	re_table_set(table, 3, P_TOK_TIMES, {.action = REDUCE, .op = { .reduce = {44, 1, P_LIT_fch}}});
-	re_table_set(table, 4, P_TOK_END, {.action = REDUCE, .op = { .reduce = {18, 1, P_LIT_elm}}});
-	re_table_set(table, 4, P_TOK_BAR, {.action = REDUCE, .op = { .reduce = {18, 1, P_LIT_elm}}});
-	re_table_set(table, 4, P_TOK_CAP, {.action = REDUCE, .op = { .reduce = {18, 1, P_LIT_elm}}});
-	re_table_set(table, 4, P_TOK_CHAR, {.action = REDUCE, .op = { .reduce = {18, 1, P_LIT_elm}}});
-	re_table_set(table, 4, P_TOK_CRETURN_CHAR, {.action = REDUCE, .op = { .reduce = {18, 1, P_LIT_elm}}});
-	re_table_set(table, 4, P_TOK_DOT, {.action = REDUCE, .op = { .reduce = {18, 1, P_LIT_elm}}});
-	re_table_set(table, 4, P_TOK_LBRACK, {.action = REDUCE, .op = { .reduce = {18, 1, P_LIT_elm}}});
-	re_table_set(table, 4, P_TOK_LPAREN, {.action = REDUCE, .op = { .reduce = {18, 1, P_LIT_elm}}});
-	re_table_set(table, 4, P_TOK_MINUS, {.action = REDUCE, .op = { .reduce = {18, 1, P_LIT_elm}}});
-	re_table_set(table, 4, P_TOK_NEWLINE_CHAR, {.action = REDUCE, .op = { .reduce = {18, 1, P_LIT_elm}}});
-	re_table_set(table, 4, P_TOK_PLUS, {.action = REDUCE, .op = { .reduce = {18, 1, P_LIT_elm}}});
-	re_table_set(table, 4, P_TOK_QUESTION, {.action = REDUCE, .op = { .reduce = {18, 1, P_LIT_elm}}});
-	re_table_set(table, 4, P_TOK_RPAREN, {.action = REDUCE, .op = { .reduce = {18, 1, P_LIT_elm}}});
-	re_table_set(table, 4, P_TOK_SLASH, {.action = REDUCE, .op = { .reduce = {18, 1, P_LIT_elm}}});
-	re_table_set(table, 4, P_TOK_TABULATE_CHAR, {.action = REDUCE, .op = { .reduce = {18, 1, P_LIT_elm}}});
-	re_table_set(table, 4, P_TOK_TIMES, {.action = REDUCE, .op = { .reduce = {18, 1, P_LIT_elm}}});
-	re_table_set(table, 6, P_TOK_END, {.action = REDUCE, .op = { .reduce = {3, 0, P_LIT_re}}});
-	re_table_set(table, 6, P_TOK_RPAREN, {.action = REDUCE, .op = { .reduce = {3, 0, P_LIT_re}}});
-	re_table_set(table, 7, P_TOK_END, {.action = REDUCE, .op = { .reduce = {17, 1, P_LIT_elm}}});
-	re_table_set(table, 7, P_TOK_BAR, {.action = REDUCE, .op = { .reduce = {17, 1, P_LIT_elm}}});
-	re_table_set(table, 7, P_TOK_CAP, {.action = REDUCE, .op = { .reduce = {17, 1, P_LIT_elm}}});
-	re_table_set(table, 7, P_TOK_CHAR, {.action = REDUCE, .op = { .reduce = {17, 1, P_LIT_elm}}});
-	re_table_set(table, 7, P_TOK_CRETURN_CHAR, {.action = REDUCE, .op = { .reduce = {17, 1, P_LIT_elm}}});
-	re_table_set(table, 7, P_TOK_DOT, {.action = REDUCE, .op = { .reduce = {17, 1, P_LIT_elm}}});
-	re_table_set(table, 7, P_TOK_LBRACK, {.action = REDUCE, .op = { .reduce = {17, 1, P_LIT_elm}}});
-	re_table_set(table, 7, P_TOK_LPAREN, {.action = REDUCE, .op = { .reduce = {17, 1, P_LIT_elm}}});
-	re_table_set(table, 7, P_TOK_MINUS, {.action = REDUCE, .op = { .reduce = {17, 1, P_LIT_elm}}});
-	re_table_set(table, 7, P_TOK_NEWLINE_CHAR, {.action = REDUCE, .op = { .reduce = {17, 1, P_LIT_elm}}});
-	re_table_set(table, 7, P_TOK_PLUS, {.action = REDUCE, .op = { .reduce = {17, 1, P_LIT_elm}}});
-	re_table_set(table, 7, P_TOK_QUESTION, {.action = REDUCE, .op = { .reduce = {17, 1, P_LIT_elm}}});
-	re_table_set(table, 7, P_TOK_RPAREN, {.action = REDUCE, .op = { .reduce = {17, 1, P_LIT_elm}}});
-	re_table_set(table, 7, P_TOK_SLASH, {.action = REDUCE, .op = { .reduce = {17, 1, P_LIT_elm}}});
-	re_table_set(table, 7, P_TOK_TABULATE_CHAR, {.action = REDUCE, .op = { .reduce = {17, 1, P_LIT_elm}}});
-	re_table_set(table, 7, P_TOK_TIMES, {.action = REDUCE, .op = { .reduce = {17, 1, P_LIT_elm}}});
-	re_table_set(table, 8, P_TOK_END, {.action = REDUCE, .op = { .reduce = {43, 1, P_LIT_fch}}});
-	re_table_set(table, 8, P_TOK_BAR, {.action = REDUCE, .op = { .reduce = {43, 1, P_LIT_fch}}});
-	re_table_set(table, 8, P_TOK_CAP, {.action = REDUCE, .op = { .reduce = {43, 1, P_LIT_fch}}});
-	re_table_set(table, 8, P_TOK_CHAR, {.action = REDUCE, .op = { .reduce = {43, 1, P_LIT_fch}}});
-	re_table_set(table, 8, P_TOK_CRETURN_CHAR, {.action = REDUCE, .op = { .reduce = {43, 1, P_LIT_fch}}});
-	re_table_set(table, 8, P_TOK_DOT, {.action = REDUCE, .op = { .reduce = {43, 1, P_LIT_fch}}});
-	re_table_set(table, 8, P_TOK_LBRACK, {.action = REDUCE, .op = { .reduce = {43, 1, P_LIT_fch}}});
-	re_table_set(table, 8, P_TOK_LPAREN, {.action = REDUCE, .op = { .reduce = {43, 1, P_LIT_fch}}});
-	re_table_set(table, 8, P_TOK_MINUS, {.action = REDUCE, .op = { .reduce = {43, 1, P_LIT_fch}}});
-	re_table_set(table, 8, P_TOK_NEWLINE_CHAR, {.action = REDUCE, .op = { .reduce = {43, 1, P_LIT_fch}}});
-	re_table_set(table, 8, P_TOK_PLUS, {.action = REDUCE, .op = { .reduce = {43, 1, P_LIT_fch}}});
-	re_table_set(table, 8, P_TOK_QUESTION, {.action = REDUCE, .op = { .reduce = {43, 1, P_LIT_fch}}});
-	re_table_set(table, 8, P_TOK_RBRACK, {.action = REDUCE, .op = { .reduce = {43, 1, P_LIT_fch}}});
-	re_table_set(table, 8, P_TOK_RPAREN, {.action = REDUCE, .op = { .reduce = {43, 1, P_LIT_fch}}});
-	re_table_set(table, 8, P_TOK_SLASH, {.action = REDUCE, .op = { .reduce = {43, 1, P_LIT_fch}}});
-	re_table_set(table, 8, P_TOK_TABULATE_CHAR, {.action = REDUCE, .op = { .reduce = {43, 1, P_LIT_fch}}});
-	re_table_set(table, 8, P_TOK_TIMES, {.action = REDUCE, .op = { .reduce = {43, 1, P_LIT_fch}}});
-	re_table_set(table, 10, P_TOK_END, {.action = REDUCE, .op = { .reduce = {42, 1, P_LIT_fch}}});
-	re_table_set(table, 10, P_TOK_BAR, {.action = REDUCE, .op = { .reduce = {42, 1, P_LIT_fch}}});
-	re_table_set(table, 10, P_TOK_CAP, {.action = REDUCE, .op = { .reduce = {42, 1, P_LIT_fch}}});
-	re_table_set(table, 10, P_TOK_CHAR, {.action = REDUCE, .op = { .reduce = {42, 1, P_LIT_fch}}});
-	re_table_set(table, 10, P_TOK_CRETURN_CHAR, {.action = REDUCE, .op = { .reduce = {42, 1, P_LIT_fch}}});
-	re_table_set(table, 10, P_TOK_DOT, {.action = REDUCE, .op = { .reduce = {42, 1, P_LIT_fch}}});
-	re_table_set(table, 10, P_TOK_LBRACK, {.action = REDUCE, .op = { .reduce = {42, 1, P_LIT_fch}}});
-	re_table_set(table, 10, P_TOK_LPAREN, {.action = REDUCE, .op = { .reduce = {42, 1, P_LIT_fch}}});
-	re_table_set(table, 10, P_TOK_MINUS, {.action = REDUCE, .op = { .reduce = {42, 1, P_LIT_fch}}});
-	re_table_set(table, 10, P_TOK_NEWLINE_CHAR, {.action = REDUCE, .op = { .reduce = {42, 1, P_LIT_fch}}});
-	re_table_set(table, 10, P_TOK_PLUS, {.action = REDUCE, .op = { .reduce = {42, 1, P_LIT_fch}}});
-	re_table_set(table, 10, P_TOK_QUESTION, {.action = REDUCE, .op = { .reduce = {42, 1, P_LIT_fch}}});
-	re_table_set(table, 10, P_TOK_RBRACK, {.action = REDUCE, .op = { .reduce = {42, 1, P_LIT_fch}}});
-	re_table_set(table, 10, P_TOK_RPAREN, {.action = REDUCE, .op = { .reduce = {42, 1, P_LIT_fch}}});
-	re_table_set(table, 10, P_TOK_SLASH, {.action = REDUCE, .op = { .reduce = {42, 1, P_LIT_fch}}});
-	re_table_set(table, 10, P_TOK_TABULATE_CHAR, {.action = REDUCE, .op = { .reduce = {42, 1, P_LIT_fch}}});
-	re_table_set(table, 10, P_TOK_TIMES, {.action = REDUCE, .op = { .reduce = {42, 1, P_LIT_fch}}});
-	re_table_set(table, 11, P_TOK_END, {.action = REDUCE, .op = { .reduce = {12, 1, P_LIT_sub}}});
-	re_table_set(table, 11, P_TOK_BAR, {.action = REDUCE, .op = { .reduce = {12, 1, P_LIT_sub}}});
-	re_table_set(table, 11, P_TOK_CAP, {.action = REDUCE, .op = { .reduce = {12, 1, P_LIT_sub}}});
-	re_table_set(table, 11, P_TOK_CHAR, {.action = REDUCE, .op = { .reduce = {12, 1, P_LIT_sub}}});
-	re_table_set(table, 11, P_TOK_CRETURN_CHAR, {.action = REDUCE, .op = { .reduce = {12, 1, P_LIT_sub}}});
-	re_table_set(table, 11, P_TOK_DOT, {.action = REDUCE, .op = { .reduce = {12, 1, P_LIT_sub}}});
-	re_table_set(table, 11, P_TOK_LBRACK, {.action = REDUCE, .op = { .reduce = {12, 1, P_LIT_sub}}});
-	re_table_set(table, 11, P_TOK_LPAREN, {.action = REDUCE, .op = { .reduce = {12, 1, P_LIT_sub}}});
-	re_table_set(table, 11, P_TOK_MINUS, {.action = REDUCE, .op = { .reduce = {12, 1, P_LIT_sub}}});
-	re_table_set(table, 11, P_TOK_NEWLINE_CHAR, {.action = REDUCE, .op = { .reduce = {12, 1, P_LIT_sub}}});
-	re_table_set(table, 11, P_TOK_PLUS, {.action = REDUCE, .op = { .reduce = {12, 1, P_LIT_sub}}});
-	re_table_set(table, 11, P_TOK_QUESTION, {.action = REDUCE, .op = { .reduce = {12, 1, P_LIT_sub}}});
-	re_table_set(table, 11, P_TOK_RPAREN, {.action = REDUCE, .op = { .reduce = {12, 1, P_LIT_sub}}});
-	re_table_set(table, 11, P_TOK_SLASH, {.action = REDUCE, .op = { .reduce = {12, 1, P_LIT_sub}}});
-	re_table_set(table, 11, P_TOK_TABULATE_CHAR, {.action = REDUCE, .op = { .reduce = {12, 1, P_LIT_sub}}});
-	re_table_set(table, 11, P_TOK_TIMES, {.action = REDUCE, .op = { .reduce = {12, 1, P_LIT_sub}}});
-	re_table_set(table, 12, P_TOK_END, {.action = REDUCE, .op = { .reduce = {45, 1, P_LIT_fch}}});
-	re_table_set(table, 12, P_TOK_BAR, {.action = REDUCE, .op = { .reduce = {45, 1, P_LIT_fch}}});
-	re_table_set(table, 12, P_TOK_CAP, {.action = REDUCE, .op = { .reduce = {45, 1, P_LIT_fch}}});
-	re_table_set(table, 12, P_TOK_CHAR, {.action = REDUCE, .op = { .reduce = {45, 1, P_LIT_fch}}});
-	re_table_set(table, 12, P_TOK_CRETURN_CHAR, {.action = REDUCE, .op = { .reduce = {45, 1, P_LIT_fch}}});
-	re_table_set(table, 12, P_TOK_DOT, {.action = REDUCE, .op = { .reduce = {45, 1, P_LIT_fch}}});
-	re_table_set(table, 12, P_TOK_LBRACK, {.action = REDUCE, .op = { .reduce = {45, 1, P_LIT_fch}}});
-	re_table_set(table, 12, P_TOK_LPAREN, {.action = REDUCE, .op = { .reduce = {45, 1, P_LIT_fch}}});
-	re_table_set(table, 12, P_TOK_MINUS, {.action = REDUCE, .op = { .reduce = {45, 1, P_LIT_fch}}});
-	re_table_set(table, 12, P_TOK_NEWLINE_CHAR, {.action = REDUCE, .op = { .reduce = {45, 1, P_LIT_fch}}});
-	re_table_set(table, 12, P_TOK_PLUS, {.action = REDUCE, .op = { .reduce = {45, 1, P_LIT_fch}}});
-	re_table_set(table, 12, P_TOK_QUESTION, {.action = REDUCE, .op = { .reduce = {45, 1, P_LIT_fch}}});
-	re_table_set(table, 12, P_TOK_RBRACK, {.action = REDUCE, .op = { .reduce = {45, 1, P_LIT_fch}}});
-	re_table_set(table, 12, P_TOK_RPAREN, {.action = REDUCE, .op = { .reduce = {45, 1, P_LIT_fch}}});
-	re_table_set(table, 12, P_TOK_SLASH, {.action = REDUCE, .op = { .reduce = {45, 1, P_LIT_fch}}});
-	re_table_set(table, 12, P_TOK_TABULATE_CHAR, {.action = REDUCE, .op = { .reduce = {45, 1, P_LIT_fch}}});
-	re_table_set(table, 12, P_TOK_TIMES, {.action = REDUCE, .op = { .reduce = {45, 1, P_LIT_fch}}});
-	re_table_set(table, 13, P_TOK_END, {.action = REDUCE, .op = { .reduce = {2, 0, P_LIT_re_BAR}}});
-	re_table_set(table, 13, P_TOK_RPAREN, {.action = REDUCE, .op = { .reduce = {2, 0, P_LIT_re_BAR}}});
-	re_table_set(table, 14, P_TOK_END, {.action = REDUCE, .op = { .reduce = {15, 1, P_LIT_elm}}});
-	re_table_set(table, 14, P_TOK_BAR, {.action = REDUCE, .op = { .reduce = {15, 1, P_LIT_elm}}});
-	re_table_set(table, 14, P_TOK_CAP, {.action = REDUCE, .op = { .reduce = {15, 1, P_LIT_elm}}});
-	re_table_set(table, 14, P_TOK_CHAR, {.action = REDUCE, .op = { .reduce = {15, 1, P_LIT_elm}}});
-	re_table_set(table, 14, P_TOK_CRETURN_CHAR, {.action = REDUCE, .op = { .reduce = {15, 1, P_LIT_elm}}});
-	re_table_set(table, 14, P_TOK_DOT, {.action = REDUCE, .op = { .reduce = {15, 1, P_LIT_elm}}});
-	re_table_set(table, 14, P_TOK_LBRACK, {.action = REDUCE, .op = { .reduce = {15, 1, P_LIT_elm}}});
-	re_table_set(table, 14, P_TOK_LPAREN, {.action = REDUCE, .op = { .reduce = {15, 1, P_LIT_elm}}});
-	re_table_set(table, 14, P_TOK_MINUS, {.action = REDUCE, .op = { .reduce = {15, 1, P_LIT_elm}}});
-	re_table_set(table, 14, P_TOK_NEWLINE_CHAR, {.action = REDUCE, .op = { .reduce = {15, 1, P_LIT_elm}}});
-	re_table_set(table, 14, P_TOK_PLUS, {.action = REDUCE, .op = { .reduce = {15, 1, P_LIT_elm}}});
-	re_table_set(table, 14, P_TOK_QUESTION, {.action = REDUCE, .op = { .reduce = {15, 1, P_LIT_elm}}});
-	re_table_set(table, 14, P_TOK_RPAREN, {.action = REDUCE, .op = { .reduce = {15, 1, P_LIT_elm}}});
-	re_table_set(table, 14, P_TOK_SLASH, {.action = REDUCE, .op = { .reduce = {15, 1, P_LIT_elm}}});
-	re_table_set(table, 14, P_TOK_TABULATE_CHAR, {.action = REDUCE, .op = { .reduce = {15, 1, P_LIT_elm}}});
-	re_table_set(table, 14, P_TOK_TIMES, {.action = REDUCE, .op = { .reduce = {15, 1, P_LIT_elm}}});
-	re_table_set(table, 15, P_TOK_END, {.action = REDUCE, .op = { .reduce = {6, 0, P_LIT_exp_BAR}}});
-	re_table_set(table, 15, P_TOK_BAR, {.action = REDUCE, .op = { .reduce = {6, 0, P_LIT_exp_BAR}}});
-	re_table_set(table, 15, P_TOK_RPAREN, {.action = REDUCE, .op = { .reduce = {6, 0, P_LIT_exp_BAR}}});
-	re_table_set(table, 16, P_TOK_END, {.action = ACCEPT, .op = {.accept = 0}});
-	re_table_set(table, 17, P_TOK_END, {.action = REDUCE, .op = { .reduce = {11, 0, P_LIT_msub_BAR}}});
-	re_table_set(table, 17, P_TOK_BAR, {.action = REDUCE, .op = { .reduce = {11, 0, P_LIT_msub_BAR}}});
-	re_table_set(table, 17, P_TOK_CAP, {.action = REDUCE, .op = { .reduce = {11, 0, P_LIT_msub_BAR}}});
-	re_table_set(table, 17, P_TOK_CHAR, {.action = REDUCE, .op = { .reduce = {11, 0, P_LIT_msub_BAR}}});
-	re_table_set(table, 17, P_TOK_CRETURN_CHAR, {.action = REDUCE, .op = { .reduce = {11, 0, P_LIT_msub_BAR}}});
-	re_table_set(table, 17, P_TOK_DOT, {.action = REDUCE, .op = { .reduce = {11, 0, P_LIT_msub_BAR}}});
-	re_table_set(table, 17, P_TOK_LBRACK, {.action = REDUCE, .op = { .reduce = {11, 0, P_LIT_msub_BAR}}});
-	re_table_set(table, 17, P_TOK_LPAREN, {.action = REDUCE, .op = { .reduce = {11, 0, P_LIT_msub_BAR}}});
-	re_table_set(table, 17, P_TOK_MINUS, {.action = REDUCE, .op = { .reduce = {11, 0, P_LIT_msub_BAR}}});
-	re_table_set(table, 17, P_TOK_NEWLINE_CHAR, {.action = REDUCE, .op = { .reduce = {11, 0, P_LIT_msub_BAR}}});
-	re_table_set(table, 17, P_TOK_RPAREN, {.action = REDUCE, .op = { .reduce = {11, 0, P_LIT_msub_BAR}}});
-	re_table_set(table, 17, P_TOK_SLASH, {.action = REDUCE, .op = { .reduce = {11, 0, P_LIT_msub_BAR}}});
-	re_table_set(table, 17, P_TOK_TABULATE_CHAR, {.action = REDUCE, .op = { .reduce = {11, 0, P_LIT_msub_BAR}}});
-	re_table_set(table, 19, P_TOK_CHAR, {.action = REDUCE, .op = { .reduce = {40, 1, P_LIT_sli}}});
-	re_table_set(table, 19, P_TOK_CRETURN_CHAR, {.action = REDUCE, .op = { .reduce = {40, 1, P_LIT_sli}}});
-	re_table_set(table, 19, P_TOK_DOT, {.action = REDUCE, .op = { .reduce = {40, 1, P_LIT_sli}}});
-	re_table_set(table, 19, P_TOK_NEWLINE_CHAR, {.action = REDUCE, .op = { .reduce = {40, 1, P_LIT_sli}}});
-	re_table_set(table, 19, P_TOK_RBRACK, {.action = REDUCE, .op = { .reduce = {40, 1, P_LIT_sli}}});
-	re_table_set(table, 19, P_TOK_SLASH, {.action = REDUCE, .op = { .reduce = {40, 1, P_LIT_sli}}});
-	re_table_set(table, 19, P_TOK_TABULATE_CHAR, {.action = REDUCE, .op = { .reduce = {40, 1, P_LIT_sli}}});
-	re_table_set(table, 20, P_TOK_CHAR, {.action = REDUCE, .op = { .reduce = {38, 1, P_LIT_sli}}});
-	re_table_set(table, 20, P_TOK_CRETURN_CHAR, {.action = REDUCE, .op = { .reduce = {38, 1, P_LIT_sli}}});
-	re_table_set(table, 20, P_TOK_DOT, {.action = REDUCE, .op = { .reduce = {38, 1, P_LIT_sli}}});
-	re_table_set(table, 20, P_TOK_NEWLINE_CHAR, {.action = REDUCE, .op = { .reduce = {38, 1, P_LIT_sli}}});
-	re_table_set(table, 20, P_TOK_RBRACK, {.action = REDUCE, .op = { .reduce = {38, 1, P_LIT_sli}}});
-	re_table_set(table, 20, P_TOK_SLASH, {.action = REDUCE, .op = { .reduce = {38, 1, P_LIT_sli}}});
-	re_table_set(table, 20, P_TOK_TABULATE_CHAR, {.action = REDUCE, .op = { .reduce = {38, 1, P_LIT_sli}}});
-	re_table_set(table, 22, P_TOK_RBRACK, {.action = REDUCE, .op = { .reduce = {36, 0, P_LIT_slc_BAR}}});
-	re_table_set(table, 24, P_TOK_END, {.action = REDUCE, .op = { .reduce = {25, 2, P_LIT_esc}}});
-	re_table_set(table, 24, P_TOK_BAR, {.action = REDUCE, .op = { .reduce = {25, 2, P_LIT_esc}}});
-	re_table_set(table, 24, P_TOK_CAP, {.action = REDUCE, .op = { .reduce = {25, 2, P_LIT_esc}}});
-	re_table_set(table, 24, P_TOK_CHAR, {.action = REDUCE, .op = { .reduce = {25, 2, P_LIT_esc}}});
-	re_table_set(table, 24, P_TOK_CRETURN_CHAR, {.action = REDUCE, .op = { .reduce = {25, 2, P_LIT_esc}}});
-	re_table_set(table, 24, P_TOK_DOT, {.action = REDUCE, .op = { .reduce = {25, 2, P_LIT_esc}}});
-	re_table_set(table, 24, P_TOK_LBRACK, {.action = REDUCE, .op = { .reduce = {25, 2, P_LIT_esc}}});
-	re_table_set(table, 24, P_TOK_LPAREN, {.action = REDUCE, .op = { .reduce = {25, 2, P_LIT_esc}}});
-	re_table_set(table, 24, P_TOK_MINUS, {.action = REDUCE, .op = { .reduce = {25, 2, P_LIT_esc}}});
-	re_table_set(table, 24, P_TOK_NEWLINE_CHAR, {.action = REDUCE, .op = { .reduce = {25, 2, P_LIT_esc}}});
-	re_table_set(table, 24, P_TOK_PLUS, {.action = REDUCE, .op = { .reduce = {25, 2, P_LIT_esc}}});
-	re_table_set(table, 24, P_TOK_QUESTION, {.action = REDUCE, .op = { .reduce = {25, 2, P_LIT_esc}}});
-	re_table_set(table, 24, P_TOK_RBRACK, {.action = REDUCE, .op = { .reduce = {25, 2, P_LIT_esc}}});
-	re_table_set(table, 24, P_TOK_RPAREN, {.action = REDUCE, .op = { .reduce = {25, 2, P_LIT_esc}}});
-	re_table_set(table, 24, P_TOK_SLASH, {.action = REDUCE, .op = { .reduce = {25, 2, P_LIT_esc}}});
-	re_table_set(table, 24, P_TOK_TABULATE_CHAR, {.action = REDUCE, .op = { .reduce = {25, 2, P_LIT_esc}}});
-	re_table_set(table, 24, P_TOK_TIMES, {.action = REDUCE, .op = { .reduce = {25, 2, P_LIT_esc}}});
-	re_table_set(table, 25, P_TOK_END, {.action = REDUCE, .op = { .reduce = {27, 2, P_LIT_esc}}});
-	re_table_set(table, 25, P_TOK_BAR, {.action = REDUCE, .op = { .reduce = {27, 2, P_LIT_esc}}});
-	re_table_set(table, 25, P_TOK_CAP, {.action = REDUCE, .op = { .reduce = {27, 2, P_LIT_esc}}});
-	re_table_set(table, 25, P_TOK_CHAR, {.action = REDUCE, .op = { .reduce = {27, 2, P_LIT_esc}}});
-	re_table_set(table, 25, P_TOK_CRETURN_CHAR, {.action = REDUCE, .op = { .reduce = {27, 2, P_LIT_esc}}});
-	re_table_set(table, 25, P_TOK_DOT, {.action = REDUCE, .op = { .reduce = {27, 2, P_LIT_esc}}});
-	re_table_set(table, 25, P_TOK_LBRACK, {.action = REDUCE, .op = { .reduce = {27, 2, P_LIT_esc}}});
-	re_table_set(table, 25, P_TOK_LPAREN, {.action = REDUCE, .op = { .reduce = {27, 2, P_LIT_esc}}});
-	re_table_set(table, 25, P_TOK_MINUS, {.action = REDUCE, .op = { .reduce = {27, 2, P_LIT_esc}}});
-	re_table_set(table, 25, P_TOK_NEWLINE_CHAR, {.action = REDUCE, .op = { .reduce = {27, 2, P_LIT_esc}}});
-	re_table_set(table, 25, P_TOK_PLUS, {.action = REDUCE, .op = { .reduce = {27, 2, P_LIT_esc}}});
-	re_table_set(table, 25, P_TOK_QUESTION, {.action = REDUCE, .op = { .reduce = {27, 2, P_LIT_esc}}});
-	re_table_set(table, 25, P_TOK_RBRACK, {.action = REDUCE, .op = { .reduce = {27, 2, P_LIT_esc}}});
-	re_table_set(table, 25, P_TOK_RPAREN, {.action = REDUCE, .op = { .reduce = {27, 2, P_LIT_esc}}});
-	re_table_set(table, 25, P_TOK_SLASH, {.action = REDUCE, .op = { .reduce = {27, 2, P_LIT_esc}}});
-	re_table_set(table, 25, P_TOK_TABULATE_CHAR, {.action = REDUCE, .op = { .reduce = {27, 2, P_LIT_esc}}});
-	re_table_set(table, 25, P_TOK_TIMES, {.action = REDUCE, .op = { .reduce = {27, 2, P_LIT_esc}}});
-	re_table_set(table, 26, P_TOK_END, {.action = REDUCE, .op = { .reduce = {32, 2, P_LIT_esc}}});
-	re_table_set(table, 26, P_TOK_BAR, {.action = REDUCE, .op = { .reduce = {32, 2, P_LIT_esc}}});
-	re_table_set(table, 26, P_TOK_CAP, {.action = REDUCE, .op = { .reduce = {32, 2, P_LIT_esc}}});
-	re_table_set(table, 26, P_TOK_CHAR, {.action = REDUCE, .op = { .reduce = {32, 2, P_LIT_esc}}});
-	re_table_set(table, 26, P_TOK_CRETURN_CHAR, {.action = REDUCE, .op = { .reduce = {32, 2, P_LIT_esc}}});
-	re_table_set(table, 26, P_TOK_DOT, {.action = REDUCE, .op = { .reduce = {32, 2, P_LIT_esc}}});
-	re_table_set(table, 26, P_TOK_LBRACK, {.action = REDUCE, .op = { .reduce = {32, 2, P_LIT_esc}}});
-	re_table_set(table, 26, P_TOK_LPAREN, {.action = REDUCE, .op = { .reduce = {32, 2, P_LIT_esc}}});
-	re_table_set(table, 26, P_TOK_MINUS, {.action = REDUCE, .op = { .reduce = {32, 2, P_LIT_esc}}});
-	re_table_set(table, 26, P_TOK_NEWLINE_CHAR, {.action = REDUCE, .op = { .reduce = {32, 2, P_LIT_esc}}});
-	re_table_set(table, 26, P_TOK_PLUS, {.action = REDUCE, .op = { .reduce = {32, 2, P_LIT_esc}}});
-	re_table_set(table, 26, P_TOK_QUESTION, {.action = REDUCE, .op = { .reduce = {32, 2, P_LIT_esc}}});
-	re_table_set(table, 26, P_TOK_RBRACK, {.action = REDUCE, .op = { .reduce = {32, 2, P_LIT_esc}}});
-	re_table_set(table, 26, P_TOK_RPAREN, {.action = REDUCE, .op = { .reduce = {32, 2, P_LIT_esc}}});
-	re_table_set(table, 26, P_TOK_SLASH, {.action = REDUCE, .op = { .reduce = {32, 2, P_LIT_esc}}});
-	re_table_set(table, 26, P_TOK_TABULATE_CHAR, {.action = REDUCE, .op = { .reduce = {32, 2, P_LIT_esc}}});
-	re_table_set(table, 26, P_TOK_TIMES, {.action = REDUCE, .op = { .reduce = {32, 2, P_LIT_esc}}});
-	re_table_set(table, 27, P_TOK_END, {.action = REDUCE, .op = { .reduce = {30, 2, P_LIT_esc}}});
-	re_table_set(table, 27, P_TOK_BAR, {.action = REDUCE, .op = { .reduce = {30, 2, P_LIT_esc}}});
-	re_table_set(table, 27, P_TOK_CAP, {.action = REDUCE, .op = { .reduce = {30, 2, P_LIT_esc}}});
-	re_table_set(table, 27, P_TOK_CHAR, {.action = REDUCE, .op = { .reduce = {30, 2, P_LIT_esc}}});
-	re_table_set(table, 27, P_TOK_CRETURN_CHAR, {.action = REDUCE, .op = { .reduce = {30, 2, P_LIT_esc}}});
-	re_table_set(table, 27, P_TOK_DOT, {.action = REDUCE, .op = { .reduce = {30, 2, P_LIT_esc}}});
-	re_table_set(table, 27, P_TOK_LBRACK, {.action = REDUCE, .op = { .reduce = {30, 2, P_LIT_esc}}});
-	re_table_set(table, 27, P_TOK_LPAREN, {.action = REDUCE, .op = { .reduce = {30, 2, P_LIT_esc}}});
-	re_table_set(table, 27, P_TOK_MINUS, {.action = REDUCE, .op = { .reduce = {30, 2, P_LIT_esc}}});
-	re_table_set(table, 27, P_TOK_NEWLINE_CHAR, {.action = REDUCE, .op = { .reduce = {30, 2, P_LIT_esc}}});
-	re_table_set(table, 27, P_TOK_PLUS, {.action = REDUCE, .op = { .reduce = {30, 2, P_LIT_esc}}});
-	re_table_set(table, 27, P_TOK_QUESTION, {.action = REDUCE, .op = { .reduce = {30, 2, P_LIT_esc}}});
-	re_table_set(table, 27, P_TOK_RBRACK, {.action = REDUCE, .op = { .reduce = {30, 2, P_LIT_esc}}});
-	re_table_set(table, 27, P_TOK_RPAREN, {.action = REDUCE, .op = { .reduce = {30, 2, P_LIT_esc}}});
-	re_table_set(table, 27, P_TOK_SLASH, {.action = REDUCE, .op = { .reduce = {30, 2, P_LIT_esc}}});
-	re_table_set(table, 27, P_TOK_TABULATE_CHAR, {.action = REDUCE, .op = { .reduce = {30, 2, P_LIT_esc}}});
-	re_table_set(table, 27, P_TOK_TIMES, {.action = REDUCE, .op = { .reduce = {30, 2, P_LIT_esc}}});
-	re_table_set(table, 28, P_TOK_END, {.action = REDUCE, .op = { .reduce = {20, 2, P_LIT_esc}}});
-	re_table_set(table, 28, P_TOK_BAR, {.action = REDUCE, .op = { .reduce = {20, 2, P_LIT_esc}}});
-	re_table_set(table, 28, P_TOK_CAP, {.action = REDUCE, .op = { .reduce = {20, 2, P_LIT_esc}}});
-	re_table_set(table, 28, P_TOK_CHAR, {.action = REDUCE, .op = { .reduce = {20, 2, P_LIT_esc}}});
-	re_table_set(table, 28, P_TOK_CRETURN_CHAR, {.action = REDUCE, .op = { .reduce = {20, 2, P_LIT_esc}}});
-	re_table_set(table, 28, P_TOK_DOT, {.action = REDUCE, .op = { .reduce = {20, 2, P_LIT_esc}}});
-	re_table_set(table, 28, P_TOK_LBRACK, {.action = REDUCE, .op = { .reduce = {20, 2, P_LIT_esc}}});
-	re_table_set(table, 28, P_TOK_LPAREN, {.action = REDUCE, .op = { .reduce = {20, 2, P_LIT_esc}}});
-	re_table_set(table, 28, P_TOK_MINUS, {.action = REDUCE, .op = { .reduce = {20, 2, P_LIT_esc}}});
-	re_table_set(table, 28, P_TOK_NEWLINE_CHAR, {.action = REDUCE, .op = { .reduce = {20, 2, P_LIT_esc}}});
-	re_table_set(table, 28, P_TOK_PLUS, {.action = REDUCE, .op = { .reduce = {20, 2, P_LIT_esc}}});
-	re_table_set(table, 28, P_TOK_QUESTION, {.action = REDUCE, .op = { .reduce = {20, 2, P_LIT_esc}}});
-	re_table_set(table, 28, P_TOK_RBRACK, {.action = REDUCE, .op = { .reduce = {20, 2, P_LIT_esc}}});
-	re_table_set(table, 28, P_TOK_RPAREN, {.action = REDUCE, .op = { .reduce = {20, 2, P_LIT_esc}}});
-	re_table_set(table, 28, P_TOK_SLASH, {.action = REDUCE, .op = { .reduce = {20, 2, P_LIT_esc}}});
-	re_table_set(table, 28, P_TOK_TABULATE_CHAR, {.action = REDUCE, .op = { .reduce = {20, 2, P_LIT_esc}}});
-	re_table_set(table, 28, P_TOK_TIMES, {.action = REDUCE, .op = { .reduce = {20, 2, P_LIT_esc}}});
-	re_table_set(table, 29, P_TOK_END, {.action = REDUCE, .op = { .reduce = {28, 2, P_LIT_esc}}});
-	re_table_set(table, 29, P_TOK_BAR, {.action = REDUCE, .op = { .reduce = {28, 2, P_LIT_esc}}});
-	re_table_set(table, 29, P_TOK_CAP, {.action = REDUCE, .op = { .reduce = {28, 2, P_LIT_esc}}});
-	re_table_set(table, 29, P_TOK_CHAR, {.action = REDUCE, .op = { .reduce = {28, 2, P_LIT_esc}}});
-	re_table_set(table, 29, P_TOK_CRETURN_CHAR, {.action = REDUCE, .op = { .reduce = {28, 2, P_LIT_esc}}});
-	re_table_set(table, 29, P_TOK_DOT, {.action = REDUCE, .op = { .reduce = {28, 2, P_LIT_esc}}});
-	re_table_set(table, 29, P_TOK_LBRACK, {.action = REDUCE, .op = { .reduce = {28, 2, P_LIT_esc}}});
-	re_table_set(table, 29, P_TOK_LPAREN, {.action = REDUCE, .op = { .reduce = {28, 2, P_LIT_esc}}});
-	re_table_set(table, 29, P_TOK_MINUS, {.action = REDUCE, .op = { .reduce = {28, 2, P_LIT_esc}}});
-	re_table_set(table, 29, P_TOK_NEWLINE_CHAR, {.action = REDUCE, .op = { .reduce = {28, 2, P_LIT_esc}}});
-	re_table_set(table, 29, P_TOK_PLUS, {.action = REDUCE, .op = { .reduce = {28, 2, P_LIT_esc}}});
-	re_table_set(table, 29, P_TOK_QUESTION, {.action = REDUCE, .op = { .reduce = {28, 2, P_LIT_esc}}});
-	re_table_set(table, 29, P_TOK_RBRACK, {.action = REDUCE, .op = { .reduce = {28, 2, P_LIT_esc}}});
-	re_table_set(table, 29, P_TOK_RPAREN, {.action = REDUCE, .op = { .reduce = {28, 2, P_LIT_esc}}});
-	re_table_set(table, 29, P_TOK_SLASH, {.action = REDUCE, .op = { .reduce = {28, 2, P_LIT_esc}}});
-	re_table_set(table, 29, P_TOK_TABULATE_CHAR, {.action = REDUCE, .op = { .reduce = {28, 2, P_LIT_esc}}});
-	re_table_set(table, 29, P_TOK_TIMES, {.action = REDUCE, .op = { .reduce = {28, 2, P_LIT_esc}}});
-	re_table_set(table, 30, P_TOK_END, {.action = REDUCE, .op = { .reduce = {23, 2, P_LIT_esc}}});
-	re_table_set(table, 30, P_TOK_BAR, {.action = REDUCE, .op = { .reduce = {23, 2, P_LIT_esc}}});
-	re_table_set(table, 30, P_TOK_CAP, {.action = REDUCE, .op = { .reduce = {23, 2, P_LIT_esc}}});
-	re_table_set(table, 30, P_TOK_CHAR, {.action = REDUCE, .op = { .reduce = {23, 2, P_LIT_esc}}});
-	re_table_set(table, 30, P_TOK_CRETURN_CHAR, {.action = REDUCE, .op = { .reduce = {23, 2, P_LIT_esc}}});
-	re_table_set(table, 30, P_TOK_DOT, {.action = REDUCE, .op = { .reduce = {23, 2, P_LIT_esc}}});
-	re_table_set(table, 30, P_TOK_LBRACK, {.action = REDUCE, .op = { .reduce = {23, 2, P_LIT_esc}}});
-	re_table_set(table, 30, P_TOK_LPAREN, {.action = REDUCE, .op = { .reduce = {23, 2, P_LIT_esc}}});
-	re_table_set(table, 30, P_TOK_MINUS, {.action = REDUCE, .op = { .reduce = {23, 2, P_LIT_esc}}});
-	re_table_set(table, 30, P_TOK_NEWLINE_CHAR, {.action = REDUCE, .op = { .reduce = {23, 2, P_LIT_esc}}});
-	re_table_set(table, 30, P_TOK_PLUS, {.action = REDUCE, .op = { .reduce = {23, 2, P_LIT_esc}}});
-	re_table_set(table, 30, P_TOK_QUESTION, {.action = REDUCE, .op = { .reduce = {23, 2, P_LIT_esc}}});
-	re_table_set(table, 30, P_TOK_RBRACK, {.action = REDUCE, .op = { .reduce = {23, 2, P_LIT_esc}}});
-	re_table_set(table, 30, P_TOK_RPAREN, {.action = REDUCE, .op = { .reduce = {23, 2, P_LIT_esc}}});
-	re_table_set(table, 30, P_TOK_SLASH, {.action = REDUCE, .op = { .reduce = {23, 2, P_LIT_esc}}});
-	re_table_set(table, 30, P_TOK_TABULATE_CHAR, {.action = REDUCE, .op = { .reduce = {23, 2, P_LIT_esc}}});
-	re_table_set(table, 30, P_TOK_TIMES, {.action = REDUCE, .op = { .reduce = {23, 2, P_LIT_esc}}});
-	re_table_set(table, 31, P_TOK_END, {.action = REDUCE, .op = { .reduce = {31, 2, P_LIT_esc}}});
-	re_table_set(table, 31, P_TOK_BAR, {.action = REDUCE, .op = { .reduce = {31, 2, P_LIT_esc}}});
-	re_table_set(table, 31, P_TOK_CAP, {.action = REDUCE, .op = { .reduce = {31, 2, P_LIT_esc}}});
-	re_table_set(table, 31, P_TOK_CHAR, {.action = REDUCE, .op = { .reduce = {31, 2, P_LIT_esc}}});
-	re_table_set(table, 31, P_TOK_CRETURN_CHAR, {.action = REDUCE, .op = { .reduce = {31, 2, P_LIT_esc}}});
-	re_table_set(table, 31, P_TOK_DOT, {.action = REDUCE, .op = { .reduce = {31, 2, P_LIT_esc}}});
-	re_table_set(table, 31, P_TOK_LBRACK, {.action = REDUCE, .op = { .reduce = {31, 2, P_LIT_esc}}});
-	re_table_set(table, 31, P_TOK_LPAREN, {.action = REDUCE, .op = { .reduce = {31, 2, P_LIT_esc}}});
-	re_table_set(table, 31, P_TOK_MINUS, {.action = REDUCE, .op = { .reduce = {31, 2, P_LIT_esc}}});
-	re_table_set(table, 31, P_TOK_NEWLINE_CHAR, {.action = REDUCE, .op = { .reduce = {31, 2, P_LIT_esc}}});
-	re_table_set(table, 31, P_TOK_PLUS, {.action = REDUCE, .op = { .reduce = {31, 2, P_LIT_esc}}});
-	re_table_set(table, 31, P_TOK_QUESTION, {.action = REDUCE, .op = { .reduce = {31, 2, P_LIT_esc}}});
-	re_table_set(table, 31, P_TOK_RBRACK, {.action = REDUCE, .op = { .reduce = {31, 2, P_LIT_esc}}});
-	re_table_set(table, 31, P_TOK_RPAREN, {.action = REDUCE, .op = { .reduce = {31, 2, P_LIT_esc}}});
-	re_table_set(table, 31, P_TOK_SLASH, {.action = REDUCE, .op = { .reduce = {31, 2, P_LIT_esc}}});
-	re_table_set(table, 31, P_TOK_TABULATE_CHAR, {.action = REDUCE, .op = { .reduce = {31, 2, P_LIT_esc}}});
-	re_table_set(table, 31, P_TOK_TIMES, {.action = REDUCE, .op = { .reduce = {31, 2, P_LIT_esc}}});
-	re_table_set(table, 32, P_TOK_END, {.action = REDUCE, .op = { .reduce = {22, 2, P_LIT_esc}}});
-	re_table_set(table, 32, P_TOK_BAR, {.action = REDUCE, .op = { .reduce = {22, 2, P_LIT_esc}}});
-	re_table_set(table, 32, P_TOK_CAP, {.action = REDUCE, .op = { .reduce = {22, 2, P_LIT_esc}}});
-	re_table_set(table, 32, P_TOK_CHAR, {.action = REDUCE, .op = { .reduce = {22, 2, P_LIT_esc}}});
-	re_table_set(table, 32, P_TOK_CRETURN_CHAR, {.action = REDUCE, .op = { .reduce = {22, 2, P_LIT_esc}}});
-	re_table_set(table, 32, P_TOK_DOT, {.action = REDUCE, .op = { .reduce = {22, 2, P_LIT_esc}}});
-	re_table_set(table, 32, P_TOK_LBRACK, {.action = REDUCE, .op = { .reduce = {22, 2, P_LIT_esc}}});
-	re_table_set(table, 32, P_TOK_LPAREN, {.action = REDUCE, .op = { .reduce = {22, 2, P_LIT_esc}}});
-	re_table_set(table, 32, P_TOK_MINUS, {.action = REDUCE, .op = { .reduce = {22, 2, P_LIT_esc}}});
-	re_table_set(table, 32, P_TOK_NEWLINE_CHAR, {.action = REDUCE, .op = { .reduce = {22, 2, P_LIT_esc}}});
-	re_table_set(table, 32, P_TOK_PLUS, {.action = REDUCE, .op = { .reduce = {22, 2, P_LIT_esc}}});
-	re_table_set(table, 32, P_TOK_QUESTION, {.action = REDUCE, .op = { .reduce = {22, 2, P_LIT_esc}}});
-	re_table_set(table, 32, P_TOK_RBRACK, {.action = REDUCE, .op = { .reduce = {22, 2, P_LIT_esc}}});
-	re_table_set(table, 32, P_TOK_RPAREN, {.action = REDUCE, .op = { .reduce = {22, 2, P_LIT_esc}}});
-	re_table_set(table, 32, P_TOK_SLASH, {.action = REDUCE, .op = { .reduce = {22, 2, P_LIT_esc}}});
-	re_table_set(table, 32, P_TOK_TABULATE_CHAR, {.action = REDUCE, .op = { .reduce = {22, 2, P_LIT_esc}}});
-	re_table_set(table, 32, P_TOK_TIMES, {.action = REDUCE, .op = { .reduce = {22, 2, P_LIT_esc}}});
-	re_table_set(table, 33, P_TOK_END, {.action = REDUCE, .op = { .reduce = {19, 2, P_LIT_esc}}});
-	re_table_set(table, 33, P_TOK_BAR, {.action = REDUCE, .op = { .reduce = {19, 2, P_LIT_esc}}});
-	re_table_set(table, 33, P_TOK_CAP, {.action = REDUCE, .op = { .reduce = {19, 2, P_LIT_esc}}});
-	re_table_set(table, 33, P_TOK_CHAR, {.action = REDUCE, .op = { .reduce = {19, 2, P_LIT_esc}}});
-	re_table_set(table, 33, P_TOK_CRETURN_CHAR, {.action = REDUCE, .op = { .reduce = {19, 2, P_LIT_esc}}});
-	re_table_set(table, 33, P_TOK_DOT, {.action = REDUCE, .op = { .reduce = {19, 2, P_LIT_esc}}});
-	re_table_set(table, 33, P_TOK_LBRACK, {.action = REDUCE, .op = { .reduce = {19, 2, P_LIT_esc}}});
-	re_table_set(table, 33, P_TOK_LPAREN, {.action = REDUCE, .op = { .reduce = {19, 2, P_LIT_esc}}});
-	re_table_set(table, 33, P_TOK_MINUS, {.action = REDUCE, .op = { .reduce = {19, 2, P_LIT_esc}}});
-	re_table_set(table, 33, P_TOK_NEWLINE_CHAR, {.action = REDUCE, .op = { .reduce = {19, 2, P_LIT_esc}}});
-	re_table_set(table, 33, P_TOK_PLUS, {.action = REDUCE, .op = { .reduce = {19, 2, P_LIT_esc}}});
-	re_table_set(table, 33, P_TOK_QUESTION, {.action = REDUCE, .op = { .reduce = {19, 2, P_LIT_esc}}});
-	re_table_set(table, 33, P_TOK_RBRACK, {.action = REDUCE, .op = { .reduce = {19, 2, P_LIT_esc}}});
-	re_table_set(table, 33, P_TOK_RPAREN, {.action = REDUCE, .op = { .reduce = {19, 2, P_LIT_esc}}});
-	re_table_set(table, 33, P_TOK_SLASH, {.action = REDUCE, .op = { .reduce = {19, 2, P_LIT_esc}}});
-	re_table_set(table, 33, P_TOK_TABULATE_CHAR, {.action = REDUCE, .op = { .reduce = {19, 2, P_LIT_esc}}});
-	re_table_set(table, 33, P_TOK_TIMES, {.action = REDUCE, .op = { .reduce = {19, 2, P_LIT_esc}}});
-	re_table_set(table, 34, P_TOK_END, {.action = REDUCE, .op = { .reduce = {21, 2, P_LIT_esc}}});
-	re_table_set(table, 34, P_TOK_BAR, {.action = REDUCE, .op = { .reduce = {21, 2, P_LIT_esc}}});
-	re_table_set(table, 34, P_TOK_CAP, {.action = REDUCE, .op = { .reduce = {21, 2, P_LIT_esc}}});
-	re_table_set(table, 34, P_TOK_CHAR, {.action = REDUCE, .op = { .reduce = {21, 2, P_LIT_esc}}});
-	re_table_set(table, 34, P_TOK_CRETURN_CHAR, {.action = REDUCE, .op = { .reduce = {21, 2, P_LIT_esc}}});
-	re_table_set(table, 34, P_TOK_DOT, {.action = REDUCE, .op = { .reduce = {21, 2, P_LIT_esc}}});
-	re_table_set(table, 34, P_TOK_LBRACK, {.action = REDUCE, .op = { .reduce = {21, 2, P_LIT_esc}}});
-	re_table_set(table, 34, P_TOK_LPAREN, {.action = REDUCE, .op = { .reduce = {21, 2, P_LIT_esc}}});
-	re_table_set(table, 34, P_TOK_MINUS, {.action = REDUCE, .op = { .reduce = {21, 2, P_LIT_esc}}});
-	re_table_set(table, 34, P_TOK_NEWLINE_CHAR, {.action = REDUCE, .op = { .reduce = {21, 2, P_LIT_esc}}});
-	re_table_set(table, 34, P_TOK_PLUS, {.action = REDUCE, .op = { .reduce = {21, 2, P_LIT_esc}}});
-	re_table_set(table, 34, P_TOK_QUESTION, {.action = REDUCE, .op = { .reduce = {21, 2, P_LIT_esc}}});
-	re_table_set(table, 34, P_TOK_RBRACK, {.action = REDUCE, .op = { .reduce = {21, 2, P_LIT_esc}}});
-	re_table_set(table, 34, P_TOK_RPAREN, {.action = REDUCE, .op = { .reduce = {21, 2, P_LIT_esc}}});
-	re_table_set(table, 34, P_TOK_SLASH, {.action = REDUCE, .op = { .reduce = {21, 2, P_LIT_esc}}});
-	re_table_set(table, 34, P_TOK_TABULATE_CHAR, {.action = REDUCE, .op = { .reduce = {21, 2, P_LIT_esc}}});
-	re_table_set(table, 34, P_TOK_TIMES, {.action = REDUCE, .op = { .reduce = {21, 2, P_LIT_esc}}});
-	re_table_set(table, 35, P_TOK_END, {.action = REDUCE, .op = { .reduce = {29, 2, P_LIT_esc}}});
-	re_table_set(table, 35, P_TOK_BAR, {.action = REDUCE, .op = { .reduce = {29, 2, P_LIT_esc}}});
-	re_table_set(table, 35, P_TOK_CAP, {.action = REDUCE, .op = { .reduce = {29, 2, P_LIT_esc}}});
-	re_table_set(table, 35, P_TOK_CHAR, {.action = REDUCE, .op = { .reduce = {29, 2, P_LIT_esc}}});
-	re_table_set(table, 35, P_TOK_CRETURN_CHAR, {.action = REDUCE, .op = { .reduce = {29, 2, P_LIT_esc}}});
-	re_table_set(table, 35, P_TOK_DOT, {.action = REDUCE, .op = { .reduce = {29, 2, P_LIT_esc}}});
-	re_table_set(table, 35, P_TOK_LBRACK, {.action = REDUCE, .op = { .reduce = {29, 2, P_LIT_esc}}});
-	re_table_set(table, 35, P_TOK_LPAREN, {.action = REDUCE, .op = { .reduce = {29, 2, P_LIT_esc}}});
-	re_table_set(table, 35, P_TOK_MINUS, {.action = REDUCE, .op = { .reduce = {29, 2, P_LIT_esc}}});
-	re_table_set(table, 35, P_TOK_NEWLINE_CHAR, {.action = REDUCE, .op = { .reduce = {29, 2, P_LIT_esc}}});
-	re_table_set(table, 35, P_TOK_PLUS, {.action = REDUCE, .op = { .reduce = {29, 2, P_LIT_esc}}});
-	re_table_set(table, 35, P_TOK_QUESTION, {.action = REDUCE, .op = { .reduce = {29, 2, P_LIT_esc}}});
-	re_table_set(table, 35, P_TOK_RBRACK, {.action = REDUCE, .op = { .reduce = {29, 2, P_LIT_esc}}});
-	re_table_set(table, 35, P_TOK_RPAREN, {.action = REDUCE, .op = { .reduce = {29, 2, P_LIT_esc}}});
-	re_table_set(table, 35, P_TOK_SLASH, {.action = REDUCE, .op = { .reduce = {29, 2, P_LIT_esc}}});
-	re_table_set(table, 35, P_TOK_TABULATE_CHAR, {.action = REDUCE, .op = { .reduce = {29, 2, P_LIT_esc}}});
-	re_table_set(table, 35, P_TOK_TIMES, {.action = REDUCE, .op = { .reduce = {29, 2, P_LIT_esc}}});
-	re_table_set(table, 36, P_TOK_END, {.action = REDUCE, .op = { .reduce = {26, 2, P_LIT_esc}}});
-	re_table_set(table, 36, P_TOK_BAR, {.action = REDUCE, .op = { .reduce = {26, 2, P_LIT_esc}}});
-	re_table_set(table, 36, P_TOK_CAP, {.action = REDUCE, .op = { .reduce = {26, 2, P_LIT_esc}}});
-	re_table_set(table, 36, P_TOK_CHAR, {.action = REDUCE, .op = { .reduce = {26, 2, P_LIT_esc}}});
-	re_table_set(table, 36, P_TOK_CRETURN_CHAR, {.action = REDUCE, .op = { .reduce = {26, 2, P_LIT_esc}}});
-	re_table_set(table, 36, P_TOK_DOT, {.action = REDUCE, .op = { .reduce = {26, 2, P_LIT_esc}}});
-	re_table_set(table, 36, P_TOK_LBRACK, {.action = REDUCE, .op = { .reduce = {26, 2, P_LIT_esc}}});
-	re_table_set(table, 36, P_TOK_LPAREN, {.action = REDUCE, .op = { .reduce = {26, 2, P_LIT_esc}}});
-	re_table_set(table, 36, P_TOK_MINUS, {.action = REDUCE, .op = { .reduce = {26, 2, P_LIT_esc}}});
-	re_table_set(table, 36, P_TOK_NEWLINE_CHAR, {.action = REDUCE, .op = { .reduce = {26, 2, P_LIT_esc}}});
-	re_table_set(table, 36, P_TOK_PLUS, {.action = REDUCE, .op = { .reduce = {26, 2, P_LIT_esc}}});
-	re_table_set(table, 36, P_TOK_QUESTION, {.action = REDUCE, .op = { .reduce = {26, 2, P_LIT_esc}}});
-	re_table_set(table, 36, P_TOK_RBRACK, {.action = REDUCE, .op = { .reduce = {26, 2, P_LIT_esc}}});
-	re_table_set(table, 36, P_TOK_RPAREN, {.action = REDUCE, .op = { .reduce = {26, 2, P_LIT_esc}}});
-	re_table_set(table, 36, P_TOK_SLASH, {.action = REDUCE, .op = { .reduce = {26, 2, P_LIT_esc}}});
-	re_table_set(table, 36, P_TOK_TABULATE_CHAR, {.action = REDUCE, .op = { .reduce = {26, 2, P_LIT_esc}}});
-	re_table_set(table, 36, P_TOK_TIMES, {.action = REDUCE, .op = { .reduce = {26, 2, P_LIT_esc}}});
-	re_table_set(table, 37, P_TOK_END, {.action = REDUCE, .op = { .reduce = {33, 2, P_LIT_esc}}});
-	re_table_set(table, 37, P_TOK_BAR, {.action = REDUCE, .op = { .reduce = {33, 2, P_LIT_esc}}});
-	re_table_set(table, 37, P_TOK_CAP, {.action = REDUCE, .op = { .reduce = {33, 2, P_LIT_esc}}});
-	re_table_set(table, 37, P_TOK_CHAR, {.action = REDUCE, .op = { .reduce = {33, 2, P_LIT_esc}}});
-	re_table_set(table, 37, P_TOK_CRETURN_CHAR, {.action = REDUCE, .op = { .reduce = {33, 2, P_LIT_esc}}});
-	re_table_set(table, 37, P_TOK_DOT, {.action = REDUCE, .op = { .reduce = {33, 2, P_LIT_esc}}});
-	re_table_set(table, 37, P_TOK_LBRACK, {.action = REDUCE, .op = { .reduce = {33, 2, P_LIT_esc}}});
-	re_table_set(table, 37, P_TOK_LPAREN, {.action = REDUCE, .op = { .reduce = {33, 2, P_LIT_esc}}});
-	re_table_set(table, 37, P_TOK_MINUS, {.action = REDUCE, .op = { .reduce = {33, 2, P_LIT_esc}}});
-	re_table_set(table, 37, P_TOK_NEWLINE_CHAR, {.action = REDUCE, .op = { .reduce = {33, 2, P_LIT_esc}}});
-	re_table_set(table, 37, P_TOK_PLUS, {.action = REDUCE, .op = { .reduce = {33, 2, P_LIT_esc}}});
-	re_table_set(table, 37, P_TOK_QUESTION, {.action = REDUCE, .op = { .reduce = {33, 2, P_LIT_esc}}});
-	re_table_set(table, 37, P_TOK_RBRACK, {.action = REDUCE, .op = { .reduce = {33, 2, P_LIT_esc}}});
-	re_table_set(table, 37, P_TOK_RPAREN, {.action = REDUCE, .op = { .reduce = {33, 2, P_LIT_esc}}});
-	re_table_set(table, 37, P_TOK_SLASH, {.action = REDUCE, .op = { .reduce = {33, 2, P_LIT_esc}}});
-	re_table_set(table, 37, P_TOK_TABULATE_CHAR, {.action = REDUCE, .op = { .reduce = {33, 2, P_LIT_esc}}});
-	re_table_set(table, 37, P_TOK_TIMES, {.action = REDUCE, .op = { .reduce = {33, 2, P_LIT_esc}}});
-	re_table_set(table, 38, P_TOK_END, {.action = REDUCE, .op = { .reduce = {24, 2, P_LIT_esc}}});
-	re_table_set(table, 38, P_TOK_BAR, {.action = REDUCE, .op = { .reduce = {24, 2, P_LIT_esc}}});
-	re_table_set(table, 38, P_TOK_CAP, {.action = REDUCE, .op = { .reduce = {24, 2, P_LIT_esc}}});
-	re_table_set(table, 38, P_TOK_CHAR, {.action = REDUCE, .op = { .reduce = {24, 2, P_LIT_esc}}});
-	re_table_set(table, 38, P_TOK_CRETURN_CHAR, {.action = REDUCE, .op = { .reduce = {24, 2, P_LIT_esc}}});
-	re_table_set(table, 38, P_TOK_DOT, {.action = REDUCE, .op = { .reduce = {24, 2, P_LIT_esc}}});
-	re_table_set(table, 38, P_TOK_LBRACK, {.action = REDUCE, .op = { .reduce = {24, 2, P_LIT_esc}}});
-	re_table_set(table, 38, P_TOK_LPAREN, {.action = REDUCE, .op = { .reduce = {24, 2, P_LIT_esc}}});
-	re_table_set(table, 38, P_TOK_MINUS, {.action = REDUCE, .op = { .reduce = {24, 2, P_LIT_esc}}});
-	re_table_set(table, 38, P_TOK_NEWLINE_CHAR, {.action = REDUCE, .op = { .reduce = {24, 2, P_LIT_esc}}});
-	re_table_set(table, 38, P_TOK_PLUS, {.action = REDUCE, .op = { .reduce = {24, 2, P_LIT_esc}}});
-	re_table_set(table, 38, P_TOK_QUESTION, {.action = REDUCE, .op = { .reduce = {24, 2, P_LIT_esc}}});
-	re_table_set(table, 38, P_TOK_RBRACK, {.action = REDUCE, .op = { .reduce = {24, 2, P_LIT_esc}}});
-	re_table_set(table, 38, P_TOK_RPAREN, {.action = REDUCE, .op = { .reduce = {24, 2, P_LIT_esc}}});
-	re_table_set(table, 38, P_TOK_SLASH, {.action = REDUCE, .op = { .reduce = {24, 2, P_LIT_esc}}});
-	re_table_set(table, 38, P_TOK_TABULATE_CHAR, {.action = REDUCE, .op = { .reduce = {24, 2, P_LIT_esc}}});
-	re_table_set(table, 38, P_TOK_TIMES, {.action = REDUCE, .op = { .reduce = {24, 2, P_LIT_esc}}});
-	re_table_set(table, 40, P_TOK_END, {.action = REDUCE, .op = { .reduce = {0, 2, P_LIT_re}}});
-	re_table_set(table, 40, P_TOK_RPAREN, {.action = REDUCE, .op = { .reduce = {0, 2, P_LIT_re}}});
-	re_table_set(table, 41, P_TOK_END, {.action = REDUCE, .op = { .reduce = {4, 2, P_LIT_exp}}});
-	re_table_set(table, 41, P_TOK_BAR, {.action = REDUCE, .op = { .reduce = {4, 2, P_LIT_exp}}});
-	re_table_set(table, 41, P_TOK_RPAREN, {.action = REDUCE, .op = { .reduce = {4, 2, P_LIT_exp}}});
-	re_table_set(table, 42, P_TOK_END, {.action = REDUCE, .op = { .reduce = {6, 0, P_LIT_exp_BAR}}});
-	re_table_set(table, 42, P_TOK_BAR, {.action = REDUCE, .op = { .reduce = {6, 0, P_LIT_exp_BAR}}});
-	re_table_set(table, 42, P_TOK_RPAREN, {.action = REDUCE, .op = { .reduce = {6, 0, P_LIT_exp_BAR}}});
-	re_table_set(table, 43, P_TOK_END, {.action = REDUCE, .op = { .reduce = {9, 1, P_LIT_msub_BAR}}});
-	re_table_set(table, 43, P_TOK_BAR, {.action = REDUCE, .op = { .reduce = {9, 1, P_LIT_msub_BAR}}});
-	re_table_set(table, 43, P_TOK_CAP, {.action = REDUCE, .op = { .reduce = {9, 1, P_LIT_msub_BAR}}});
-	re_table_set(table, 43, P_TOK_CHAR, {.action = REDUCE, .op = { .reduce = {9, 1, P_LIT_msub_BAR}}});
-	re_table_set(table, 43, P_TOK_CRETURN_CHAR, {.action = REDUCE, .op = { .reduce = {9, 1, P_LIT_msub_BAR}}});
-	re_table_set(table, 43, P_TOK_DOT, {.action = REDUCE, .op = { .reduce = {9, 1, P_LIT_msub_BAR}}});
-	re_table_set(table, 43, P_TOK_LBRACK, {.action = REDUCE, .op = { .reduce = {9, 1, P_LIT_msub_BAR}}});
-	re_table_set(table, 43, P_TOK_LPAREN, {.action = REDUCE, .op = { .reduce = {9, 1, P_LIT_msub_BAR}}});
-	re_table_set(table, 43, P_TOK_MINUS, {.action = REDUCE, .op = { .reduce = {9, 1, P_LIT_msub_BAR}}});
-	re_table_set(table, 43, P_TOK_NEWLINE_CHAR, {.action = REDUCE, .op = { .reduce = {9, 1, P_LIT_msub_BAR}}});
-	re_table_set(table, 43, P_TOK_RPAREN, {.action = REDUCE, .op = { .reduce = {9, 1, P_LIT_msub_BAR}}});
-	re_table_set(table, 43, P_TOK_SLASH, {.action = REDUCE, .op = { .reduce = {9, 1, P_LIT_msub_BAR}}});
-	re_table_set(table, 43, P_TOK_TABULATE_CHAR, {.action = REDUCE, .op = { .reduce = {9, 1, P_LIT_msub_BAR}}});
-	re_table_set(table, 44, P_TOK_END, {.action = REDUCE, .op = { .reduce = {8, 1, P_LIT_msub_BAR}}});
-	re_table_set(table, 44, P_TOK_BAR, {.action = REDUCE, .op = { .reduce = {8, 1, P_LIT_msub_BAR}}});
-	re_table_set(table, 44, P_TOK_CAP, {.action = REDUCE, .op = { .reduce = {8, 1, P_LIT_msub_BAR}}});
-	re_table_set(table, 44, P_TOK_CHAR, {.action = REDUCE, .op = { .reduce = {8, 1, P_LIT_msub_BAR}}});
-	re_table_set(table, 44, P_TOK_CRETURN_CHAR, {.action = REDUCE, .op = { .reduce = {8, 1, P_LIT_msub_BAR}}});
-	re_table_set(table, 44, P_TOK_DOT, {.action = REDUCE, .op = { .reduce = {8, 1, P_LIT_msub_BAR}}});
-	re_table_set(table, 44, P_TOK_LBRACK, {.action = REDUCE, .op = { .reduce = {8, 1, P_LIT_msub_BAR}}});
-	re_table_set(table, 44, P_TOK_LPAREN, {.action = REDUCE, .op = { .reduce = {8, 1, P_LIT_msub_BAR}}});
-	re_table_set(table, 44, P_TOK_MINUS, {.action = REDUCE, .op = { .reduce = {8, 1, P_LIT_msub_BAR}}});
-	re_table_set(table, 44, P_TOK_NEWLINE_CHAR, {.action = REDUCE, .op = { .reduce = {8, 1, P_LIT_msub_BAR}}});
-	re_table_set(table, 44, P_TOK_RPAREN, {.action = REDUCE, .op = { .reduce = {8, 1, P_LIT_msub_BAR}}});
-	re_table_set(table, 44, P_TOK_SLASH, {.action = REDUCE, .op = { .reduce = {8, 1, P_LIT_msub_BAR}}});
-	re_table_set(table, 44, P_TOK_TABULATE_CHAR, {.action = REDUCE, .op = { .reduce = {8, 1, P_LIT_msub_BAR}}});
-	re_table_set(table, 45, P_TOK_END, {.action = REDUCE, .op = { .reduce = {10, 1, P_LIT_msub_BAR}}});
-	re_table_set(table, 45, P_TOK_BAR, {.action = REDUCE, .op = { .reduce = {10, 1, P_LIT_msub_BAR}}});
-	re_table_set(table, 45, P_TOK_CAP, {.action = REDUCE, .op = { .reduce = {10, 1, P_LIT_msub_BAR}}});
-	re_table_set(table, 45, P_TOK_CHAR, {.action = REDUCE, .op = { .reduce = {10, 1, P_LIT_msub_BAR}}});
-	re_table_set(table, 45, P_TOK_CRETURN_CHAR, {.action = REDUCE, .op = { .reduce = {10, 1, P_LIT_msub_BAR}}});
-	re_table_set(table, 45, P_TOK_DOT, {.action = REDUCE, .op = { .reduce = {10, 1, P_LIT_msub_BAR}}});
-	re_table_set(table, 45, P_TOK_LBRACK, {.action = REDUCE, .op = { .reduce = {10, 1, P_LIT_msub_BAR}}});
-	re_table_set(table, 45, P_TOK_LPAREN, {.action = REDUCE, .op = { .reduce = {10, 1, P_LIT_msub_BAR}}});
-	re_table_set(table, 45, P_TOK_MINUS, {.action = REDUCE, .op = { .reduce = {10, 1, P_LIT_msub_BAR}}});
-	re_table_set(table, 45, P_TOK_NEWLINE_CHAR, {.action = REDUCE, .op = { .reduce = {10, 1, P_LIT_msub_BAR}}});
-	re_table_set(table, 45, P_TOK_RPAREN, {.action = REDUCE, .op = { .reduce = {10, 1, P_LIT_msub_BAR}}});
-	re_table_set(table, 45, P_TOK_SLASH, {.action = REDUCE, .op = { .reduce = {10, 1, P_LIT_msub_BAR}}});
-	re_table_set(table, 45, P_TOK_TABULATE_CHAR, {.action = REDUCE, .op = { .reduce = {10, 1, P_LIT_msub_BAR}}});
-	re_table_set(table, 46, P_TOK_END, {.action = REDUCE, .op = { .reduce = {7, 2, P_LIT_msub}}});
-	re_table_set(table, 46, P_TOK_BAR, {.action = REDUCE, .op = { .reduce = {7, 2, P_LIT_msub}}});
-	re_table_set(table, 46, P_TOK_CAP, {.action = REDUCE, .op = { .reduce = {7, 2, P_LIT_msub}}});
-	re_table_set(table, 46, P_TOK_CHAR, {.action = REDUCE, .op = { .reduce = {7, 2, P_LIT_msub}}});
-	re_table_set(table, 46, P_TOK_CRETURN_CHAR, {.action = REDUCE, .op = { .reduce = {7, 2, P_LIT_msub}}});
-	re_table_set(table, 46, P_TOK_DOT, {.action = REDUCE, .op = { .reduce = {7, 2, P_LIT_msub}}});
-	re_table_set(table, 46, P_TOK_LBRACK, {.action = REDUCE, .op = { .reduce = {7, 2, P_LIT_msub}}});
-	re_table_set(table, 46, P_TOK_LPAREN, {.action = REDUCE, .op = { .reduce = {7, 2, P_LIT_msub}}});
-	re_table_set(table, 46, P_TOK_MINUS, {.action = REDUCE, .op = { .reduce = {7, 2, P_LIT_msub}}});
-	re_table_set(table, 46, P_TOK_NEWLINE_CHAR, {.action = REDUCE, .op = { .reduce = {7, 2, P_LIT_msub}}});
-	re_table_set(table, 46, P_TOK_RPAREN, {.action = REDUCE, .op = { .reduce = {7, 2, P_LIT_msub}}});
-	re_table_set(table, 46, P_TOK_SLASH, {.action = REDUCE, .op = { .reduce = {7, 2, P_LIT_msub}}});
-	re_table_set(table, 46, P_TOK_TABULATE_CHAR, {.action = REDUCE, .op = { .reduce = {7, 2, P_LIT_msub}}});
-	re_table_set(table, 47, P_TOK_RBRACK, {.action = REDUCE, .op = { .reduce = {36, 0, P_LIT_slc_BAR}}});
-	re_table_set(table, 49, P_TOK_END, {.action = REDUCE, .op = { .reduce = {13, 3, P_LIT_sub}}});
-	re_table_set(table, 49, P_TOK_BAR, {.action = REDUCE, .op = { .reduce = {13, 3, P_LIT_sub}}});
-	re_table_set(table, 49, P_TOK_CAP, {.action = REDUCE, .op = { .reduce = {13, 3, P_LIT_sub}}});
-	re_table_set(table, 49, P_TOK_CHAR, {.action = REDUCE, .op = { .reduce = {13, 3, P_LIT_sub}}});
-	re_table_set(table, 49, P_TOK_CRETURN_CHAR, {.action = REDUCE, .op = { .reduce = {13, 3, P_LIT_sub}}});
-	re_table_set(table, 49, P_TOK_DOT, {.action = REDUCE, .op = { .reduce = {13, 3, P_LIT_sub}}});
-	re_table_set(table, 49, P_TOK_LBRACK, {.action = REDUCE, .op = { .reduce = {13, 3, P_LIT_sub}}});
-	re_table_set(table, 49, P_TOK_LPAREN, {.action = REDUCE, .op = { .reduce = {13, 3, P_LIT_sub}}});
-	re_table_set(table, 49, P_TOK_MINUS, {.action = REDUCE, .op = { .reduce = {13, 3, P_LIT_sub}}});
-	re_table_set(table, 49, P_TOK_NEWLINE_CHAR, {.action = REDUCE, .op = { .reduce = {13, 3, P_LIT_sub}}});
-	re_table_set(table, 49, P_TOK_PLUS, {.action = REDUCE, .op = { .reduce = {13, 3, P_LIT_sub}}});
-	re_table_set(table, 49, P_TOK_QUESTION, {.action = REDUCE, .op = { .reduce = {13, 3, P_LIT_sub}}});
-	re_table_set(table, 49, P_TOK_RPAREN, {.action = REDUCE, .op = { .reduce = {13, 3, P_LIT_sub}}});
-	re_table_set(table, 49, P_TOK_SLASH, {.action = REDUCE, .op = { .reduce = {13, 3, P_LIT_sub}}});
-	re_table_set(table, 49, P_TOK_TABULATE_CHAR, {.action = REDUCE, .op = { .reduce = {13, 3, P_LIT_sub}}});
-	re_table_set(table, 49, P_TOK_TIMES, {.action = REDUCE, .op = { .reduce = {13, 3, P_LIT_sub}}});
-	re_table_set(table, 50, P_TOK_RBRACK, {.action = REDUCE, .op = { .reduce = {37, 2, P_LIT_slc}}});
-	re_table_set(table, 51, P_TOK_RBRACK, {.action = REDUCE, .op = { .reduce = {36, 0, P_LIT_slc_BAR}}});
-	re_table_set(table, 52, P_TOK_END, {.action = REDUCE, .op = { .reduce = {14, 3, P_LIT_sub}}});
-	re_table_set(table, 52, P_TOK_BAR, {.action = REDUCE, .op = { .reduce = {14, 3, P_LIT_sub}}});
-	re_table_set(table, 52, P_TOK_CAP, {.action = REDUCE, .op = { .reduce = {14, 3, P_LIT_sub}}});
-	re_table_set(table, 52, P_TOK_CHAR, {.action = REDUCE, .op = { .reduce = {14, 3, P_LIT_sub}}});
-	re_table_set(table, 52, P_TOK_CRETURN_CHAR, {.action = REDUCE, .op = { .reduce = {14, 3, P_LIT_sub}}});
-	re_table_set(table, 52, P_TOK_DOT, {.action = REDUCE, .op = { .reduce = {14, 3, P_LIT_sub}}});
-	re_table_set(table, 52, P_TOK_LBRACK, {.action = REDUCE, .op = { .reduce = {14, 3, P_LIT_sub}}});
-	re_table_set(table, 52, P_TOK_LPAREN, {.action = REDUCE, .op = { .reduce = {14, 3, P_LIT_sub}}});
-	re_table_set(table, 52, P_TOK_MINUS, {.action = REDUCE, .op = { .reduce = {14, 3, P_LIT_sub}}});
-	re_table_set(table, 52, P_TOK_NEWLINE_CHAR, {.action = REDUCE, .op = { .reduce = {14, 3, P_LIT_sub}}});
-	re_table_set(table, 52, P_TOK_PLUS, {.action = REDUCE, .op = { .reduce = {14, 3, P_LIT_sub}}});
-	re_table_set(table, 52, P_TOK_QUESTION, {.action = REDUCE, .op = { .reduce = {14, 3, P_LIT_sub}}});
-	re_table_set(table, 52, P_TOK_RPAREN, {.action = REDUCE, .op = { .reduce = {14, 3, P_LIT_sub}}});
-	re_table_set(table, 52, P_TOK_SLASH, {.action = REDUCE, .op = { .reduce = {14, 3, P_LIT_sub}}});
-	re_table_set(table, 52, P_TOK_TABULATE_CHAR, {.action = REDUCE, .op = { .reduce = {14, 3, P_LIT_sub}}});
-	re_table_set(table, 52, P_TOK_TIMES, {.action = REDUCE, .op = { .reduce = {14, 3, P_LIT_sub}}});
-	re_table_set(table, 53, P_TOK_END, {.action = REDUCE, .op = { .reduce = {2, 0, P_LIT_re_BAR}}});
-	re_table_set(table, 53, P_TOK_RPAREN, {.action = REDUCE, .op = { .reduce = {2, 0, P_LIT_re_BAR}}});
-	re_table_set(table, 54, P_TOK_END, {.action = REDUCE, .op = { .reduce = {5, 2, P_LIT_exp_BAR}}});
-	re_table_set(table, 54, P_TOK_BAR, {.action = REDUCE, .op = { .reduce = {5, 2, P_LIT_exp_BAR}}});
-	re_table_set(table, 54, P_TOK_RPAREN, {.action = REDUCE, .op = { .reduce = {5, 2, P_LIT_exp_BAR}}});
-	re_table_set(table, 55, P_TOK_RBRACK, {.action = REDUCE, .op = { .reduce = {34, 3, P_LIT_slc}}});
-	re_table_set(table, 56, P_TOK_CHAR, {.action = REDUCE, .op = { .reduce = {39, 3, P_LIT_sli}}});
-	re_table_set(table, 56, P_TOK_CRETURN_CHAR, {.action = REDUCE, .op = { .reduce = {39, 3, P_LIT_sli}}});
-	re_table_set(table, 56, P_TOK_DOT, {.action = REDUCE, .op = { .reduce = {39, 3, P_LIT_sli}}});
-	re_table_set(table, 56, P_TOK_NEWLINE_CHAR, {.action = REDUCE, .op = { .reduce = {39, 3, P_LIT_sli}}});
-	re_table_set(table, 56, P_TOK_RBRACK, {.action = REDUCE, .op = { .reduce = {39, 3, P_LIT_sli}}});
-	re_table_set(table, 56, P_TOK_SLASH, {.action = REDUCE, .op = { .reduce = {39, 3, P_LIT_sli}}});
-	re_table_set(table, 56, P_TOK_TABULATE_CHAR, {.action = REDUCE, .op = { .reduce = {39, 3, P_LIT_sli}}});
-	re_table_set(table, 57, P_TOK_RBRACK, {.action = REDUCE, .op = { .reduce = {35, 2, P_LIT_slc_BAR}}});
-	re_table_set(table, 58, P_TOK_END, {.action = REDUCE, .op = { .reduce = {1, 3, P_LIT_re_BAR}}});
-	re_table_set(table, 58, P_TOK_RPAREN, {.action = REDUCE, .op = { .reduce = {1, 3, P_LIT_re_BAR}}});
+	re_table_set(table, 0, P_TOK_CAP, { .action = SHIFT, .op = { .shift = 1 }});
+	re_table_set(table, 0, P_TOK_CHAR, { .action = SHIFT, .op = { .shift = 2 }});
+	re_table_set(table, 0, P_TOK_CRETURN_CHAR, { .action = SHIFT, .op = { .shift = 3 }});
+	re_table_set(table, 0, P_TOK_DOT, { .action = SHIFT, .op = { .shift = 4 }});
+	re_table_set(table, 0, P_TOK_LBRACK, { .action = SHIFT, .op = { .shift = 5 }});
+	re_table_set(table, 0, P_TOK_LPAREN, { .action = SHIFT, .op = { .shift = 6 }});
+	re_table_set(table, 0, P_TOK_MINUS, { .action = SHIFT, .op = { .shift = 7 }});
+	re_table_set(table, 0, P_TOK_NEWLINE_CHAR, { .action = SHIFT, .op = { .shift = 8 }});
+	re_table_set(table, 0, P_TOK_SLASH, { .action = SHIFT, .op = { .shift = 9 }});
+	re_table_set(table, 0, P_TOK_TABULATE_CHAR, { .action = SHIFT, .op = { .shift = 10 }});
+	re_table_set(table, 0, P_TOK_ZERO, { .action = SHIFT, .op = { .shift = 11 }});
+	re_table_set(table, 0, P_LIT_elm, { .action = GOTO, .op = { .sgoto = 12 }});
+	re_table_set(table, 0, P_LIT_esc, { .action = GOTO, .op = { .sgoto = 13 }});
+	re_table_set(table, 0, P_LIT_exp, { .action = GOTO, .op = { .sgoto = 14 }});
+	re_table_set(table, 0, P_LIT_fch, { .action = GOTO, .op = { .sgoto = 15 }});
+	re_table_set(table, 0, P_LIT_msub, { .action = GOTO, .op = { .sgoto = 16 }});
+	re_table_set(table, 0, P_LIT_re, { .action = GOTO, .op = { .sgoto = 17 }});
+	re_table_set(table, 0, P_LIT_sub, { .action = GOTO, .op = { .sgoto = 18 }});
+	re_table_set(table, 5, P_TOK_CAP, { .action = SHIFT, .op = { .shift = 19 }});
+	re_table_set(table, 5, P_TOK_CHAR, { .action = SHIFT, .op = { .shift = 2 }});
+	re_table_set(table, 5, P_TOK_CRETURN_CHAR, { .action = SHIFT, .op = { .shift = 3 }});
+	re_table_set(table, 5, P_TOK_DOT, { .action = SHIFT, .op = { .shift = 20 }});
+	re_table_set(table, 5, P_TOK_NEWLINE_CHAR, { .action = SHIFT, .op = { .shift = 8 }});
+	re_table_set(table, 5, P_TOK_SLASH, { .action = SHIFT, .op = { .shift = 9 }});
+	re_table_set(table, 5, P_TOK_TABULATE_CHAR, { .action = SHIFT, .op = { .shift = 10 }});
+	re_table_set(table, 5, P_TOK_ZERO, { .action = SHIFT, .op = { .shift = 11 }});
+	re_table_set(table, 5, P_LIT_esc, { .action = GOTO, .op = { .sgoto = 13 }});
+	re_table_set(table, 5, P_LIT_fch, { .action = GOTO, .op = { .sgoto = 21 }});
+	re_table_set(table, 5, P_LIT_slc, { .action = GOTO, .op = { .sgoto = 22 }});
+	re_table_set(table, 5, P_LIT_sli, { .action = GOTO, .op = { .sgoto = 23 }});
+	re_table_set(table, 6, P_TOK_CAP, { .action = SHIFT, .op = { .shift = 1 }});
+	re_table_set(table, 6, P_TOK_CHAR, { .action = SHIFT, .op = { .shift = 2 }});
+	re_table_set(table, 6, P_TOK_CRETURN_CHAR, { .action = SHIFT, .op = { .shift = 3 }});
+	re_table_set(table, 6, P_TOK_DOT, { .action = SHIFT, .op = { .shift = 4 }});
+	re_table_set(table, 6, P_TOK_LBRACK, { .action = SHIFT, .op = { .shift = 5 }});
+	re_table_set(table, 6, P_TOK_LPAREN, { .action = SHIFT, .op = { .shift = 6 }});
+	re_table_set(table, 6, P_TOK_MINUS, { .action = SHIFT, .op = { .shift = 7 }});
+	re_table_set(table, 6, P_TOK_NEWLINE_CHAR, { .action = SHIFT, .op = { .shift = 8 }});
+	re_table_set(table, 6, P_TOK_SLASH, { .action = SHIFT, .op = { .shift = 9 }});
+	re_table_set(table, 6, P_TOK_TABULATE_CHAR, { .action = SHIFT, .op = { .shift = 10 }});
+	re_table_set(table, 6, P_TOK_ZERO, { .action = SHIFT, .op = { .shift = 11 }});
+	re_table_set(table, 6, P_LIT_elm, { .action = GOTO, .op = { .sgoto = 12 }});
+	re_table_set(table, 6, P_LIT_esc, { .action = GOTO, .op = { .sgoto = 13 }});
+	re_table_set(table, 6, P_LIT_exp, { .action = GOTO, .op = { .sgoto = 14 }});
+	re_table_set(table, 6, P_LIT_fch, { .action = GOTO, .op = { .sgoto = 15 }});
+	re_table_set(table, 6, P_LIT_msub, { .action = GOTO, .op = { .sgoto = 16 }});
+	re_table_set(table, 6, P_LIT_re, { .action = GOTO, .op = { .sgoto = 24 }});
+	re_table_set(table, 6, P_LIT_sub, { .action = GOTO, .op = { .sgoto = 18 }});
+	re_table_set(table, 9, P_TOK_BAR, { .action = SHIFT, .op = { .shift = 25 }});
+	re_table_set(table, 9, P_TOK_CAP, { .action = SHIFT, .op = { .shift = 26 }});
+	re_table_set(table, 9, P_TOK_CRETURN_CHAR, { .action = SHIFT, .op = { .shift = 27 }});
+	re_table_set(table, 9, P_TOK_DOT, { .action = SHIFT, .op = { .shift = 28 }});
+	re_table_set(table, 9, P_TOK_LBRACK, { .action = SHIFT, .op = { .shift = 29 }});
+	re_table_set(table, 9, P_TOK_LPAREN, { .action = SHIFT, .op = { .shift = 30 }});
+	re_table_set(table, 9, P_TOK_MINUS, { .action = SHIFT, .op = { .shift = 31 }});
+	re_table_set(table, 9, P_TOK_NEWLINE_CHAR, { .action = SHIFT, .op = { .shift = 32 }});
+	re_table_set(table, 9, P_TOK_PLUS, { .action = SHIFT, .op = { .shift = 33 }});
+	re_table_set(table, 9, P_TOK_QUESTION, { .action = SHIFT, .op = { .shift = 34 }});
+	re_table_set(table, 9, P_TOK_RBRACK, { .action = SHIFT, .op = { .shift = 35 }});
+	re_table_set(table, 9, P_TOK_RPAREN, { .action = SHIFT, .op = { .shift = 36 }});
+	re_table_set(table, 9, P_TOK_SLASH, { .action = SHIFT, .op = { .shift = 37 }});
+	re_table_set(table, 9, P_TOK_TABULATE_CHAR, { .action = SHIFT, .op = { .shift = 38 }});
+	re_table_set(table, 9, P_TOK_TIMES, { .action = SHIFT, .op = { .shift = 39 }});
+	re_table_set(table, 9, P_TOK_ZERO, { .action = SHIFT, .op = { .shift = 40 }});
+	re_table_set(table, 14, P_TOK_BAR, { .action = SHIFT, .op = { .shift = 41 }});
+	re_table_set(table, 14, P_LIT_re_BAR, { .action = GOTO, .op = { .sgoto = 42 }});
+	re_table_set(table, 16, P_TOK_CAP, { .action = SHIFT, .op = { .shift = 1 }});
+	re_table_set(table, 16, P_TOK_CHAR, { .action = SHIFT, .op = { .shift = 2 }});
+	re_table_set(table, 16, P_TOK_CRETURN_CHAR, { .action = SHIFT, .op = { .shift = 3 }});
+	re_table_set(table, 16, P_TOK_DOT, { .action = SHIFT, .op = { .shift = 4 }});
+	re_table_set(table, 16, P_TOK_LBRACK, { .action = SHIFT, .op = { .shift = 5 }});
+	re_table_set(table, 16, P_TOK_LPAREN, { .action = SHIFT, .op = { .shift = 6 }});
+	re_table_set(table, 16, P_TOK_MINUS, { .action = SHIFT, .op = { .shift = 7 }});
+	re_table_set(table, 16, P_TOK_NEWLINE_CHAR, { .action = SHIFT, .op = { .shift = 8 }});
+	re_table_set(table, 16, P_TOK_SLASH, { .action = SHIFT, .op = { .shift = 9 }});
+	re_table_set(table, 16, P_TOK_TABULATE_CHAR, { .action = SHIFT, .op = { .shift = 10 }});
+	re_table_set(table, 16, P_TOK_ZERO, { .action = SHIFT, .op = { .shift = 11 }});
+	re_table_set(table, 16, P_LIT_elm, { .action = GOTO, .op = { .sgoto = 12 }});
+	re_table_set(table, 16, P_LIT_esc, { .action = GOTO, .op = { .sgoto = 13 }});
+	re_table_set(table, 16, P_LIT_exp_BAR, { .action = GOTO, .op = { .sgoto = 43 }});
+	re_table_set(table, 16, P_LIT_fch, { .action = GOTO, .op = { .sgoto = 15 }});
+	re_table_set(table, 16, P_LIT_msub, { .action = GOTO, .op = { .sgoto = 44 }});
+	re_table_set(table, 16, P_LIT_sub, { .action = GOTO, .op = { .sgoto = 18 }});
+	re_table_set(table, 18, P_TOK_PLUS, { .action = SHIFT, .op = { .shift = 45 }});
+	re_table_set(table, 18, P_TOK_QUESTION, { .action = SHIFT, .op = { .shift = 46 }});
+	re_table_set(table, 18, P_TOK_TIMES, { .action = SHIFT, .op = { .shift = 47 }});
+	re_table_set(table, 19, P_TOK_CHAR, { .action = SHIFT, .op = { .shift = 2 }});
+	re_table_set(table, 19, P_TOK_CRETURN_CHAR, { .action = SHIFT, .op = { .shift = 3 }});
+	re_table_set(table, 19, P_TOK_DOT, { .action = SHIFT, .op = { .shift = 20 }});
+	re_table_set(table, 19, P_TOK_NEWLINE_CHAR, { .action = SHIFT, .op = { .shift = 8 }});
+	re_table_set(table, 19, P_TOK_SLASH, { .action = SHIFT, .op = { .shift = 9 }});
+	re_table_set(table, 19, P_TOK_TABULATE_CHAR, { .action = SHIFT, .op = { .shift = 10 }});
+	re_table_set(table, 19, P_TOK_ZERO, { .action = SHIFT, .op = { .shift = 11 }});
+	re_table_set(table, 19, P_LIT_esc, { .action = GOTO, .op = { .sgoto = 13 }});
+	re_table_set(table, 19, P_LIT_fch, { .action = GOTO, .op = { .sgoto = 21 }});
+	re_table_set(table, 19, P_LIT_sli, { .action = GOTO, .op = { .sgoto = 48 }});
+	re_table_set(table, 21, P_TOK_MINUS, { .action = SHIFT, .op = { .shift = 49 }});
+	re_table_set(table, 22, P_TOK_RBRACK, { .action = SHIFT, .op = { .shift = 50 }});
+	re_table_set(table, 23, P_TOK_CHAR, { .action = SHIFT, .op = { .shift = 2 }});
+	re_table_set(table, 23, P_TOK_CRETURN_CHAR, { .action = SHIFT, .op = { .shift = 3 }});
+	re_table_set(table, 23, P_TOK_DOT, { .action = SHIFT, .op = { .shift = 20 }});
+	re_table_set(table, 23, P_TOK_NEWLINE_CHAR, { .action = SHIFT, .op = { .shift = 8 }});
+	re_table_set(table, 23, P_TOK_SLASH, { .action = SHIFT, .op = { .shift = 9 }});
+	re_table_set(table, 23, P_TOK_TABULATE_CHAR, { .action = SHIFT, .op = { .shift = 10 }});
+	re_table_set(table, 23, P_TOK_ZERO, { .action = SHIFT, .op = { .shift = 11 }});
+	re_table_set(table, 23, P_LIT_esc, { .action = GOTO, .op = { .sgoto = 13 }});
+	re_table_set(table, 23, P_LIT_fch, { .action = GOTO, .op = { .sgoto = 21 }});
+	re_table_set(table, 23, P_LIT_slc_BAR, { .action = GOTO, .op = { .sgoto = 51 }});
+	re_table_set(table, 23, P_LIT_sli, { .action = GOTO, .op = { .sgoto = 52 }});
+	re_table_set(table, 24, P_TOK_RPAREN, { .action = SHIFT, .op = { .shift = 53 }});
+	re_table_set(table, 41, P_TOK_CAP, { .action = SHIFT, .op = { .shift = 1 }});
+	re_table_set(table, 41, P_TOK_CHAR, { .action = SHIFT, .op = { .shift = 2 }});
+	re_table_set(table, 41, P_TOK_CRETURN_CHAR, { .action = SHIFT, .op = { .shift = 3 }});
+	re_table_set(table, 41, P_TOK_DOT, { .action = SHIFT, .op = { .shift = 4 }});
+	re_table_set(table, 41, P_TOK_LBRACK, { .action = SHIFT, .op = { .shift = 5 }});
+	re_table_set(table, 41, P_TOK_LPAREN, { .action = SHIFT, .op = { .shift = 6 }});
+	re_table_set(table, 41, P_TOK_MINUS, { .action = SHIFT, .op = { .shift = 7 }});
+	re_table_set(table, 41, P_TOK_NEWLINE_CHAR, { .action = SHIFT, .op = { .shift = 8 }});
+	re_table_set(table, 41, P_TOK_SLASH, { .action = SHIFT, .op = { .shift = 9 }});
+	re_table_set(table, 41, P_TOK_TABULATE_CHAR, { .action = SHIFT, .op = { .shift = 10 }});
+	re_table_set(table, 41, P_TOK_ZERO, { .action = SHIFT, .op = { .shift = 11 }});
+	re_table_set(table, 41, P_LIT_elm, { .action = GOTO, .op = { .sgoto = 12 }});
+	re_table_set(table, 41, P_LIT_esc, { .action = GOTO, .op = { .sgoto = 13 }});
+	re_table_set(table, 41, P_LIT_exp, { .action = GOTO, .op = { .sgoto = 54 }});
+	re_table_set(table, 41, P_LIT_fch, { .action = GOTO, .op = { .sgoto = 15 }});
+	re_table_set(table, 41, P_LIT_msub, { .action = GOTO, .op = { .sgoto = 16 }});
+	re_table_set(table, 41, P_LIT_sub, { .action = GOTO, .op = { .sgoto = 18 }});
+	re_table_set(table, 44, P_TOK_CAP, { .action = SHIFT, .op = { .shift = 1 }});
+	re_table_set(table, 44, P_TOK_CHAR, { .action = SHIFT, .op = { .shift = 2 }});
+	re_table_set(table, 44, P_TOK_CRETURN_CHAR, { .action = SHIFT, .op = { .shift = 3 }});
+	re_table_set(table, 44, P_TOK_DOT, { .action = SHIFT, .op = { .shift = 4 }});
+	re_table_set(table, 44, P_TOK_LBRACK, { .action = SHIFT, .op = { .shift = 5 }});
+	re_table_set(table, 44, P_TOK_LPAREN, { .action = SHIFT, .op = { .shift = 6 }});
+	re_table_set(table, 44, P_TOK_MINUS, { .action = SHIFT, .op = { .shift = 7 }});
+	re_table_set(table, 44, P_TOK_NEWLINE_CHAR, { .action = SHIFT, .op = { .shift = 8 }});
+	re_table_set(table, 44, P_TOK_SLASH, { .action = SHIFT, .op = { .shift = 9 }});
+	re_table_set(table, 44, P_TOK_TABULATE_CHAR, { .action = SHIFT, .op = { .shift = 10 }});
+	re_table_set(table, 44, P_TOK_ZERO, { .action = SHIFT, .op = { .shift = 11 }});
+	re_table_set(table, 44, P_LIT_elm, { .action = GOTO, .op = { .sgoto = 12 }});
+	re_table_set(table, 44, P_LIT_esc, { .action = GOTO, .op = { .sgoto = 13 }});
+	re_table_set(table, 44, P_LIT_exp_BAR, { .action = GOTO, .op = { .sgoto = 55 }});
+	re_table_set(table, 44, P_LIT_fch, { .action = GOTO, .op = { .sgoto = 15 }});
+	re_table_set(table, 44, P_LIT_msub, { .action = GOTO, .op = { .sgoto = 44 }});
+	re_table_set(table, 44, P_LIT_sub, { .action = GOTO, .op = { .sgoto = 18 }});
+	re_table_set(table, 48, P_TOK_CHAR, { .action = SHIFT, .op = { .shift = 2 }});
+	re_table_set(table, 48, P_TOK_CRETURN_CHAR, { .action = SHIFT, .op = { .shift = 3 }});
+	re_table_set(table, 48, P_TOK_DOT, { .action = SHIFT, .op = { .shift = 20 }});
+	re_table_set(table, 48, P_TOK_NEWLINE_CHAR, { .action = SHIFT, .op = { .shift = 8 }});
+	re_table_set(table, 48, P_TOK_SLASH, { .action = SHIFT, .op = { .shift = 9 }});
+	re_table_set(table, 48, P_TOK_TABULATE_CHAR, { .action = SHIFT, .op = { .shift = 10 }});
+	re_table_set(table, 48, P_TOK_ZERO, { .action = SHIFT, .op = { .shift = 11 }});
+	re_table_set(table, 48, P_LIT_esc, { .action = GOTO, .op = { .sgoto = 13 }});
+	re_table_set(table, 48, P_LIT_fch, { .action = GOTO, .op = { .sgoto = 21 }});
+	re_table_set(table, 48, P_LIT_slc_BAR, { .action = GOTO, .op = { .sgoto = 56 }});
+	re_table_set(table, 48, P_LIT_sli, { .action = GOTO, .op = { .sgoto = 52 }});
+	re_table_set(table, 49, P_TOK_CHAR, { .action = SHIFT, .op = { .shift = 2 }});
+	re_table_set(table, 49, P_TOK_CRETURN_CHAR, { .action = SHIFT, .op = { .shift = 3 }});
+	re_table_set(table, 49, P_TOK_NEWLINE_CHAR, { .action = SHIFT, .op = { .shift = 8 }});
+	re_table_set(table, 49, P_TOK_SLASH, { .action = SHIFT, .op = { .shift = 9 }});
+	re_table_set(table, 49, P_TOK_TABULATE_CHAR, { .action = SHIFT, .op = { .shift = 10 }});
+	re_table_set(table, 49, P_TOK_ZERO, { .action = SHIFT, .op = { .shift = 11 }});
+	re_table_set(table, 49, P_LIT_esc, { .action = GOTO, .op = { .sgoto = 13 }});
+	re_table_set(table, 49, P_LIT_fch, { .action = GOTO, .op = { .sgoto = 57 }});
+	re_table_set(table, 52, P_TOK_CHAR, { .action = SHIFT, .op = { .shift = 2 }});
+	re_table_set(table, 52, P_TOK_CRETURN_CHAR, { .action = SHIFT, .op = { .shift = 3 }});
+	re_table_set(table, 52, P_TOK_DOT, { .action = SHIFT, .op = { .shift = 20 }});
+	re_table_set(table, 52, P_TOK_NEWLINE_CHAR, { .action = SHIFT, .op = { .shift = 8 }});
+	re_table_set(table, 52, P_TOK_SLASH, { .action = SHIFT, .op = { .shift = 9 }});
+	re_table_set(table, 52, P_TOK_TABULATE_CHAR, { .action = SHIFT, .op = { .shift = 10 }});
+	re_table_set(table, 52, P_TOK_ZERO, { .action = SHIFT, .op = { .shift = 11 }});
+	re_table_set(table, 52, P_LIT_esc, { .action = GOTO, .op = { .sgoto = 13 }});
+	re_table_set(table, 52, P_LIT_fch, { .action = GOTO, .op = { .sgoto = 21 }});
+	re_table_set(table, 52, P_LIT_slc_BAR, { .action = GOTO, .op = { .sgoto = 58 }});
+	re_table_set(table, 52, P_LIT_sli, { .action = GOTO, .op = { .sgoto = 52 }});
+	re_table_set(table, 54, P_TOK_BAR, { .action = SHIFT, .op = { .shift = 41 }});
+	re_table_set(table, 54, P_LIT_re_BAR, { .action = GOTO, .op = { .sgoto = 59 }});
+	re_table_set(table, 0, P_TOK_END, { .action = REDUCE, .op = { .reduce = {3, 0, P_LIT_re} }});
+	re_table_set(table, 0, P_TOK_RPAREN, { .action = REDUCE, .op = { .reduce = {3, 0, P_LIT_re} }});
+	re_table_set(table, 1, P_TOK_END, { .action = REDUCE, .op = { .reduce = {15, 1, P_LIT_elm} }});
+	re_table_set(table, 1, P_TOK_BAR, { .action = REDUCE, .op = { .reduce = {15, 1, P_LIT_elm} }});
+	re_table_set(table, 1, P_TOK_CAP, { .action = REDUCE, .op = { .reduce = {15, 1, P_LIT_elm} }});
+	re_table_set(table, 1, P_TOK_CHAR, { .action = REDUCE, .op = { .reduce = {15, 1, P_LIT_elm} }});
+	re_table_set(table, 1, P_TOK_CRETURN_CHAR, { .action = REDUCE, .op = { .reduce = {15, 1, P_LIT_elm} }});
+	re_table_set(table, 1, P_TOK_DOT, { .action = REDUCE, .op = { .reduce = {15, 1, P_LIT_elm} }});
+	re_table_set(table, 1, P_TOK_LBRACK, { .action = REDUCE, .op = { .reduce = {15, 1, P_LIT_elm} }});
+	re_table_set(table, 1, P_TOK_LPAREN, { .action = REDUCE, .op = { .reduce = {15, 1, P_LIT_elm} }});
+	re_table_set(table, 1, P_TOK_MINUS, { .action = REDUCE, .op = { .reduce = {15, 1, P_LIT_elm} }});
+	re_table_set(table, 1, P_TOK_NEWLINE_CHAR, { .action = REDUCE, .op = { .reduce = {15, 1, P_LIT_elm} }});
+	re_table_set(table, 1, P_TOK_PLUS, { .action = REDUCE, .op = { .reduce = {15, 1, P_LIT_elm} }});
+	re_table_set(table, 1, P_TOK_QUESTION, { .action = REDUCE, .op = { .reduce = {15, 1, P_LIT_elm} }});
+	re_table_set(table, 1, P_TOK_RPAREN, { .action = REDUCE, .op = { .reduce = {15, 1, P_LIT_elm} }});
+	re_table_set(table, 1, P_TOK_SLASH, { .action = REDUCE, .op = { .reduce = {15, 1, P_LIT_elm} }});
+	re_table_set(table, 1, P_TOK_TABULATE_CHAR, { .action = REDUCE, .op = { .reduce = {15, 1, P_LIT_elm} }});
+	re_table_set(table, 1, P_TOK_TIMES, { .action = REDUCE, .op = { .reduce = {15, 1, P_LIT_elm} }});
+	re_table_set(table, 1, P_TOK_ZERO, { .action = REDUCE, .op = { .reduce = {15, 1, P_LIT_elm} }});
+	re_table_set(table, 2, P_TOK_END, { .action = REDUCE, .op = { .reduce = {41, 1, P_LIT_fch} }});
+	re_table_set(table, 2, P_TOK_BAR, { .action = REDUCE, .op = { .reduce = {41, 1, P_LIT_fch} }});
+	re_table_set(table, 2, P_TOK_CAP, { .action = REDUCE, .op = { .reduce = {41, 1, P_LIT_fch} }});
+	re_table_set(table, 2, P_TOK_CHAR, { .action = REDUCE, .op = { .reduce = {41, 1, P_LIT_fch} }});
+	re_table_set(table, 2, P_TOK_CRETURN_CHAR, { .action = REDUCE, .op = { .reduce = {41, 1, P_LIT_fch} }});
+	re_table_set(table, 2, P_TOK_DOT, { .action = REDUCE, .op = { .reduce = {41, 1, P_LIT_fch} }});
+	re_table_set(table, 2, P_TOK_LBRACK, { .action = REDUCE, .op = { .reduce = {41, 1, P_LIT_fch} }});
+	re_table_set(table, 2, P_TOK_LPAREN, { .action = REDUCE, .op = { .reduce = {41, 1, P_LIT_fch} }});
+	re_table_set(table, 2, P_TOK_MINUS, { .action = REDUCE, .op = { .reduce = {41, 1, P_LIT_fch} }});
+	re_table_set(table, 2, P_TOK_NEWLINE_CHAR, { .action = REDUCE, .op = { .reduce = {41, 1, P_LIT_fch} }});
+	re_table_set(table, 2, P_TOK_PLUS, { .action = REDUCE, .op = { .reduce = {41, 1, P_LIT_fch} }});
+	re_table_set(table, 2, P_TOK_QUESTION, { .action = REDUCE, .op = { .reduce = {41, 1, P_LIT_fch} }});
+	re_table_set(table, 2, P_TOK_RBRACK, { .action = REDUCE, .op = { .reduce = {41, 1, P_LIT_fch} }});
+	re_table_set(table, 2, P_TOK_RPAREN, { .action = REDUCE, .op = { .reduce = {41, 1, P_LIT_fch} }});
+	re_table_set(table, 2, P_TOK_SLASH, { .action = REDUCE, .op = { .reduce = {41, 1, P_LIT_fch} }});
+	re_table_set(table, 2, P_TOK_TABULATE_CHAR, { .action = REDUCE, .op = { .reduce = {41, 1, P_LIT_fch} }});
+	re_table_set(table, 2, P_TOK_TIMES, { .action = REDUCE, .op = { .reduce = {41, 1, P_LIT_fch} }});
+	re_table_set(table, 2, P_TOK_ZERO, { .action = REDUCE, .op = { .reduce = {41, 1, P_LIT_fch} }});
+	re_table_set(table, 3, P_TOK_END, { .action = REDUCE, .op = { .reduce = {44, 1, P_LIT_fch} }});
+	re_table_set(table, 3, P_TOK_BAR, { .action = REDUCE, .op = { .reduce = {44, 1, P_LIT_fch} }});
+	re_table_set(table, 3, P_TOK_CAP, { .action = REDUCE, .op = { .reduce = {44, 1, P_LIT_fch} }});
+	re_table_set(table, 3, P_TOK_CHAR, { .action = REDUCE, .op = { .reduce = {44, 1, P_LIT_fch} }});
+	re_table_set(table, 3, P_TOK_CRETURN_CHAR, { .action = REDUCE, .op = { .reduce = {44, 1, P_LIT_fch} }});
+	re_table_set(table, 3, P_TOK_DOT, { .action = REDUCE, .op = { .reduce = {44, 1, P_LIT_fch} }});
+	re_table_set(table, 3, P_TOK_LBRACK, { .action = REDUCE, .op = { .reduce = {44, 1, P_LIT_fch} }});
+	re_table_set(table, 3, P_TOK_LPAREN, { .action = REDUCE, .op = { .reduce = {44, 1, P_LIT_fch} }});
+	re_table_set(table, 3, P_TOK_MINUS, { .action = REDUCE, .op = { .reduce = {44, 1, P_LIT_fch} }});
+	re_table_set(table, 3, P_TOK_NEWLINE_CHAR, { .action = REDUCE, .op = { .reduce = {44, 1, P_LIT_fch} }});
+	re_table_set(table, 3, P_TOK_PLUS, { .action = REDUCE, .op = { .reduce = {44, 1, P_LIT_fch} }});
+	re_table_set(table, 3, P_TOK_QUESTION, { .action = REDUCE, .op = { .reduce = {44, 1, P_LIT_fch} }});
+	re_table_set(table, 3, P_TOK_RBRACK, { .action = REDUCE, .op = { .reduce = {44, 1, P_LIT_fch} }});
+	re_table_set(table, 3, P_TOK_RPAREN, { .action = REDUCE, .op = { .reduce = {44, 1, P_LIT_fch} }});
+	re_table_set(table, 3, P_TOK_SLASH, { .action = REDUCE, .op = { .reduce = {44, 1, P_LIT_fch} }});
+	re_table_set(table, 3, P_TOK_TABULATE_CHAR, { .action = REDUCE, .op = { .reduce = {44, 1, P_LIT_fch} }});
+	re_table_set(table, 3, P_TOK_TIMES, { .action = REDUCE, .op = { .reduce = {44, 1, P_LIT_fch} }});
+	re_table_set(table, 3, P_TOK_ZERO, { .action = REDUCE, .op = { .reduce = {44, 1, P_LIT_fch} }});
+	re_table_set(table, 4, P_TOK_END, { .action = REDUCE, .op = { .reduce = {17, 1, P_LIT_elm} }});
+	re_table_set(table, 4, P_TOK_BAR, { .action = REDUCE, .op = { .reduce = {17, 1, P_LIT_elm} }});
+	re_table_set(table, 4, P_TOK_CAP, { .action = REDUCE, .op = { .reduce = {17, 1, P_LIT_elm} }});
+	re_table_set(table, 4, P_TOK_CHAR, { .action = REDUCE, .op = { .reduce = {17, 1, P_LIT_elm} }});
+	re_table_set(table, 4, P_TOK_CRETURN_CHAR, { .action = REDUCE, .op = { .reduce = {17, 1, P_LIT_elm} }});
+	re_table_set(table, 4, P_TOK_DOT, { .action = REDUCE, .op = { .reduce = {17, 1, P_LIT_elm} }});
+	re_table_set(table, 4, P_TOK_LBRACK, { .action = REDUCE, .op = { .reduce = {17, 1, P_LIT_elm} }});
+	re_table_set(table, 4, P_TOK_LPAREN, { .action = REDUCE, .op = { .reduce = {17, 1, P_LIT_elm} }});
+	re_table_set(table, 4, P_TOK_MINUS, { .action = REDUCE, .op = { .reduce = {17, 1, P_LIT_elm} }});
+	re_table_set(table, 4, P_TOK_NEWLINE_CHAR, { .action = REDUCE, .op = { .reduce = {17, 1, P_LIT_elm} }});
+	re_table_set(table, 4, P_TOK_PLUS, { .action = REDUCE, .op = { .reduce = {17, 1, P_LIT_elm} }});
+	re_table_set(table, 4, P_TOK_QUESTION, { .action = REDUCE, .op = { .reduce = {17, 1, P_LIT_elm} }});
+	re_table_set(table, 4, P_TOK_RPAREN, { .action = REDUCE, .op = { .reduce = {17, 1, P_LIT_elm} }});
+	re_table_set(table, 4, P_TOK_SLASH, { .action = REDUCE, .op = { .reduce = {17, 1, P_LIT_elm} }});
+	re_table_set(table, 4, P_TOK_TABULATE_CHAR, { .action = REDUCE, .op = { .reduce = {17, 1, P_LIT_elm} }});
+	re_table_set(table, 4, P_TOK_TIMES, { .action = REDUCE, .op = { .reduce = {17, 1, P_LIT_elm} }});
+	re_table_set(table, 4, P_TOK_ZERO, { .action = REDUCE, .op = { .reduce = {17, 1, P_LIT_elm} }});
+	re_table_set(table, 6, P_TOK_END, { .action = REDUCE, .op = { .reduce = {3, 0, P_LIT_re} }});
+	re_table_set(table, 6, P_TOK_RPAREN, { .action = REDUCE, .op = { .reduce = {3, 0, P_LIT_re} }});
+	re_table_set(table, 7, P_TOK_END, { .action = REDUCE, .op = { .reduce = {16, 1, P_LIT_elm} }});
+	re_table_set(table, 7, P_TOK_BAR, { .action = REDUCE, .op = { .reduce = {16, 1, P_LIT_elm} }});
+	re_table_set(table, 7, P_TOK_CAP, { .action = REDUCE, .op = { .reduce = {16, 1, P_LIT_elm} }});
+	re_table_set(table, 7, P_TOK_CHAR, { .action = REDUCE, .op = { .reduce = {16, 1, P_LIT_elm} }});
+	re_table_set(table, 7, P_TOK_CRETURN_CHAR, { .action = REDUCE, .op = { .reduce = {16, 1, P_LIT_elm} }});
+	re_table_set(table, 7, P_TOK_DOT, { .action = REDUCE, .op = { .reduce = {16, 1, P_LIT_elm} }});
+	re_table_set(table, 7, P_TOK_LBRACK, { .action = REDUCE, .op = { .reduce = {16, 1, P_LIT_elm} }});
+	re_table_set(table, 7, P_TOK_LPAREN, { .action = REDUCE, .op = { .reduce = {16, 1, P_LIT_elm} }});
+	re_table_set(table, 7, P_TOK_MINUS, { .action = REDUCE, .op = { .reduce = {16, 1, P_LIT_elm} }});
+	re_table_set(table, 7, P_TOK_NEWLINE_CHAR, { .action = REDUCE, .op = { .reduce = {16, 1, P_LIT_elm} }});
+	re_table_set(table, 7, P_TOK_PLUS, { .action = REDUCE, .op = { .reduce = {16, 1, P_LIT_elm} }});
+	re_table_set(table, 7, P_TOK_QUESTION, { .action = REDUCE, .op = { .reduce = {16, 1, P_LIT_elm} }});
+	re_table_set(table, 7, P_TOK_RPAREN, { .action = REDUCE, .op = { .reduce = {16, 1, P_LIT_elm} }});
+	re_table_set(table, 7, P_TOK_SLASH, { .action = REDUCE, .op = { .reduce = {16, 1, P_LIT_elm} }});
+	re_table_set(table, 7, P_TOK_TABULATE_CHAR, { .action = REDUCE, .op = { .reduce = {16, 1, P_LIT_elm} }});
+	re_table_set(table, 7, P_TOK_TIMES, { .action = REDUCE, .op = { .reduce = {16, 1, P_LIT_elm} }});
+	re_table_set(table, 7, P_TOK_ZERO, { .action = REDUCE, .op = { .reduce = {16, 1, P_LIT_elm} }});
+	re_table_set(table, 8, P_TOK_END, { .action = REDUCE, .op = { .reduce = {43, 1, P_LIT_fch} }});
+	re_table_set(table, 8, P_TOK_BAR, { .action = REDUCE, .op = { .reduce = {43, 1, P_LIT_fch} }});
+	re_table_set(table, 8, P_TOK_CAP, { .action = REDUCE, .op = { .reduce = {43, 1, P_LIT_fch} }});
+	re_table_set(table, 8, P_TOK_CHAR, { .action = REDUCE, .op = { .reduce = {43, 1, P_LIT_fch} }});
+	re_table_set(table, 8, P_TOK_CRETURN_CHAR, { .action = REDUCE, .op = { .reduce = {43, 1, P_LIT_fch} }});
+	re_table_set(table, 8, P_TOK_DOT, { .action = REDUCE, .op = { .reduce = {43, 1, P_LIT_fch} }});
+	re_table_set(table, 8, P_TOK_LBRACK, { .action = REDUCE, .op = { .reduce = {43, 1, P_LIT_fch} }});
+	re_table_set(table, 8, P_TOK_LPAREN, { .action = REDUCE, .op = { .reduce = {43, 1, P_LIT_fch} }});
+	re_table_set(table, 8, P_TOK_MINUS, { .action = REDUCE, .op = { .reduce = {43, 1, P_LIT_fch} }});
+	re_table_set(table, 8, P_TOK_NEWLINE_CHAR, { .action = REDUCE, .op = { .reduce = {43, 1, P_LIT_fch} }});
+	re_table_set(table, 8, P_TOK_PLUS, { .action = REDUCE, .op = { .reduce = {43, 1, P_LIT_fch} }});
+	re_table_set(table, 8, P_TOK_QUESTION, { .action = REDUCE, .op = { .reduce = {43, 1, P_LIT_fch} }});
+	re_table_set(table, 8, P_TOK_RBRACK, { .action = REDUCE, .op = { .reduce = {43, 1, P_LIT_fch} }});
+	re_table_set(table, 8, P_TOK_RPAREN, { .action = REDUCE, .op = { .reduce = {43, 1, P_LIT_fch} }});
+	re_table_set(table, 8, P_TOK_SLASH, { .action = REDUCE, .op = { .reduce = {43, 1, P_LIT_fch} }});
+	re_table_set(table, 8, P_TOK_TABULATE_CHAR, { .action = REDUCE, .op = { .reduce = {43, 1, P_LIT_fch} }});
+	re_table_set(table, 8, P_TOK_TIMES, { .action = REDUCE, .op = { .reduce = {43, 1, P_LIT_fch} }});
+	re_table_set(table, 8, P_TOK_ZERO, { .action = REDUCE, .op = { .reduce = {43, 1, P_LIT_fch} }});
+	re_table_set(table, 10, P_TOK_END, { .action = REDUCE, .op = { .reduce = {42, 1, P_LIT_fch} }});
+	re_table_set(table, 10, P_TOK_BAR, { .action = REDUCE, .op = { .reduce = {42, 1, P_LIT_fch} }});
+	re_table_set(table, 10, P_TOK_CAP, { .action = REDUCE, .op = { .reduce = {42, 1, P_LIT_fch} }});
+	re_table_set(table, 10, P_TOK_CHAR, { .action = REDUCE, .op = { .reduce = {42, 1, P_LIT_fch} }});
+	re_table_set(table, 10, P_TOK_CRETURN_CHAR, { .action = REDUCE, .op = { .reduce = {42, 1, P_LIT_fch} }});
+	re_table_set(table, 10, P_TOK_DOT, { .action = REDUCE, .op = { .reduce = {42, 1, P_LIT_fch} }});
+	re_table_set(table, 10, P_TOK_LBRACK, { .action = REDUCE, .op = { .reduce = {42, 1, P_LIT_fch} }});
+	re_table_set(table, 10, P_TOK_LPAREN, { .action = REDUCE, .op = { .reduce = {42, 1, P_LIT_fch} }});
+	re_table_set(table, 10, P_TOK_MINUS, { .action = REDUCE, .op = { .reduce = {42, 1, P_LIT_fch} }});
+	re_table_set(table, 10, P_TOK_NEWLINE_CHAR, { .action = REDUCE, .op = { .reduce = {42, 1, P_LIT_fch} }});
+	re_table_set(table, 10, P_TOK_PLUS, { .action = REDUCE, .op = { .reduce = {42, 1, P_LIT_fch} }});
+	re_table_set(table, 10, P_TOK_QUESTION, { .action = REDUCE, .op = { .reduce = {42, 1, P_LIT_fch} }});
+	re_table_set(table, 10, P_TOK_RBRACK, { .action = REDUCE, .op = { .reduce = {42, 1, P_LIT_fch} }});
+	re_table_set(table, 10, P_TOK_RPAREN, { .action = REDUCE, .op = { .reduce = {42, 1, P_LIT_fch} }});
+	re_table_set(table, 10, P_TOK_SLASH, { .action = REDUCE, .op = { .reduce = {42, 1, P_LIT_fch} }});
+	re_table_set(table, 10, P_TOK_TABULATE_CHAR, { .action = REDUCE, .op = { .reduce = {42, 1, P_LIT_fch} }});
+	re_table_set(table, 10, P_TOK_TIMES, { .action = REDUCE, .op = { .reduce = {42, 1, P_LIT_fch} }});
+	re_table_set(table, 10, P_TOK_ZERO, { .action = REDUCE, .op = { .reduce = {42, 1, P_LIT_fch} }});
+	re_table_set(table, 11, P_TOK_END, { .action = REDUCE, .op = { .reduce = {45, 1, P_LIT_fch} }});
+	re_table_set(table, 11, P_TOK_BAR, { .action = REDUCE, .op = { .reduce = {45, 1, P_LIT_fch} }});
+	re_table_set(table, 11, P_TOK_CAP, { .action = REDUCE, .op = { .reduce = {45, 1, P_LIT_fch} }});
+	re_table_set(table, 11, P_TOK_CHAR, { .action = REDUCE, .op = { .reduce = {45, 1, P_LIT_fch} }});
+	re_table_set(table, 11, P_TOK_CRETURN_CHAR, { .action = REDUCE, .op = { .reduce = {45, 1, P_LIT_fch} }});
+	re_table_set(table, 11, P_TOK_DOT, { .action = REDUCE, .op = { .reduce = {45, 1, P_LIT_fch} }});
+	re_table_set(table, 11, P_TOK_LBRACK, { .action = REDUCE, .op = { .reduce = {45, 1, P_LIT_fch} }});
+	re_table_set(table, 11, P_TOK_LPAREN, { .action = REDUCE, .op = { .reduce = {45, 1, P_LIT_fch} }});
+	re_table_set(table, 11, P_TOK_MINUS, { .action = REDUCE, .op = { .reduce = {45, 1, P_LIT_fch} }});
+	re_table_set(table, 11, P_TOK_NEWLINE_CHAR, { .action = REDUCE, .op = { .reduce = {45, 1, P_LIT_fch} }});
+	re_table_set(table, 11, P_TOK_PLUS, { .action = REDUCE, .op = { .reduce = {45, 1, P_LIT_fch} }});
+	re_table_set(table, 11, P_TOK_QUESTION, { .action = REDUCE, .op = { .reduce = {45, 1, P_LIT_fch} }});
+	re_table_set(table, 11, P_TOK_RBRACK, { .action = REDUCE, .op = { .reduce = {45, 1, P_LIT_fch} }});
+	re_table_set(table, 11, P_TOK_RPAREN, { .action = REDUCE, .op = { .reduce = {45, 1, P_LIT_fch} }});
+	re_table_set(table, 11, P_TOK_SLASH, { .action = REDUCE, .op = { .reduce = {45, 1, P_LIT_fch} }});
+	re_table_set(table, 11, P_TOK_TABULATE_CHAR, { .action = REDUCE, .op = { .reduce = {45, 1, P_LIT_fch} }});
+	re_table_set(table, 11, P_TOK_TIMES, { .action = REDUCE, .op = { .reduce = {45, 1, P_LIT_fch} }});
+	re_table_set(table, 11, P_TOK_ZERO, { .action = REDUCE, .op = { .reduce = {45, 1, P_LIT_fch} }});
+	re_table_set(table, 12, P_TOK_END, { .action = REDUCE, .op = { .reduce = {11, 1, P_LIT_sub} }});
+	re_table_set(table, 12, P_TOK_BAR, { .action = REDUCE, .op = { .reduce = {11, 1, P_LIT_sub} }});
+	re_table_set(table, 12, P_TOK_CAP, { .action = REDUCE, .op = { .reduce = {11, 1, P_LIT_sub} }});
+	re_table_set(table, 12, P_TOK_CHAR, { .action = REDUCE, .op = { .reduce = {11, 1, P_LIT_sub} }});
+	re_table_set(table, 12, P_TOK_CRETURN_CHAR, { .action = REDUCE, .op = { .reduce = {11, 1, P_LIT_sub} }});
+	re_table_set(table, 12, P_TOK_DOT, { .action = REDUCE, .op = { .reduce = {11, 1, P_LIT_sub} }});
+	re_table_set(table, 12, P_TOK_LBRACK, { .action = REDUCE, .op = { .reduce = {11, 1, P_LIT_sub} }});
+	re_table_set(table, 12, P_TOK_LPAREN, { .action = REDUCE, .op = { .reduce = {11, 1, P_LIT_sub} }});
+	re_table_set(table, 12, P_TOK_MINUS, { .action = REDUCE, .op = { .reduce = {11, 1, P_LIT_sub} }});
+	re_table_set(table, 12, P_TOK_NEWLINE_CHAR, { .action = REDUCE, .op = { .reduce = {11, 1, P_LIT_sub} }});
+	re_table_set(table, 12, P_TOK_PLUS, { .action = REDUCE, .op = { .reduce = {11, 1, P_LIT_sub} }});
+	re_table_set(table, 12, P_TOK_QUESTION, { .action = REDUCE, .op = { .reduce = {11, 1, P_LIT_sub} }});
+	re_table_set(table, 12, P_TOK_RPAREN, { .action = REDUCE, .op = { .reduce = {11, 1, P_LIT_sub} }});
+	re_table_set(table, 12, P_TOK_SLASH, { .action = REDUCE, .op = { .reduce = {11, 1, P_LIT_sub} }});
+	re_table_set(table, 12, P_TOK_TABULATE_CHAR, { .action = REDUCE, .op = { .reduce = {11, 1, P_LIT_sub} }});
+	re_table_set(table, 12, P_TOK_TIMES, { .action = REDUCE, .op = { .reduce = {11, 1, P_LIT_sub} }});
+	re_table_set(table, 12, P_TOK_ZERO, { .action = REDUCE, .op = { .reduce = {11, 1, P_LIT_sub} }});
+	re_table_set(table, 13, P_TOK_END, { .action = REDUCE, .op = { .reduce = {46, 1, P_LIT_fch} }});
+	re_table_set(table, 13, P_TOK_BAR, { .action = REDUCE, .op = { .reduce = {46, 1, P_LIT_fch} }});
+	re_table_set(table, 13, P_TOK_CAP, { .action = REDUCE, .op = { .reduce = {46, 1, P_LIT_fch} }});
+	re_table_set(table, 13, P_TOK_CHAR, { .action = REDUCE, .op = { .reduce = {46, 1, P_LIT_fch} }});
+	re_table_set(table, 13, P_TOK_CRETURN_CHAR, { .action = REDUCE, .op = { .reduce = {46, 1, P_LIT_fch} }});
+	re_table_set(table, 13, P_TOK_DOT, { .action = REDUCE, .op = { .reduce = {46, 1, P_LIT_fch} }});
+	re_table_set(table, 13, P_TOK_LBRACK, { .action = REDUCE, .op = { .reduce = {46, 1, P_LIT_fch} }});
+	re_table_set(table, 13, P_TOK_LPAREN, { .action = REDUCE, .op = { .reduce = {46, 1, P_LIT_fch} }});
+	re_table_set(table, 13, P_TOK_MINUS, { .action = REDUCE, .op = { .reduce = {46, 1, P_LIT_fch} }});
+	re_table_set(table, 13, P_TOK_NEWLINE_CHAR, { .action = REDUCE, .op = { .reduce = {46, 1, P_LIT_fch} }});
+	re_table_set(table, 13, P_TOK_PLUS, { .action = REDUCE, .op = { .reduce = {46, 1, P_LIT_fch} }});
+	re_table_set(table, 13, P_TOK_QUESTION, { .action = REDUCE, .op = { .reduce = {46, 1, P_LIT_fch} }});
+	re_table_set(table, 13, P_TOK_RBRACK, { .action = REDUCE, .op = { .reduce = {46, 1, P_LIT_fch} }});
+	re_table_set(table, 13, P_TOK_RPAREN, { .action = REDUCE, .op = { .reduce = {46, 1, P_LIT_fch} }});
+	re_table_set(table, 13, P_TOK_SLASH, { .action = REDUCE, .op = { .reduce = {46, 1, P_LIT_fch} }});
+	re_table_set(table, 13, P_TOK_TABULATE_CHAR, { .action = REDUCE, .op = { .reduce = {46, 1, P_LIT_fch} }});
+	re_table_set(table, 13, P_TOK_TIMES, { .action = REDUCE, .op = { .reduce = {46, 1, P_LIT_fch} }});
+	re_table_set(table, 13, P_TOK_ZERO, { .action = REDUCE, .op = { .reduce = {46, 1, P_LIT_fch} }});
+	re_table_set(table, 14, P_TOK_END, { .action = REDUCE, .op = { .reduce = {2, 0, P_LIT_re_BAR} }});
+	re_table_set(table, 14, P_TOK_RPAREN, { .action = REDUCE, .op = { .reduce = {2, 0, P_LIT_re_BAR} }});
+	re_table_set(table, 15, P_TOK_END, { .action = REDUCE, .op = { .reduce = {14, 1, P_LIT_elm} }});
+	re_table_set(table, 15, P_TOK_BAR, { .action = REDUCE, .op = { .reduce = {14, 1, P_LIT_elm} }});
+	re_table_set(table, 15, P_TOK_CAP, { .action = REDUCE, .op = { .reduce = {14, 1, P_LIT_elm} }});
+	re_table_set(table, 15, P_TOK_CHAR, { .action = REDUCE, .op = { .reduce = {14, 1, P_LIT_elm} }});
+	re_table_set(table, 15, P_TOK_CRETURN_CHAR, { .action = REDUCE, .op = { .reduce = {14, 1, P_LIT_elm} }});
+	re_table_set(table, 15, P_TOK_DOT, { .action = REDUCE, .op = { .reduce = {14, 1, P_LIT_elm} }});
+	re_table_set(table, 15, P_TOK_LBRACK, { .action = REDUCE, .op = { .reduce = {14, 1, P_LIT_elm} }});
+	re_table_set(table, 15, P_TOK_LPAREN, { .action = REDUCE, .op = { .reduce = {14, 1, P_LIT_elm} }});
+	re_table_set(table, 15, P_TOK_MINUS, { .action = REDUCE, .op = { .reduce = {14, 1, P_LIT_elm} }});
+	re_table_set(table, 15, P_TOK_NEWLINE_CHAR, { .action = REDUCE, .op = { .reduce = {14, 1, P_LIT_elm} }});
+	re_table_set(table, 15, P_TOK_PLUS, { .action = REDUCE, .op = { .reduce = {14, 1, P_LIT_elm} }});
+	re_table_set(table, 15, P_TOK_QUESTION, { .action = REDUCE, .op = { .reduce = {14, 1, P_LIT_elm} }});
+	re_table_set(table, 15, P_TOK_RPAREN, { .action = REDUCE, .op = { .reduce = {14, 1, P_LIT_elm} }});
+	re_table_set(table, 15, P_TOK_SLASH, { .action = REDUCE, .op = { .reduce = {14, 1, P_LIT_elm} }});
+	re_table_set(table, 15, P_TOK_TABULATE_CHAR, { .action = REDUCE, .op = { .reduce = {14, 1, P_LIT_elm} }});
+	re_table_set(table, 15, P_TOK_TIMES, { .action = REDUCE, .op = { .reduce = {14, 1, P_LIT_elm} }});
+	re_table_set(table, 15, P_TOK_ZERO, { .action = REDUCE, .op = { .reduce = {14, 1, P_LIT_elm} }});
+	re_table_set(table, 16, P_TOK_END, { .action = REDUCE, .op = { .reduce = {6, 0, P_LIT_exp_BAR} }});
+	re_table_set(table, 16, P_TOK_BAR, { .action = REDUCE, .op = { .reduce = {6, 0, P_LIT_exp_BAR} }});
+	re_table_set(table, 16, P_TOK_RPAREN, { .action = REDUCE, .op = { .reduce = {6, 0, P_LIT_exp_BAR} }});
+	re_table_set(table, 17, P_TOK_END, { .action = ACCEPT, .op = { .accept = 0 }});
+	re_table_set(table, 18, P_TOK_END, { .action = REDUCE, .op = { .reduce = {10, 1, P_LIT_msub} }});
+	re_table_set(table, 18, P_TOK_BAR, { .action = REDUCE, .op = { .reduce = {10, 1, P_LIT_msub} }});
+	re_table_set(table, 18, P_TOK_CAP, { .action = REDUCE, .op = { .reduce = {10, 1, P_LIT_msub} }});
+	re_table_set(table, 18, P_TOK_CHAR, { .action = REDUCE, .op = { .reduce = {10, 1, P_LIT_msub} }});
+	re_table_set(table, 18, P_TOK_CRETURN_CHAR, { .action = REDUCE, .op = { .reduce = {10, 1, P_LIT_msub} }});
+	re_table_set(table, 18, P_TOK_DOT, { .action = REDUCE, .op = { .reduce = {10, 1, P_LIT_msub} }});
+	re_table_set(table, 18, P_TOK_LBRACK, { .action = REDUCE, .op = { .reduce = {10, 1, P_LIT_msub} }});
+	re_table_set(table, 18, P_TOK_LPAREN, { .action = REDUCE, .op = { .reduce = {10, 1, P_LIT_msub} }});
+	re_table_set(table, 18, P_TOK_MINUS, { .action = REDUCE, .op = { .reduce = {10, 1, P_LIT_msub} }});
+	re_table_set(table, 18, P_TOK_NEWLINE_CHAR, { .action = REDUCE, .op = { .reduce = {10, 1, P_LIT_msub} }});
+	re_table_set(table, 18, P_TOK_RPAREN, { .action = REDUCE, .op = { .reduce = {10, 1, P_LIT_msub} }});
+	re_table_set(table, 18, P_TOK_SLASH, { .action = REDUCE, .op = { .reduce = {10, 1, P_LIT_msub} }});
+	re_table_set(table, 18, P_TOK_TABULATE_CHAR, { .action = REDUCE, .op = { .reduce = {10, 1, P_LIT_msub} }});
+	re_table_set(table, 18, P_TOK_ZERO, { .action = REDUCE, .op = { .reduce = {10, 1, P_LIT_msub} }});
+	re_table_set(table, 20, P_TOK_CHAR, { .action = REDUCE, .op = { .reduce = {40, 1, P_LIT_sli} }});
+	re_table_set(table, 20, P_TOK_CRETURN_CHAR, { .action = REDUCE, .op = { .reduce = {40, 1, P_LIT_sli} }});
+	re_table_set(table, 20, P_TOK_DOT, { .action = REDUCE, .op = { .reduce = {40, 1, P_LIT_sli} }});
+	re_table_set(table, 20, P_TOK_NEWLINE_CHAR, { .action = REDUCE, .op = { .reduce = {40, 1, P_LIT_sli} }});
+	re_table_set(table, 20, P_TOK_RBRACK, { .action = REDUCE, .op = { .reduce = {40, 1, P_LIT_sli} }});
+	re_table_set(table, 20, P_TOK_SLASH, { .action = REDUCE, .op = { .reduce = {40, 1, P_LIT_sli} }});
+	re_table_set(table, 20, P_TOK_TABULATE_CHAR, { .action = REDUCE, .op = { .reduce = {40, 1, P_LIT_sli} }});
+	re_table_set(table, 20, P_TOK_ZERO, { .action = REDUCE, .op = { .reduce = {40, 1, P_LIT_sli} }});
+	re_table_set(table, 21, P_TOK_CHAR, { .action = REDUCE, .op = { .reduce = {38, 1, P_LIT_sli} }});
+	re_table_set(table, 21, P_TOK_CRETURN_CHAR, { .action = REDUCE, .op = { .reduce = {38, 1, P_LIT_sli} }});
+	re_table_set(table, 21, P_TOK_DOT, { .action = REDUCE, .op = { .reduce = {38, 1, P_LIT_sli} }});
+	re_table_set(table, 21, P_TOK_NEWLINE_CHAR, { .action = REDUCE, .op = { .reduce = {38, 1, P_LIT_sli} }});
+	re_table_set(table, 21, P_TOK_RBRACK, { .action = REDUCE, .op = { .reduce = {38, 1, P_LIT_sli} }});
+	re_table_set(table, 21, P_TOK_SLASH, { .action = REDUCE, .op = { .reduce = {38, 1, P_LIT_sli} }});
+	re_table_set(table, 21, P_TOK_TABULATE_CHAR, { .action = REDUCE, .op = { .reduce = {38, 1, P_LIT_sli} }});
+	re_table_set(table, 21, P_TOK_ZERO, { .action = REDUCE, .op = { .reduce = {38, 1, P_LIT_sli} }});
+	re_table_set(table, 23, P_TOK_RBRACK, { .action = REDUCE, .op = { .reduce = {36, 0, P_LIT_slc_BAR} }});
+	re_table_set(table, 25, P_TOK_END, { .action = REDUCE, .op = { .reduce = {24, 2, P_LIT_esc} }});
+	re_table_set(table, 25, P_TOK_BAR, { .action = REDUCE, .op = { .reduce = {24, 2, P_LIT_esc} }});
+	re_table_set(table, 25, P_TOK_CAP, { .action = REDUCE, .op = { .reduce = {24, 2, P_LIT_esc} }});
+	re_table_set(table, 25, P_TOK_CHAR, { .action = REDUCE, .op = { .reduce = {24, 2, P_LIT_esc} }});
+	re_table_set(table, 25, P_TOK_CRETURN_CHAR, { .action = REDUCE, .op = { .reduce = {24, 2, P_LIT_esc} }});
+	re_table_set(table, 25, P_TOK_DOT, { .action = REDUCE, .op = { .reduce = {24, 2, P_LIT_esc} }});
+	re_table_set(table, 25, P_TOK_LBRACK, { .action = REDUCE, .op = { .reduce = {24, 2, P_LIT_esc} }});
+	re_table_set(table, 25, P_TOK_LPAREN, { .action = REDUCE, .op = { .reduce = {24, 2, P_LIT_esc} }});
+	re_table_set(table, 25, P_TOK_MINUS, { .action = REDUCE, .op = { .reduce = {24, 2, P_LIT_esc} }});
+	re_table_set(table, 25, P_TOK_NEWLINE_CHAR, { .action = REDUCE, .op = { .reduce = {24, 2, P_LIT_esc} }});
+	re_table_set(table, 25, P_TOK_PLUS, { .action = REDUCE, .op = { .reduce = {24, 2, P_LIT_esc} }});
+	re_table_set(table, 25, P_TOK_QUESTION, { .action = REDUCE, .op = { .reduce = {24, 2, P_LIT_esc} }});
+	re_table_set(table, 25, P_TOK_RBRACK, { .action = REDUCE, .op = { .reduce = {24, 2, P_LIT_esc} }});
+	re_table_set(table, 25, P_TOK_RPAREN, { .action = REDUCE, .op = { .reduce = {24, 2, P_LIT_esc} }});
+	re_table_set(table, 25, P_TOK_SLASH, { .action = REDUCE, .op = { .reduce = {24, 2, P_LIT_esc} }});
+	re_table_set(table, 25, P_TOK_TABULATE_CHAR, { .action = REDUCE, .op = { .reduce = {24, 2, P_LIT_esc} }});
+	re_table_set(table, 25, P_TOK_TIMES, { .action = REDUCE, .op = { .reduce = {24, 2, P_LIT_esc} }});
+	re_table_set(table, 25, P_TOK_ZERO, { .action = REDUCE, .op = { .reduce = {24, 2, P_LIT_esc} }});
+	re_table_set(table, 26, P_TOK_END, { .action = REDUCE, .op = { .reduce = {26, 2, P_LIT_esc} }});
+	re_table_set(table, 26, P_TOK_BAR, { .action = REDUCE, .op = { .reduce = {26, 2, P_LIT_esc} }});
+	re_table_set(table, 26, P_TOK_CAP, { .action = REDUCE, .op = { .reduce = {26, 2, P_LIT_esc} }});
+	re_table_set(table, 26, P_TOK_CHAR, { .action = REDUCE, .op = { .reduce = {26, 2, P_LIT_esc} }});
+	re_table_set(table, 26, P_TOK_CRETURN_CHAR, { .action = REDUCE, .op = { .reduce = {26, 2, P_LIT_esc} }});
+	re_table_set(table, 26, P_TOK_DOT, { .action = REDUCE, .op = { .reduce = {26, 2, P_LIT_esc} }});
+	re_table_set(table, 26, P_TOK_LBRACK, { .action = REDUCE, .op = { .reduce = {26, 2, P_LIT_esc} }});
+	re_table_set(table, 26, P_TOK_LPAREN, { .action = REDUCE, .op = { .reduce = {26, 2, P_LIT_esc} }});
+	re_table_set(table, 26, P_TOK_MINUS, { .action = REDUCE, .op = { .reduce = {26, 2, P_LIT_esc} }});
+	re_table_set(table, 26, P_TOK_NEWLINE_CHAR, { .action = REDUCE, .op = { .reduce = {26, 2, P_LIT_esc} }});
+	re_table_set(table, 26, P_TOK_PLUS, { .action = REDUCE, .op = { .reduce = {26, 2, P_LIT_esc} }});
+	re_table_set(table, 26, P_TOK_QUESTION, { .action = REDUCE, .op = { .reduce = {26, 2, P_LIT_esc} }});
+	re_table_set(table, 26, P_TOK_RBRACK, { .action = REDUCE, .op = { .reduce = {26, 2, P_LIT_esc} }});
+	re_table_set(table, 26, P_TOK_RPAREN, { .action = REDUCE, .op = { .reduce = {26, 2, P_LIT_esc} }});
+	re_table_set(table, 26, P_TOK_SLASH, { .action = REDUCE, .op = { .reduce = {26, 2, P_LIT_esc} }});
+	re_table_set(table, 26, P_TOK_TABULATE_CHAR, { .action = REDUCE, .op = { .reduce = {26, 2, P_LIT_esc} }});
+	re_table_set(table, 26, P_TOK_TIMES, { .action = REDUCE, .op = { .reduce = {26, 2, P_LIT_esc} }});
+	re_table_set(table, 26, P_TOK_ZERO, { .action = REDUCE, .op = { .reduce = {26, 2, P_LIT_esc} }});
+	re_table_set(table, 27, P_TOK_END, { .action = REDUCE, .op = { .reduce = {31, 2, P_LIT_esc} }});
+	re_table_set(table, 27, P_TOK_BAR, { .action = REDUCE, .op = { .reduce = {31, 2, P_LIT_esc} }});
+	re_table_set(table, 27, P_TOK_CAP, { .action = REDUCE, .op = { .reduce = {31, 2, P_LIT_esc} }});
+	re_table_set(table, 27, P_TOK_CHAR, { .action = REDUCE, .op = { .reduce = {31, 2, P_LIT_esc} }});
+	re_table_set(table, 27, P_TOK_CRETURN_CHAR, { .action = REDUCE, .op = { .reduce = {31, 2, P_LIT_esc} }});
+	re_table_set(table, 27, P_TOK_DOT, { .action = REDUCE, .op = { .reduce = {31, 2, P_LIT_esc} }});
+	re_table_set(table, 27, P_TOK_LBRACK, { .action = REDUCE, .op = { .reduce = {31, 2, P_LIT_esc} }});
+	re_table_set(table, 27, P_TOK_LPAREN, { .action = REDUCE, .op = { .reduce = {31, 2, P_LIT_esc} }});
+	re_table_set(table, 27, P_TOK_MINUS, { .action = REDUCE, .op = { .reduce = {31, 2, P_LIT_esc} }});
+	re_table_set(table, 27, P_TOK_NEWLINE_CHAR, { .action = REDUCE, .op = { .reduce = {31, 2, P_LIT_esc} }});
+	re_table_set(table, 27, P_TOK_PLUS, { .action = REDUCE, .op = { .reduce = {31, 2, P_LIT_esc} }});
+	re_table_set(table, 27, P_TOK_QUESTION, { .action = REDUCE, .op = { .reduce = {31, 2, P_LIT_esc} }});
+	re_table_set(table, 27, P_TOK_RBRACK, { .action = REDUCE, .op = { .reduce = {31, 2, P_LIT_esc} }});
+	re_table_set(table, 27, P_TOK_RPAREN, { .action = REDUCE, .op = { .reduce = {31, 2, P_LIT_esc} }});
+	re_table_set(table, 27, P_TOK_SLASH, { .action = REDUCE, .op = { .reduce = {31, 2, P_LIT_esc} }});
+	re_table_set(table, 27, P_TOK_TABULATE_CHAR, { .action = REDUCE, .op = { .reduce = {31, 2, P_LIT_esc} }});
+	re_table_set(table, 27, P_TOK_TIMES, { .action = REDUCE, .op = { .reduce = {31, 2, P_LIT_esc} }});
+	re_table_set(table, 27, P_TOK_ZERO, { .action = REDUCE, .op = { .reduce = {31, 2, P_LIT_esc} }});
+	re_table_set(table, 28, P_TOK_END, { .action = REDUCE, .op = { .reduce = {29, 2, P_LIT_esc} }});
+	re_table_set(table, 28, P_TOK_BAR, { .action = REDUCE, .op = { .reduce = {29, 2, P_LIT_esc} }});
+	re_table_set(table, 28, P_TOK_CAP, { .action = REDUCE, .op = { .reduce = {29, 2, P_LIT_esc} }});
+	re_table_set(table, 28, P_TOK_CHAR, { .action = REDUCE, .op = { .reduce = {29, 2, P_LIT_esc} }});
+	re_table_set(table, 28, P_TOK_CRETURN_CHAR, { .action = REDUCE, .op = { .reduce = {29, 2, P_LIT_esc} }});
+	re_table_set(table, 28, P_TOK_DOT, { .action = REDUCE, .op = { .reduce = {29, 2, P_LIT_esc} }});
+	re_table_set(table, 28, P_TOK_LBRACK, { .action = REDUCE, .op = { .reduce = {29, 2, P_LIT_esc} }});
+	re_table_set(table, 28, P_TOK_LPAREN, { .action = REDUCE, .op = { .reduce = {29, 2, P_LIT_esc} }});
+	re_table_set(table, 28, P_TOK_MINUS, { .action = REDUCE, .op = { .reduce = {29, 2, P_LIT_esc} }});
+	re_table_set(table, 28, P_TOK_NEWLINE_CHAR, { .action = REDUCE, .op = { .reduce = {29, 2, P_LIT_esc} }});
+	re_table_set(table, 28, P_TOK_PLUS, { .action = REDUCE, .op = { .reduce = {29, 2, P_LIT_esc} }});
+	re_table_set(table, 28, P_TOK_QUESTION, { .action = REDUCE, .op = { .reduce = {29, 2, P_LIT_esc} }});
+	re_table_set(table, 28, P_TOK_RBRACK, { .action = REDUCE, .op = { .reduce = {29, 2, P_LIT_esc} }});
+	re_table_set(table, 28, P_TOK_RPAREN, { .action = REDUCE, .op = { .reduce = {29, 2, P_LIT_esc} }});
+	re_table_set(table, 28, P_TOK_SLASH, { .action = REDUCE, .op = { .reduce = {29, 2, P_LIT_esc} }});
+	re_table_set(table, 28, P_TOK_TABULATE_CHAR, { .action = REDUCE, .op = { .reduce = {29, 2, P_LIT_esc} }});
+	re_table_set(table, 28, P_TOK_TIMES, { .action = REDUCE, .op = { .reduce = {29, 2, P_LIT_esc} }});
+	re_table_set(table, 28, P_TOK_ZERO, { .action = REDUCE, .op = { .reduce = {29, 2, P_LIT_esc} }});
+	re_table_set(table, 29, P_TOK_END, { .action = REDUCE, .op = { .reduce = {19, 2, P_LIT_esc} }});
+	re_table_set(table, 29, P_TOK_BAR, { .action = REDUCE, .op = { .reduce = {19, 2, P_LIT_esc} }});
+	re_table_set(table, 29, P_TOK_CAP, { .action = REDUCE, .op = { .reduce = {19, 2, P_LIT_esc} }});
+	re_table_set(table, 29, P_TOK_CHAR, { .action = REDUCE, .op = { .reduce = {19, 2, P_LIT_esc} }});
+	re_table_set(table, 29, P_TOK_CRETURN_CHAR, { .action = REDUCE, .op = { .reduce = {19, 2, P_LIT_esc} }});
+	re_table_set(table, 29, P_TOK_DOT, { .action = REDUCE, .op = { .reduce = {19, 2, P_LIT_esc} }});
+	re_table_set(table, 29, P_TOK_LBRACK, { .action = REDUCE, .op = { .reduce = {19, 2, P_LIT_esc} }});
+	re_table_set(table, 29, P_TOK_LPAREN, { .action = REDUCE, .op = { .reduce = {19, 2, P_LIT_esc} }});
+	re_table_set(table, 29, P_TOK_MINUS, { .action = REDUCE, .op = { .reduce = {19, 2, P_LIT_esc} }});
+	re_table_set(table, 29, P_TOK_NEWLINE_CHAR, { .action = REDUCE, .op = { .reduce = {19, 2, P_LIT_esc} }});
+	re_table_set(table, 29, P_TOK_PLUS, { .action = REDUCE, .op = { .reduce = {19, 2, P_LIT_esc} }});
+	re_table_set(table, 29, P_TOK_QUESTION, { .action = REDUCE, .op = { .reduce = {19, 2, P_LIT_esc} }});
+	re_table_set(table, 29, P_TOK_RBRACK, { .action = REDUCE, .op = { .reduce = {19, 2, P_LIT_esc} }});
+	re_table_set(table, 29, P_TOK_RPAREN, { .action = REDUCE, .op = { .reduce = {19, 2, P_LIT_esc} }});
+	re_table_set(table, 29, P_TOK_SLASH, { .action = REDUCE, .op = { .reduce = {19, 2, P_LIT_esc} }});
+	re_table_set(table, 29, P_TOK_TABULATE_CHAR, { .action = REDUCE, .op = { .reduce = {19, 2, P_LIT_esc} }});
+	re_table_set(table, 29, P_TOK_TIMES, { .action = REDUCE, .op = { .reduce = {19, 2, P_LIT_esc} }});
+	re_table_set(table, 29, P_TOK_ZERO, { .action = REDUCE, .op = { .reduce = {19, 2, P_LIT_esc} }});
+	re_table_set(table, 30, P_TOK_END, { .action = REDUCE, .op = { .reduce = {27, 2, P_LIT_esc} }});
+	re_table_set(table, 30, P_TOK_BAR, { .action = REDUCE, .op = { .reduce = {27, 2, P_LIT_esc} }});
+	re_table_set(table, 30, P_TOK_CAP, { .action = REDUCE, .op = { .reduce = {27, 2, P_LIT_esc} }});
+	re_table_set(table, 30, P_TOK_CHAR, { .action = REDUCE, .op = { .reduce = {27, 2, P_LIT_esc} }});
+	re_table_set(table, 30, P_TOK_CRETURN_CHAR, { .action = REDUCE, .op = { .reduce = {27, 2, P_LIT_esc} }});
+	re_table_set(table, 30, P_TOK_DOT, { .action = REDUCE, .op = { .reduce = {27, 2, P_LIT_esc} }});
+	re_table_set(table, 30, P_TOK_LBRACK, { .action = REDUCE, .op = { .reduce = {27, 2, P_LIT_esc} }});
+	re_table_set(table, 30, P_TOK_LPAREN, { .action = REDUCE, .op = { .reduce = {27, 2, P_LIT_esc} }});
+	re_table_set(table, 30, P_TOK_MINUS, { .action = REDUCE, .op = { .reduce = {27, 2, P_LIT_esc} }});
+	re_table_set(table, 30, P_TOK_NEWLINE_CHAR, { .action = REDUCE, .op = { .reduce = {27, 2, P_LIT_esc} }});
+	re_table_set(table, 30, P_TOK_PLUS, { .action = REDUCE, .op = { .reduce = {27, 2, P_LIT_esc} }});
+	re_table_set(table, 30, P_TOK_QUESTION, { .action = REDUCE, .op = { .reduce = {27, 2, P_LIT_esc} }});
+	re_table_set(table, 30, P_TOK_RBRACK, { .action = REDUCE, .op = { .reduce = {27, 2, P_LIT_esc} }});
+	re_table_set(table, 30, P_TOK_RPAREN, { .action = REDUCE, .op = { .reduce = {27, 2, P_LIT_esc} }});
+	re_table_set(table, 30, P_TOK_SLASH, { .action = REDUCE, .op = { .reduce = {27, 2, P_LIT_esc} }});
+	re_table_set(table, 30, P_TOK_TABULATE_CHAR, { .action = REDUCE, .op = { .reduce = {27, 2, P_LIT_esc} }});
+	re_table_set(table, 30, P_TOK_TIMES, { .action = REDUCE, .op = { .reduce = {27, 2, P_LIT_esc} }});
+	re_table_set(table, 30, P_TOK_ZERO, { .action = REDUCE, .op = { .reduce = {27, 2, P_LIT_esc} }});
+	re_table_set(table, 31, P_TOK_END, { .action = REDUCE, .op = { .reduce = {22, 2, P_LIT_esc} }});
+	re_table_set(table, 31, P_TOK_BAR, { .action = REDUCE, .op = { .reduce = {22, 2, P_LIT_esc} }});
+	re_table_set(table, 31, P_TOK_CAP, { .action = REDUCE, .op = { .reduce = {22, 2, P_LIT_esc} }});
+	re_table_set(table, 31, P_TOK_CHAR, { .action = REDUCE, .op = { .reduce = {22, 2, P_LIT_esc} }});
+	re_table_set(table, 31, P_TOK_CRETURN_CHAR, { .action = REDUCE, .op = { .reduce = {22, 2, P_LIT_esc} }});
+	re_table_set(table, 31, P_TOK_DOT, { .action = REDUCE, .op = { .reduce = {22, 2, P_LIT_esc} }});
+	re_table_set(table, 31, P_TOK_LBRACK, { .action = REDUCE, .op = { .reduce = {22, 2, P_LIT_esc} }});
+	re_table_set(table, 31, P_TOK_LPAREN, { .action = REDUCE, .op = { .reduce = {22, 2, P_LIT_esc} }});
+	re_table_set(table, 31, P_TOK_MINUS, { .action = REDUCE, .op = { .reduce = {22, 2, P_LIT_esc} }});
+	re_table_set(table, 31, P_TOK_NEWLINE_CHAR, { .action = REDUCE, .op = { .reduce = {22, 2, P_LIT_esc} }});
+	re_table_set(table, 31, P_TOK_PLUS, { .action = REDUCE, .op = { .reduce = {22, 2, P_LIT_esc} }});
+	re_table_set(table, 31, P_TOK_QUESTION, { .action = REDUCE, .op = { .reduce = {22, 2, P_LIT_esc} }});
+	re_table_set(table, 31, P_TOK_RBRACK, { .action = REDUCE, .op = { .reduce = {22, 2, P_LIT_esc} }});
+	re_table_set(table, 31, P_TOK_RPAREN, { .action = REDUCE, .op = { .reduce = {22, 2, P_LIT_esc} }});
+	re_table_set(table, 31, P_TOK_SLASH, { .action = REDUCE, .op = { .reduce = {22, 2, P_LIT_esc} }});
+	re_table_set(table, 31, P_TOK_TABULATE_CHAR, { .action = REDUCE, .op = { .reduce = {22, 2, P_LIT_esc} }});
+	re_table_set(table, 31, P_TOK_TIMES, { .action = REDUCE, .op = { .reduce = {22, 2, P_LIT_esc} }});
+	re_table_set(table, 31, P_TOK_ZERO, { .action = REDUCE, .op = { .reduce = {22, 2, P_LIT_esc} }});
+	re_table_set(table, 32, P_TOK_END, { .action = REDUCE, .op = { .reduce = {30, 2, P_LIT_esc} }});
+	re_table_set(table, 32, P_TOK_BAR, { .action = REDUCE, .op = { .reduce = {30, 2, P_LIT_esc} }});
+	re_table_set(table, 32, P_TOK_CAP, { .action = REDUCE, .op = { .reduce = {30, 2, P_LIT_esc} }});
+	re_table_set(table, 32, P_TOK_CHAR, { .action = REDUCE, .op = { .reduce = {30, 2, P_LIT_esc} }});
+	re_table_set(table, 32, P_TOK_CRETURN_CHAR, { .action = REDUCE, .op = { .reduce = {30, 2, P_LIT_esc} }});
+	re_table_set(table, 32, P_TOK_DOT, { .action = REDUCE, .op = { .reduce = {30, 2, P_LIT_esc} }});
+	re_table_set(table, 32, P_TOK_LBRACK, { .action = REDUCE, .op = { .reduce = {30, 2, P_LIT_esc} }});
+	re_table_set(table, 32, P_TOK_LPAREN, { .action = REDUCE, .op = { .reduce = {30, 2, P_LIT_esc} }});
+	re_table_set(table, 32, P_TOK_MINUS, { .action = REDUCE, .op = { .reduce = {30, 2, P_LIT_esc} }});
+	re_table_set(table, 32, P_TOK_NEWLINE_CHAR, { .action = REDUCE, .op = { .reduce = {30, 2, P_LIT_esc} }});
+	re_table_set(table, 32, P_TOK_PLUS, { .action = REDUCE, .op = { .reduce = {30, 2, P_LIT_esc} }});
+	re_table_set(table, 32, P_TOK_QUESTION, { .action = REDUCE, .op = { .reduce = {30, 2, P_LIT_esc} }});
+	re_table_set(table, 32, P_TOK_RBRACK, { .action = REDUCE, .op = { .reduce = {30, 2, P_LIT_esc} }});
+	re_table_set(table, 32, P_TOK_RPAREN, { .action = REDUCE, .op = { .reduce = {30, 2, P_LIT_esc} }});
+	re_table_set(table, 32, P_TOK_SLASH, { .action = REDUCE, .op = { .reduce = {30, 2, P_LIT_esc} }});
+	re_table_set(table, 32, P_TOK_TABULATE_CHAR, { .action = REDUCE, .op = { .reduce = {30, 2, P_LIT_esc} }});
+	re_table_set(table, 32, P_TOK_TIMES, { .action = REDUCE, .op = { .reduce = {30, 2, P_LIT_esc} }});
+	re_table_set(table, 32, P_TOK_ZERO, { .action = REDUCE, .op = { .reduce = {30, 2, P_LIT_esc} }});
+	re_table_set(table, 33, P_TOK_END, { .action = REDUCE, .op = { .reduce = {21, 2, P_LIT_esc} }});
+	re_table_set(table, 33, P_TOK_BAR, { .action = REDUCE, .op = { .reduce = {21, 2, P_LIT_esc} }});
+	re_table_set(table, 33, P_TOK_CAP, { .action = REDUCE, .op = { .reduce = {21, 2, P_LIT_esc} }});
+	re_table_set(table, 33, P_TOK_CHAR, { .action = REDUCE, .op = { .reduce = {21, 2, P_LIT_esc} }});
+	re_table_set(table, 33, P_TOK_CRETURN_CHAR, { .action = REDUCE, .op = { .reduce = {21, 2, P_LIT_esc} }});
+	re_table_set(table, 33, P_TOK_DOT, { .action = REDUCE, .op = { .reduce = {21, 2, P_LIT_esc} }});
+	re_table_set(table, 33, P_TOK_LBRACK, { .action = REDUCE, .op = { .reduce = {21, 2, P_LIT_esc} }});
+	re_table_set(table, 33, P_TOK_LPAREN, { .action = REDUCE, .op = { .reduce = {21, 2, P_LIT_esc} }});
+	re_table_set(table, 33, P_TOK_MINUS, { .action = REDUCE, .op = { .reduce = {21, 2, P_LIT_esc} }});
+	re_table_set(table, 33, P_TOK_NEWLINE_CHAR, { .action = REDUCE, .op = { .reduce = {21, 2, P_LIT_esc} }});
+	re_table_set(table, 33, P_TOK_PLUS, { .action = REDUCE, .op = { .reduce = {21, 2, P_LIT_esc} }});
+	re_table_set(table, 33, P_TOK_QUESTION, { .action = REDUCE, .op = { .reduce = {21, 2, P_LIT_esc} }});
+	re_table_set(table, 33, P_TOK_RBRACK, { .action = REDUCE, .op = { .reduce = {21, 2, P_LIT_esc} }});
+	re_table_set(table, 33, P_TOK_RPAREN, { .action = REDUCE, .op = { .reduce = {21, 2, P_LIT_esc} }});
+	re_table_set(table, 33, P_TOK_SLASH, { .action = REDUCE, .op = { .reduce = {21, 2, P_LIT_esc} }});
+	re_table_set(table, 33, P_TOK_TABULATE_CHAR, { .action = REDUCE, .op = { .reduce = {21, 2, P_LIT_esc} }});
+	re_table_set(table, 33, P_TOK_TIMES, { .action = REDUCE, .op = { .reduce = {21, 2, P_LIT_esc} }});
+	re_table_set(table, 33, P_TOK_ZERO, { .action = REDUCE, .op = { .reduce = {21, 2, P_LIT_esc} }});
+	re_table_set(table, 34, P_TOK_END, { .action = REDUCE, .op = { .reduce = {18, 2, P_LIT_esc} }});
+	re_table_set(table, 34, P_TOK_BAR, { .action = REDUCE, .op = { .reduce = {18, 2, P_LIT_esc} }});
+	re_table_set(table, 34, P_TOK_CAP, { .action = REDUCE, .op = { .reduce = {18, 2, P_LIT_esc} }});
+	re_table_set(table, 34, P_TOK_CHAR, { .action = REDUCE, .op = { .reduce = {18, 2, P_LIT_esc} }});
+	re_table_set(table, 34, P_TOK_CRETURN_CHAR, { .action = REDUCE, .op = { .reduce = {18, 2, P_LIT_esc} }});
+	re_table_set(table, 34, P_TOK_DOT, { .action = REDUCE, .op = { .reduce = {18, 2, P_LIT_esc} }});
+	re_table_set(table, 34, P_TOK_LBRACK, { .action = REDUCE, .op = { .reduce = {18, 2, P_LIT_esc} }});
+	re_table_set(table, 34, P_TOK_LPAREN, { .action = REDUCE, .op = { .reduce = {18, 2, P_LIT_esc} }});
+	re_table_set(table, 34, P_TOK_MINUS, { .action = REDUCE, .op = { .reduce = {18, 2, P_LIT_esc} }});
+	re_table_set(table, 34, P_TOK_NEWLINE_CHAR, { .action = REDUCE, .op = { .reduce = {18, 2, P_LIT_esc} }});
+	re_table_set(table, 34, P_TOK_PLUS, { .action = REDUCE, .op = { .reduce = {18, 2, P_LIT_esc} }});
+	re_table_set(table, 34, P_TOK_QUESTION, { .action = REDUCE, .op = { .reduce = {18, 2, P_LIT_esc} }});
+	re_table_set(table, 34, P_TOK_RBRACK, { .action = REDUCE, .op = { .reduce = {18, 2, P_LIT_esc} }});
+	re_table_set(table, 34, P_TOK_RPAREN, { .action = REDUCE, .op = { .reduce = {18, 2, P_LIT_esc} }});
+	re_table_set(table, 34, P_TOK_SLASH, { .action = REDUCE, .op = { .reduce = {18, 2, P_LIT_esc} }});
+	re_table_set(table, 34, P_TOK_TABULATE_CHAR, { .action = REDUCE, .op = { .reduce = {18, 2, P_LIT_esc} }});
+	re_table_set(table, 34, P_TOK_TIMES, { .action = REDUCE, .op = { .reduce = {18, 2, P_LIT_esc} }});
+	re_table_set(table, 34, P_TOK_ZERO, { .action = REDUCE, .op = { .reduce = {18, 2, P_LIT_esc} }});
+	re_table_set(table, 35, P_TOK_END, { .action = REDUCE, .op = { .reduce = {20, 2, P_LIT_esc} }});
+	re_table_set(table, 35, P_TOK_BAR, { .action = REDUCE, .op = { .reduce = {20, 2, P_LIT_esc} }});
+	re_table_set(table, 35, P_TOK_CAP, { .action = REDUCE, .op = { .reduce = {20, 2, P_LIT_esc} }});
+	re_table_set(table, 35, P_TOK_CHAR, { .action = REDUCE, .op = { .reduce = {20, 2, P_LIT_esc} }});
+	re_table_set(table, 35, P_TOK_CRETURN_CHAR, { .action = REDUCE, .op = { .reduce = {20, 2, P_LIT_esc} }});
+	re_table_set(table, 35, P_TOK_DOT, { .action = REDUCE, .op = { .reduce = {20, 2, P_LIT_esc} }});
+	re_table_set(table, 35, P_TOK_LBRACK, { .action = REDUCE, .op = { .reduce = {20, 2, P_LIT_esc} }});
+	re_table_set(table, 35, P_TOK_LPAREN, { .action = REDUCE, .op = { .reduce = {20, 2, P_LIT_esc} }});
+	re_table_set(table, 35, P_TOK_MINUS, { .action = REDUCE, .op = { .reduce = {20, 2, P_LIT_esc} }});
+	re_table_set(table, 35, P_TOK_NEWLINE_CHAR, { .action = REDUCE, .op = { .reduce = {20, 2, P_LIT_esc} }});
+	re_table_set(table, 35, P_TOK_PLUS, { .action = REDUCE, .op = { .reduce = {20, 2, P_LIT_esc} }});
+	re_table_set(table, 35, P_TOK_QUESTION, { .action = REDUCE, .op = { .reduce = {20, 2, P_LIT_esc} }});
+	re_table_set(table, 35, P_TOK_RBRACK, { .action = REDUCE, .op = { .reduce = {20, 2, P_LIT_esc} }});
+	re_table_set(table, 35, P_TOK_RPAREN, { .action = REDUCE, .op = { .reduce = {20, 2, P_LIT_esc} }});
+	re_table_set(table, 35, P_TOK_SLASH, { .action = REDUCE, .op = { .reduce = {20, 2, P_LIT_esc} }});
+	re_table_set(table, 35, P_TOK_TABULATE_CHAR, { .action = REDUCE, .op = { .reduce = {20, 2, P_LIT_esc} }});
+	re_table_set(table, 35, P_TOK_TIMES, { .action = REDUCE, .op = { .reduce = {20, 2, P_LIT_esc} }});
+	re_table_set(table, 35, P_TOK_ZERO, { .action = REDUCE, .op = { .reduce = {20, 2, P_LIT_esc} }});
+	re_table_set(table, 36, P_TOK_END, { .action = REDUCE, .op = { .reduce = {28, 2, P_LIT_esc} }});
+	re_table_set(table, 36, P_TOK_BAR, { .action = REDUCE, .op = { .reduce = {28, 2, P_LIT_esc} }});
+	re_table_set(table, 36, P_TOK_CAP, { .action = REDUCE, .op = { .reduce = {28, 2, P_LIT_esc} }});
+	re_table_set(table, 36, P_TOK_CHAR, { .action = REDUCE, .op = { .reduce = {28, 2, P_LIT_esc} }});
+	re_table_set(table, 36, P_TOK_CRETURN_CHAR, { .action = REDUCE, .op = { .reduce = {28, 2, P_LIT_esc} }});
+	re_table_set(table, 36, P_TOK_DOT, { .action = REDUCE, .op = { .reduce = {28, 2, P_LIT_esc} }});
+	re_table_set(table, 36, P_TOK_LBRACK, { .action = REDUCE, .op = { .reduce = {28, 2, P_LIT_esc} }});
+	re_table_set(table, 36, P_TOK_LPAREN, { .action = REDUCE, .op = { .reduce = {28, 2, P_LIT_esc} }});
+	re_table_set(table, 36, P_TOK_MINUS, { .action = REDUCE, .op = { .reduce = {28, 2, P_LIT_esc} }});
+	re_table_set(table, 36, P_TOK_NEWLINE_CHAR, { .action = REDUCE, .op = { .reduce = {28, 2, P_LIT_esc} }});
+	re_table_set(table, 36, P_TOK_PLUS, { .action = REDUCE, .op = { .reduce = {28, 2, P_LIT_esc} }});
+	re_table_set(table, 36, P_TOK_QUESTION, { .action = REDUCE, .op = { .reduce = {28, 2, P_LIT_esc} }});
+	re_table_set(table, 36, P_TOK_RBRACK, { .action = REDUCE, .op = { .reduce = {28, 2, P_LIT_esc} }});
+	re_table_set(table, 36, P_TOK_RPAREN, { .action = REDUCE, .op = { .reduce = {28, 2, P_LIT_esc} }});
+	re_table_set(table, 36, P_TOK_SLASH, { .action = REDUCE, .op = { .reduce = {28, 2, P_LIT_esc} }});
+	re_table_set(table, 36, P_TOK_TABULATE_CHAR, { .action = REDUCE, .op = { .reduce = {28, 2, P_LIT_esc} }});
+	re_table_set(table, 36, P_TOK_TIMES, { .action = REDUCE, .op = { .reduce = {28, 2, P_LIT_esc} }});
+	re_table_set(table, 36, P_TOK_ZERO, { .action = REDUCE, .op = { .reduce = {28, 2, P_LIT_esc} }});
+	re_table_set(table, 37, P_TOK_END, { .action = REDUCE, .op = { .reduce = {25, 2, P_LIT_esc} }});
+	re_table_set(table, 37, P_TOK_BAR, { .action = REDUCE, .op = { .reduce = {25, 2, P_LIT_esc} }});
+	re_table_set(table, 37, P_TOK_CAP, { .action = REDUCE, .op = { .reduce = {25, 2, P_LIT_esc} }});
+	re_table_set(table, 37, P_TOK_CHAR, { .action = REDUCE, .op = { .reduce = {25, 2, P_LIT_esc} }});
+	re_table_set(table, 37, P_TOK_CRETURN_CHAR, { .action = REDUCE, .op = { .reduce = {25, 2, P_LIT_esc} }});
+	re_table_set(table, 37, P_TOK_DOT, { .action = REDUCE, .op = { .reduce = {25, 2, P_LIT_esc} }});
+	re_table_set(table, 37, P_TOK_LBRACK, { .action = REDUCE, .op = { .reduce = {25, 2, P_LIT_esc} }});
+	re_table_set(table, 37, P_TOK_LPAREN, { .action = REDUCE, .op = { .reduce = {25, 2, P_LIT_esc} }});
+	re_table_set(table, 37, P_TOK_MINUS, { .action = REDUCE, .op = { .reduce = {25, 2, P_LIT_esc} }});
+	re_table_set(table, 37, P_TOK_NEWLINE_CHAR, { .action = REDUCE, .op = { .reduce = {25, 2, P_LIT_esc} }});
+	re_table_set(table, 37, P_TOK_PLUS, { .action = REDUCE, .op = { .reduce = {25, 2, P_LIT_esc} }});
+	re_table_set(table, 37, P_TOK_QUESTION, { .action = REDUCE, .op = { .reduce = {25, 2, P_LIT_esc} }});
+	re_table_set(table, 37, P_TOK_RBRACK, { .action = REDUCE, .op = { .reduce = {25, 2, P_LIT_esc} }});
+	re_table_set(table, 37, P_TOK_RPAREN, { .action = REDUCE, .op = { .reduce = {25, 2, P_LIT_esc} }});
+	re_table_set(table, 37, P_TOK_SLASH, { .action = REDUCE, .op = { .reduce = {25, 2, P_LIT_esc} }});
+	re_table_set(table, 37, P_TOK_TABULATE_CHAR, { .action = REDUCE, .op = { .reduce = {25, 2, P_LIT_esc} }});
+	re_table_set(table, 37, P_TOK_TIMES, { .action = REDUCE, .op = { .reduce = {25, 2, P_LIT_esc} }});
+	re_table_set(table, 37, P_TOK_ZERO, { .action = REDUCE, .op = { .reduce = {25, 2, P_LIT_esc} }});
+	re_table_set(table, 38, P_TOK_END, { .action = REDUCE, .op = { .reduce = {32, 2, P_LIT_esc} }});
+	re_table_set(table, 38, P_TOK_BAR, { .action = REDUCE, .op = { .reduce = {32, 2, P_LIT_esc} }});
+	re_table_set(table, 38, P_TOK_CAP, { .action = REDUCE, .op = { .reduce = {32, 2, P_LIT_esc} }});
+	re_table_set(table, 38, P_TOK_CHAR, { .action = REDUCE, .op = { .reduce = {32, 2, P_LIT_esc} }});
+	re_table_set(table, 38, P_TOK_CRETURN_CHAR, { .action = REDUCE, .op = { .reduce = {32, 2, P_LIT_esc} }});
+	re_table_set(table, 38, P_TOK_DOT, { .action = REDUCE, .op = { .reduce = {32, 2, P_LIT_esc} }});
+	re_table_set(table, 38, P_TOK_LBRACK, { .action = REDUCE, .op = { .reduce = {32, 2, P_LIT_esc} }});
+	re_table_set(table, 38, P_TOK_LPAREN, { .action = REDUCE, .op = { .reduce = {32, 2, P_LIT_esc} }});
+	re_table_set(table, 38, P_TOK_MINUS, { .action = REDUCE, .op = { .reduce = {32, 2, P_LIT_esc} }});
+	re_table_set(table, 38, P_TOK_NEWLINE_CHAR, { .action = REDUCE, .op = { .reduce = {32, 2, P_LIT_esc} }});
+	re_table_set(table, 38, P_TOK_PLUS, { .action = REDUCE, .op = { .reduce = {32, 2, P_LIT_esc} }});
+	re_table_set(table, 38, P_TOK_QUESTION, { .action = REDUCE, .op = { .reduce = {32, 2, P_LIT_esc} }});
+	re_table_set(table, 38, P_TOK_RBRACK, { .action = REDUCE, .op = { .reduce = {32, 2, P_LIT_esc} }});
+	re_table_set(table, 38, P_TOK_RPAREN, { .action = REDUCE, .op = { .reduce = {32, 2, P_LIT_esc} }});
+	re_table_set(table, 38, P_TOK_SLASH, { .action = REDUCE, .op = { .reduce = {32, 2, P_LIT_esc} }});
+	re_table_set(table, 38, P_TOK_TABULATE_CHAR, { .action = REDUCE, .op = { .reduce = {32, 2, P_LIT_esc} }});
+	re_table_set(table, 38, P_TOK_TIMES, { .action = REDUCE, .op = { .reduce = {32, 2, P_LIT_esc} }});
+	re_table_set(table, 38, P_TOK_ZERO, { .action = REDUCE, .op = { .reduce = {32, 2, P_LIT_esc} }});
+	re_table_set(table, 39, P_TOK_END, { .action = REDUCE, .op = { .reduce = {23, 2, P_LIT_esc} }});
+	re_table_set(table, 39, P_TOK_BAR, { .action = REDUCE, .op = { .reduce = {23, 2, P_LIT_esc} }});
+	re_table_set(table, 39, P_TOK_CAP, { .action = REDUCE, .op = { .reduce = {23, 2, P_LIT_esc} }});
+	re_table_set(table, 39, P_TOK_CHAR, { .action = REDUCE, .op = { .reduce = {23, 2, P_LIT_esc} }});
+	re_table_set(table, 39, P_TOK_CRETURN_CHAR, { .action = REDUCE, .op = { .reduce = {23, 2, P_LIT_esc} }});
+	re_table_set(table, 39, P_TOK_DOT, { .action = REDUCE, .op = { .reduce = {23, 2, P_LIT_esc} }});
+	re_table_set(table, 39, P_TOK_LBRACK, { .action = REDUCE, .op = { .reduce = {23, 2, P_LIT_esc} }});
+	re_table_set(table, 39, P_TOK_LPAREN, { .action = REDUCE, .op = { .reduce = {23, 2, P_LIT_esc} }});
+	re_table_set(table, 39, P_TOK_MINUS, { .action = REDUCE, .op = { .reduce = {23, 2, P_LIT_esc} }});
+	re_table_set(table, 39, P_TOK_NEWLINE_CHAR, { .action = REDUCE, .op = { .reduce = {23, 2, P_LIT_esc} }});
+	re_table_set(table, 39, P_TOK_PLUS, { .action = REDUCE, .op = { .reduce = {23, 2, P_LIT_esc} }});
+	re_table_set(table, 39, P_TOK_QUESTION, { .action = REDUCE, .op = { .reduce = {23, 2, P_LIT_esc} }});
+	re_table_set(table, 39, P_TOK_RBRACK, { .action = REDUCE, .op = { .reduce = {23, 2, P_LIT_esc} }});
+	re_table_set(table, 39, P_TOK_RPAREN, { .action = REDUCE, .op = { .reduce = {23, 2, P_LIT_esc} }});
+	re_table_set(table, 39, P_TOK_SLASH, { .action = REDUCE, .op = { .reduce = {23, 2, P_LIT_esc} }});
+	re_table_set(table, 39, P_TOK_TABULATE_CHAR, { .action = REDUCE, .op = { .reduce = {23, 2, P_LIT_esc} }});
+	re_table_set(table, 39, P_TOK_TIMES, { .action = REDUCE, .op = { .reduce = {23, 2, P_LIT_esc} }});
+	re_table_set(table, 39, P_TOK_ZERO, { .action = REDUCE, .op = { .reduce = {23, 2, P_LIT_esc} }});
+	re_table_set(table, 40, P_TOK_END, { .action = REDUCE, .op = { .reduce = {33, 2, P_LIT_esc} }});
+	re_table_set(table, 40, P_TOK_BAR, { .action = REDUCE, .op = { .reduce = {33, 2, P_LIT_esc} }});
+	re_table_set(table, 40, P_TOK_CAP, { .action = REDUCE, .op = { .reduce = {33, 2, P_LIT_esc} }});
+	re_table_set(table, 40, P_TOK_CHAR, { .action = REDUCE, .op = { .reduce = {33, 2, P_LIT_esc} }});
+	re_table_set(table, 40, P_TOK_CRETURN_CHAR, { .action = REDUCE, .op = { .reduce = {33, 2, P_LIT_esc} }});
+	re_table_set(table, 40, P_TOK_DOT, { .action = REDUCE, .op = { .reduce = {33, 2, P_LIT_esc} }});
+	re_table_set(table, 40, P_TOK_LBRACK, { .action = REDUCE, .op = { .reduce = {33, 2, P_LIT_esc} }});
+	re_table_set(table, 40, P_TOK_LPAREN, { .action = REDUCE, .op = { .reduce = {33, 2, P_LIT_esc} }});
+	re_table_set(table, 40, P_TOK_MINUS, { .action = REDUCE, .op = { .reduce = {33, 2, P_LIT_esc} }});
+	re_table_set(table, 40, P_TOK_NEWLINE_CHAR, { .action = REDUCE, .op = { .reduce = {33, 2, P_LIT_esc} }});
+	re_table_set(table, 40, P_TOK_PLUS, { .action = REDUCE, .op = { .reduce = {33, 2, P_LIT_esc} }});
+	re_table_set(table, 40, P_TOK_QUESTION, { .action = REDUCE, .op = { .reduce = {33, 2, P_LIT_esc} }});
+	re_table_set(table, 40, P_TOK_RBRACK, { .action = REDUCE, .op = { .reduce = {33, 2, P_LIT_esc} }});
+	re_table_set(table, 40, P_TOK_RPAREN, { .action = REDUCE, .op = { .reduce = {33, 2, P_LIT_esc} }});
+	re_table_set(table, 40, P_TOK_SLASH, { .action = REDUCE, .op = { .reduce = {33, 2, P_LIT_esc} }});
+	re_table_set(table, 40, P_TOK_TABULATE_CHAR, { .action = REDUCE, .op = { .reduce = {33, 2, P_LIT_esc} }});
+	re_table_set(table, 40, P_TOK_TIMES, { .action = REDUCE, .op = { .reduce = {33, 2, P_LIT_esc} }});
+	re_table_set(table, 40, P_TOK_ZERO, { .action = REDUCE, .op = { .reduce = {33, 2, P_LIT_esc} }});
+	re_table_set(table, 42, P_TOK_END, { .action = REDUCE, .op = { .reduce = {0, 2, P_LIT_re} }});
+	re_table_set(table, 42, P_TOK_RPAREN, { .action = REDUCE, .op = { .reduce = {0, 2, P_LIT_re} }});
+	re_table_set(table, 43, P_TOK_END, { .action = REDUCE, .op = { .reduce = {4, 2, P_LIT_exp} }});
+	re_table_set(table, 43, P_TOK_BAR, { .action = REDUCE, .op = { .reduce = {4, 2, P_LIT_exp} }});
+	re_table_set(table, 43, P_TOK_RPAREN, { .action = REDUCE, .op = { .reduce = {4, 2, P_LIT_exp} }});
+	re_table_set(table, 44, P_TOK_END, { .action = REDUCE, .op = { .reduce = {6, 0, P_LIT_exp_BAR} }});
+	re_table_set(table, 44, P_TOK_BAR, { .action = REDUCE, .op = { .reduce = {6, 0, P_LIT_exp_BAR} }});
+	re_table_set(table, 44, P_TOK_RPAREN, { .action = REDUCE, .op = { .reduce = {6, 0, P_LIT_exp_BAR} }});
+	re_table_set(table, 45, P_TOK_END, { .action = REDUCE, .op = { .reduce = {8, 2, P_LIT_msub} }});
+	re_table_set(table, 45, P_TOK_BAR, { .action = REDUCE, .op = { .reduce = {8, 2, P_LIT_msub} }});
+	re_table_set(table, 45, P_TOK_CAP, { .action = REDUCE, .op = { .reduce = {8, 2, P_LIT_msub} }});
+	re_table_set(table, 45, P_TOK_CHAR, { .action = REDUCE, .op = { .reduce = {8, 2, P_LIT_msub} }});
+	re_table_set(table, 45, P_TOK_CRETURN_CHAR, { .action = REDUCE, .op = { .reduce = {8, 2, P_LIT_msub} }});
+	re_table_set(table, 45, P_TOK_DOT, { .action = REDUCE, .op = { .reduce = {8, 2, P_LIT_msub} }});
+	re_table_set(table, 45, P_TOK_LBRACK, { .action = REDUCE, .op = { .reduce = {8, 2, P_LIT_msub} }});
+	re_table_set(table, 45, P_TOK_LPAREN, { .action = REDUCE, .op = { .reduce = {8, 2, P_LIT_msub} }});
+	re_table_set(table, 45, P_TOK_MINUS, { .action = REDUCE, .op = { .reduce = {8, 2, P_LIT_msub} }});
+	re_table_set(table, 45, P_TOK_NEWLINE_CHAR, { .action = REDUCE, .op = { .reduce = {8, 2, P_LIT_msub} }});
+	re_table_set(table, 45, P_TOK_RPAREN, { .action = REDUCE, .op = { .reduce = {8, 2, P_LIT_msub} }});
+	re_table_set(table, 45, P_TOK_SLASH, { .action = REDUCE, .op = { .reduce = {8, 2, P_LIT_msub} }});
+	re_table_set(table, 45, P_TOK_TABULATE_CHAR, { .action = REDUCE, .op = { .reduce = {8, 2, P_LIT_msub} }});
+	re_table_set(table, 45, P_TOK_ZERO, { .action = REDUCE, .op = { .reduce = {8, 2, P_LIT_msub} }});
+	re_table_set(table, 46, P_TOK_END, { .action = REDUCE, .op = { .reduce = {7, 2, P_LIT_msub} }});
+	re_table_set(table, 46, P_TOK_BAR, { .action = REDUCE, .op = { .reduce = {7, 2, P_LIT_msub} }});
+	re_table_set(table, 46, P_TOK_CAP, { .action = REDUCE, .op = { .reduce = {7, 2, P_LIT_msub} }});
+	re_table_set(table, 46, P_TOK_CHAR, { .action = REDUCE, .op = { .reduce = {7, 2, P_LIT_msub} }});
+	re_table_set(table, 46, P_TOK_CRETURN_CHAR, { .action = REDUCE, .op = { .reduce = {7, 2, P_LIT_msub} }});
+	re_table_set(table, 46, P_TOK_DOT, { .action = REDUCE, .op = { .reduce = {7, 2, P_LIT_msub} }});
+	re_table_set(table, 46, P_TOK_LBRACK, { .action = REDUCE, .op = { .reduce = {7, 2, P_LIT_msub} }});
+	re_table_set(table, 46, P_TOK_LPAREN, { .action = REDUCE, .op = { .reduce = {7, 2, P_LIT_msub} }});
+	re_table_set(table, 46, P_TOK_MINUS, { .action = REDUCE, .op = { .reduce = {7, 2, P_LIT_msub} }});
+	re_table_set(table, 46, P_TOK_NEWLINE_CHAR, { .action = REDUCE, .op = { .reduce = {7, 2, P_LIT_msub} }});
+	re_table_set(table, 46, P_TOK_RPAREN, { .action = REDUCE, .op = { .reduce = {7, 2, P_LIT_msub} }});
+	re_table_set(table, 46, P_TOK_SLASH, { .action = REDUCE, .op = { .reduce = {7, 2, P_LIT_msub} }});
+	re_table_set(table, 46, P_TOK_TABULATE_CHAR, { .action = REDUCE, .op = { .reduce = {7, 2, P_LIT_msub} }});
+	re_table_set(table, 46, P_TOK_ZERO, { .action = REDUCE, .op = { .reduce = {7, 2, P_LIT_msub} }});
+	re_table_set(table, 47, P_TOK_END, { .action = REDUCE, .op = { .reduce = {9, 2, P_LIT_msub} }});
+	re_table_set(table, 47, P_TOK_BAR, { .action = REDUCE, .op = { .reduce = {9, 2, P_LIT_msub} }});
+	re_table_set(table, 47, P_TOK_CAP, { .action = REDUCE, .op = { .reduce = {9, 2, P_LIT_msub} }});
+	re_table_set(table, 47, P_TOK_CHAR, { .action = REDUCE, .op = { .reduce = {9, 2, P_LIT_msub} }});
+	re_table_set(table, 47, P_TOK_CRETURN_CHAR, { .action = REDUCE, .op = { .reduce = {9, 2, P_LIT_msub} }});
+	re_table_set(table, 47, P_TOK_DOT, { .action = REDUCE, .op = { .reduce = {9, 2, P_LIT_msub} }});
+	re_table_set(table, 47, P_TOK_LBRACK, { .action = REDUCE, .op = { .reduce = {9, 2, P_LIT_msub} }});
+	re_table_set(table, 47, P_TOK_LPAREN, { .action = REDUCE, .op = { .reduce = {9, 2, P_LIT_msub} }});
+	re_table_set(table, 47, P_TOK_MINUS, { .action = REDUCE, .op = { .reduce = {9, 2, P_LIT_msub} }});
+	re_table_set(table, 47, P_TOK_NEWLINE_CHAR, { .action = REDUCE, .op = { .reduce = {9, 2, P_LIT_msub} }});
+	re_table_set(table, 47, P_TOK_RPAREN, { .action = REDUCE, .op = { .reduce = {9, 2, P_LIT_msub} }});
+	re_table_set(table, 47, P_TOK_SLASH, { .action = REDUCE, .op = { .reduce = {9, 2, P_LIT_msub} }});
+	re_table_set(table, 47, P_TOK_TABULATE_CHAR, { .action = REDUCE, .op = { .reduce = {9, 2, P_LIT_msub} }});
+	re_table_set(table, 47, P_TOK_ZERO, { .action = REDUCE, .op = { .reduce = {9, 2, P_LIT_msub} }});
+	re_table_set(table, 48, P_TOK_RBRACK, { .action = REDUCE, .op = { .reduce = {36, 0, P_LIT_slc_BAR} }});
+	re_table_set(table, 50, P_TOK_END, { .action = REDUCE, .op = { .reduce = {12, 3, P_LIT_sub} }});
+	re_table_set(table, 50, P_TOK_BAR, { .action = REDUCE, .op = { .reduce = {12, 3, P_LIT_sub} }});
+	re_table_set(table, 50, P_TOK_CAP, { .action = REDUCE, .op = { .reduce = {12, 3, P_LIT_sub} }});
+	re_table_set(table, 50, P_TOK_CHAR, { .action = REDUCE, .op = { .reduce = {12, 3, P_LIT_sub} }});
+	re_table_set(table, 50, P_TOK_CRETURN_CHAR, { .action = REDUCE, .op = { .reduce = {12, 3, P_LIT_sub} }});
+	re_table_set(table, 50, P_TOK_DOT, { .action = REDUCE, .op = { .reduce = {12, 3, P_LIT_sub} }});
+	re_table_set(table, 50, P_TOK_LBRACK, { .action = REDUCE, .op = { .reduce = {12, 3, P_LIT_sub} }});
+	re_table_set(table, 50, P_TOK_LPAREN, { .action = REDUCE, .op = { .reduce = {12, 3, P_LIT_sub} }});
+	re_table_set(table, 50, P_TOK_MINUS, { .action = REDUCE, .op = { .reduce = {12, 3, P_LIT_sub} }});
+	re_table_set(table, 50, P_TOK_NEWLINE_CHAR, { .action = REDUCE, .op = { .reduce = {12, 3, P_LIT_sub} }});
+	re_table_set(table, 50, P_TOK_PLUS, { .action = REDUCE, .op = { .reduce = {12, 3, P_LIT_sub} }});
+	re_table_set(table, 50, P_TOK_QUESTION, { .action = REDUCE, .op = { .reduce = {12, 3, P_LIT_sub} }});
+	re_table_set(table, 50, P_TOK_RPAREN, { .action = REDUCE, .op = { .reduce = {12, 3, P_LIT_sub} }});
+	re_table_set(table, 50, P_TOK_SLASH, { .action = REDUCE, .op = { .reduce = {12, 3, P_LIT_sub} }});
+	re_table_set(table, 50, P_TOK_TABULATE_CHAR, { .action = REDUCE, .op = { .reduce = {12, 3, P_LIT_sub} }});
+	re_table_set(table, 50, P_TOK_TIMES, { .action = REDUCE, .op = { .reduce = {12, 3, P_LIT_sub} }});
+	re_table_set(table, 50, P_TOK_ZERO, { .action = REDUCE, .op = { .reduce = {12, 3, P_LIT_sub} }});
+	re_table_set(table, 51, P_TOK_RBRACK, { .action = REDUCE, .op = { .reduce = {37, 2, P_LIT_slc} }});
+	re_table_set(table, 52, P_TOK_RBRACK, { .action = REDUCE, .op = { .reduce = {36, 0, P_LIT_slc_BAR} }});
+	re_table_set(table, 53, P_TOK_END, { .action = REDUCE, .op = { .reduce = {13, 3, P_LIT_sub} }});
+	re_table_set(table, 53, P_TOK_BAR, { .action = REDUCE, .op = { .reduce = {13, 3, P_LIT_sub} }});
+	re_table_set(table, 53, P_TOK_CAP, { .action = REDUCE, .op = { .reduce = {13, 3, P_LIT_sub} }});
+	re_table_set(table, 53, P_TOK_CHAR, { .action = REDUCE, .op = { .reduce = {13, 3, P_LIT_sub} }});
+	re_table_set(table, 53, P_TOK_CRETURN_CHAR, { .action = REDUCE, .op = { .reduce = {13, 3, P_LIT_sub} }});
+	re_table_set(table, 53, P_TOK_DOT, { .action = REDUCE, .op = { .reduce = {13, 3, P_LIT_sub} }});
+	re_table_set(table, 53, P_TOK_LBRACK, { .action = REDUCE, .op = { .reduce = {13, 3, P_LIT_sub} }});
+	re_table_set(table, 53, P_TOK_LPAREN, { .action = REDUCE, .op = { .reduce = {13, 3, P_LIT_sub} }});
+	re_table_set(table, 53, P_TOK_MINUS, { .action = REDUCE, .op = { .reduce = {13, 3, P_LIT_sub} }});
+	re_table_set(table, 53, P_TOK_NEWLINE_CHAR, { .action = REDUCE, .op = { .reduce = {13, 3, P_LIT_sub} }});
+	re_table_set(table, 53, P_TOK_PLUS, { .action = REDUCE, .op = { .reduce = {13, 3, P_LIT_sub} }});
+	re_table_set(table, 53, P_TOK_QUESTION, { .action = REDUCE, .op = { .reduce = {13, 3, P_LIT_sub} }});
+	re_table_set(table, 53, P_TOK_RPAREN, { .action = REDUCE, .op = { .reduce = {13, 3, P_LIT_sub} }});
+	re_table_set(table, 53, P_TOK_SLASH, { .action = REDUCE, .op = { .reduce = {13, 3, P_LIT_sub} }});
+	re_table_set(table, 53, P_TOK_TABULATE_CHAR, { .action = REDUCE, .op = { .reduce = {13, 3, P_LIT_sub} }});
+	re_table_set(table, 53, P_TOK_TIMES, { .action = REDUCE, .op = { .reduce = {13, 3, P_LIT_sub} }});
+	re_table_set(table, 53, P_TOK_ZERO, { .action = REDUCE, .op = { .reduce = {13, 3, P_LIT_sub} }});
+	re_table_set(table, 54, P_TOK_END, { .action = REDUCE, .op = { .reduce = {2, 0, P_LIT_re_BAR} }});
+	re_table_set(table, 54, P_TOK_RPAREN, { .action = REDUCE, .op = { .reduce = {2, 0, P_LIT_re_BAR} }});
+	re_table_set(table, 55, P_TOK_END, { .action = REDUCE, .op = { .reduce = {5, 2, P_LIT_exp_BAR} }});
+	re_table_set(table, 55, P_TOK_BAR, { .action = REDUCE, .op = { .reduce = {5, 2, P_LIT_exp_BAR} }});
+	re_table_set(table, 55, P_TOK_RPAREN, { .action = REDUCE, .op = { .reduce = {5, 2, P_LIT_exp_BAR} }});
+	re_table_set(table, 56, P_TOK_RBRACK, { .action = REDUCE, .op = { .reduce = {34, 3, P_LIT_slc} }});
+	re_table_set(table, 57, P_TOK_CHAR, { .action = REDUCE, .op = { .reduce = {39, 3, P_LIT_sli} }});
+	re_table_set(table, 57, P_TOK_CRETURN_CHAR, { .action = REDUCE, .op = { .reduce = {39, 3, P_LIT_sli} }});
+	re_table_set(table, 57, P_TOK_DOT, { .action = REDUCE, .op = { .reduce = {39, 3, P_LIT_sli} }});
+	re_table_set(table, 57, P_TOK_NEWLINE_CHAR, { .action = REDUCE, .op = { .reduce = {39, 3, P_LIT_sli} }});
+	re_table_set(table, 57, P_TOK_RBRACK, { .action = REDUCE, .op = { .reduce = {39, 3, P_LIT_sli} }});
+	re_table_set(table, 57, P_TOK_SLASH, { .action = REDUCE, .op = { .reduce = {39, 3, P_LIT_sli} }});
+	re_table_set(table, 57, P_TOK_TABULATE_CHAR, { .action = REDUCE, .op = { .reduce = {39, 3, P_LIT_sli} }});
+	re_table_set(table, 57, P_TOK_ZERO, { .action = REDUCE, .op = { .reduce = {39, 3, P_LIT_sli} }});
+	re_table_set(table, 58, P_TOK_RBRACK, { .action = REDUCE, .op = { .reduce = {35, 2, P_LIT_slc_BAR} }});
+	re_table_set(table, 59, P_TOK_END, { .action = REDUCE, .op = { .reduce = {1, 3, P_LIT_re_BAR} }});
+	re_table_set(table, 59, P_TOK_RPAREN, { .action = REDUCE, .op = { .reduce = {1, 3, P_LIT_re_BAR} }});
 
 	return table;
 }
@@ -1050,7 +1119,6 @@ re_exp* re_parse::compute()
 					case 2:
 					case 3:
 					case 6:
-					case 11:
 					case 36:
 						/* empty statement */
 						retmp1 = re_exp_new((re_exp) {
@@ -1181,13 +1249,24 @@ re_exp* re_parse::compute()
 
 					case 33:
 						restack.pop_back();
+						restack.pop_back();
+						retmp1 = re_exp_new((re_exp) {
+							.tag = re_exp::char_exp,
+							.op = {.charExp = '\0'}
+						});
+						break;
+
+					case 32:
+						restack.pop_back();
+						restack.pop_back();
 						retmp1 = re_exp_new((re_exp) {
 							.tag = re_exp::char_exp,
 							.op = {.charExp = '\t'}
 						});
 						break;
 
-					case 32:
+					case 31:
+						restack.pop_back();
 						restack.pop_back();
 						retmp1 = re_exp_new((re_exp) {
 							.tag = re_exp::char_exp,
@@ -1195,7 +1274,8 @@ re_exp* re_parse::compute()
 						});
 						break;
 						
-					case 31:
+					case 30:
+						restack.pop_back();
 						restack.pop_back();
 						retmp1 = re_exp_new((re_exp) {
 							.tag = re_exp::char_exp,
@@ -1203,7 +1283,6 @@ re_exp* re_parse::compute()
 						});
 						break;
 					
-					case 30:
 					case 29:
 					case 28:
 					case 27:
@@ -1215,13 +1294,14 @@ re_exp* re_parse::compute()
 					case 21:
 					case 20:
 					case 19:
+					case 18:
 						retmp2 = restack.back();
 						restack.pop_back();
 						restack.pop_back();
 						retmp1 = retmp2;
 						break;
 
-					case 18:
+					case 17:
 						restack.pop_back();
 						retmp1 = re_exp_new((re_exp) {
 							.tag = re_exp::dot_exp,
@@ -1229,16 +1309,16 @@ re_exp* re_parse::compute()
 						});
 						break;
 
-					case 17:
 					case 16:
 					case 15:
+					case 14:
 						retmp2 = restack.back();
 						restack.pop_back();
 						retmp1 = retmp2;
 						break;
 
-					case 14:
 					case 13:
+					case 12:
 						/* sub <- LBRACK slc RBRACK */
 						/* sub <- LPAREN re RPAREN  */
 						restack.pop_back();
@@ -1248,7 +1328,7 @@ re_exp* re_parse::compute()
 						retmp1 = retmp2;
 						break;
 
-					case 12:
+					case 11:
 						/* sub <- elm */
 						retmp2 = restack.back();
 						restack.pop_back();
@@ -1256,69 +1336,52 @@ re_exp* re_parse::compute()
 						break;
 
 					case 10:
-					case 9:
-					case 8:
-						/* msub' <- PLUS */
-						/* msub' <- TIMES */
-						/* msub' <- QUESTION */
+						/* msub <- sub */
 						retmp2 = restack.back();
 						restack.pop_back();
 						retmp1 = retmp2;
 						break;
 
+					case 9:
+						/* msub <- sub TIMES */
+						restack.pop_back();
+						retmp2 = restack.back();
+						restack.pop_back();
+						retmp1 = re_exp_new((re_exp) {
+							.tag          = re_exp::kleene_exp,
+							.op = { .kleeneExp = re_comp_new({
+								.elem = retmp2,
+								.next = NULL
+							})}
+						});
+						break;
+
+					case 8:
+						/* msub <- sub PLUS */
+						restack.pop_back();
+						retmp2 = restack.back();
+						restack.pop_back();
+						retmp1 = re_exp_new((re_exp) {
+							.tag       = re_exp::rep_exp,
+							.op = {.repExp = re_comp_new({
+								.elem = retmp2,
+								.next = NULL
+							})}
+						});
+						break;
+
 					case 7:
-						/* msub <- sub msub' */
-						retmp3 = restack.back(); // msub'
+						/* msub <- sub QUESTION */
 						restack.pop_back();
-						retmp2 = restack.back(); // sub
+						retmp2 = restack.back();
 						restack.pop_back();
-
-						if (retmp3->tag == re_exp::empty_exp) {
-							retmp1 = retmp2;
-						}
-						else {
-							if (retmp3->tag == re_exp::char_exp) {
-								switch (retmp3->op.charExp) {
-									case '*':
-										retmp1 = re_exp_new((re_exp) {
-											.tag          = re_exp::kleene_exp,
-											.op = { .kleeneExp = re_comp_new({
-												.elem = retmp2,
-												.next = NULL
-											})}
-										});
-										break;
-
-									case '+':
-										retmp1 = re_exp_new((re_exp) {
-											.tag       = re_exp::rep_exp,
-											.op = {.repExp = re_comp_new({
-												.elem = retmp2,
-												.next = NULL
-											})}
-										});
-										break;
-										
-									case '?':
-										retmp1 = re_exp_new((re_exp) {
-											.tag       = re_exp::opt_exp,
-											.op = {.optExp = re_comp_new({
-												.elem = retmp2,
-												.next = NULL
-											})}
-										});
-										break;
-									
-									default:
-										fprintf(stderr, "incorrect type\n");
-										exit(EXIT_FAILURE);
-								}
-							}
-							else {
-								fprintf(stderr, "incorrect type\n");
-								exit(EXIT_FAILURE);
-							}
-						}
+						retmp1 = re_exp_new((re_exp) {
+							.tag       = re_exp::opt_exp,
+							.op = {.optExp = re_comp_new({
+								.elem = retmp2,
+								.next = NULL
+							})}
+						});
 						break;
 
 					case 5:
@@ -1470,32 +1533,34 @@ void re_conv_rec(re_exp* re, stringstream *fptr, int space)
 	switch (re->tag)
 	{
 		case re_exp::char_exp:
-			re_write(fptr, "save_bool(scan() == \'", space);
-			re_write(fptr, ch_to_str(re->op.charExp), 0);
-			re_write(fptr, "\');\n", 0);
+			if (re->op.charExp != '\0') {
+				re_write(fptr, "save_bool(sc, scan(sc) == \'", space);
+				re_write(fptr, ch_to_str(re->op.charExp), 0);
+				re_write(fptr, "\');\n", 0);
+			} else re_write(fptr, "save_bool(sc, scan(sc) == EOF);\n", space);
 			break;
 
 		case re_exp::dot_exp:
-			re_write(fptr, "save_bool(scan() != EOF);\n", space);
+			re_write(fptr, "save_bool(sc, scan(sc) != EOF);\n", space);
 			break;
 
 		case re_exp::range_exp:
-			re_write(fptr, "ch = scan();\n", space);
-			re_write(fptr, "save_bool(ch >= \'", space);
+			re_write(fptr, "ch = scan(sc);\n", space);
+			re_write(fptr, "save_bool(sc, (ch >= \'", space);
 			re_write(fptr, ch_to_str(re->op.rangeExp.min), 0);
 			re_write(fptr, "\' && ch <= \'", 0);
 			re_write(fptr, ch_to_str(re->op.rangeExp.max), 0);
-			re_write(fptr, "\');\n", 0);
+			re_write(fptr, "\'));\n", 0);
 			break;
 
 		case re_exp::empty_exp:
-			re_write(fptr, "save_bool(true);\n", space);
+			re_write(fptr, "save_bool(sc, true);\n", space);
 			break;
 
 		case re_exp::kleene_exp:
 		case re_exp::rep_exp:
-			re_write(fptr, "save_pos();\n", space);
-			re_write(fptr, "new_counter();\n", space);
+			re_write(fptr, "save_pos(sc);\n", space);
+			re_write(fptr, "new_counter(sc);\n", space);
 			re_write(fptr, "while (true) {\n", space);
 			
 			re_conv_rec(re_exp_new({
@@ -1503,31 +1568,31 @@ void re_conv_rec(re_exp* re, stringstream *fptr, int space)
 				.op = {.plainExp = re->tag == re_exp::kleene_exp ? re->op.kleeneExp : re->op.repExp}
 			}), fptr, space + 1);
 
-			re_write(fptr, "if (!load_bool()) {\n", space + 1);
-			re_write(fptr, "load_pos();\n", space + 2);
+			re_write(fptr, "if (!load_bool(sc)) {\n", space + 1);
+			re_write(fptr, "load_pos(sc);\n", space + 2);
 			re_write(fptr, "break;\n", space + 2);
 			re_write(fptr, "} else {\n", space + 1);
-			re_write(fptr, "update_pos();\n", space + 2);
-			re_write(fptr, "inc_counter();\n", space + 2);
+			re_write(fptr, "update_pos(sc);\n", space + 2);
+			re_write(fptr, "inc_counter(sc);\n", space + 2);
 			re_write(fptr, "}\n", space + 1);
 
-			re_write(fptr, "} save_bool(count() > ", space);
+			re_write(fptr, "} save_bool(sc, count(sc) > ", space);
 			re_write(fptr, re->tag == re_exp::kleene_exp ? "-1" : "0", 0);
 			re_write(fptr, ");\n", 0);
 
 			break;
 
 		case re_exp::opt_exp:
-			re_write(fptr, "save_pos();\n", space);
+			re_write(fptr, "save_pos(sc);\n", space);
 			
 			re_conv_rec(re_exp_new({
 				.tag = re_exp::plain_exp,
 				.op = {.plainExp = re->tag == re_exp::kleene_exp ? re->op.kleeneExp : re->op.repExp}
 			}), fptr, space);
 
-			re_write(fptr, "if (!load_bool())\n", space);
-			re_write(fptr, "load_pos();\n", space + 1);
-			re_write(fptr, "save_bool(true);\n", space);
+			re_write(fptr, "if (!load_bool(sc))\n", space);
+			re_write(fptr, "load_pos(sc);\n", space + 1);
+			re_write(fptr, "save_bool(sc, true);\n", space);
 			
 			break;
 
@@ -1539,11 +1604,11 @@ void re_conv_rec(re_exp* re, stringstream *fptr, int space)
 			{
 				if (iter->next) 
 				{
-					re_write(fptr, "ch = scan();\n", space);
+					re_write(fptr, "ch = scan(sc);\n", space);
 
 					re_write(fptr, "do {\n", space);
 					re_write(fptr, "if (ch == EOF) {\n", space + 1);
-					re_write(fptr, "save_bool(false);\n", space + 2);
+					re_write(fptr, "save_bool(sc, false);\n", space + 2);
 					re_write(fptr, "break;\n", space + 2);
 					re_write(fptr, "}\n", space + 1);
 
@@ -1554,21 +1619,25 @@ void re_conv_rec(re_exp* re, stringstream *fptr, int space)
 						switch (smp->tag)
 						{
 							case re_exp::char_exp:
-								re_write(fptr, "save_bool(ch == \'", space + 1);
-								re_write(fptr, ch_to_str(smp->op.charExp), 0);
-								re_write(fptr, "\');\n", 0);
+								if (smp->op.charExp == '\0') {
+									re_write(fptr, "save_bool(sc, ch == EOF);\n", space + 1);
+								} else {
+									re_write(fptr, "save_bool(sc, ch == \'", space + 1);
+									re_write(fptr, ch_to_str(smp->op.charExp), 0);
+									re_write(fptr, "\');\n", 0);
+								}
 								break;
 
 							case re_exp::dot_exp:
-								re_write(fptr, "save_bool(ch != EOF);\n", space + 1);
+								re_write(fptr, "save_bool(sc, ch != EOF);\n", space + 1);
 								break;
 
 							case re_exp::range_exp:
-								re_write(fptr, "save_bool(ch >= \'", space + 1);
+								re_write(fptr, "save_bool(sc, (ch >= \'", space + 1);
 								re_write(fptr, ch_to_str(smp->op.rangeExp.min), 0);
 								re_write(fptr, "\' && ch <= \'", 0);
 								re_write(fptr, ch_to_str(smp->op.rangeExp.max), 0);
-								re_write(fptr, "\');\n", 0);
+								re_write(fptr, "\'));\n", 0);
 								break;
 
 							case re_exp::empty_exp:
@@ -1580,13 +1649,13 @@ void re_conv_rec(re_exp* re, stringstream *fptr, int space)
 								exit(EXIT_FAILURE);
 						}
 						
-						re_write(fptr, "if (load_bool()) {\n", space + 1);
-						re_write(fptr, "save_bool(", space + 2);
+						re_write(fptr, "if (load_bool(sc)) {\n", space + 1);
+						re_write(fptr, "save_bool(sc, ", space + 2);
 						re_write(fptr, pol ? "true);\n" : "false);\n", 0);
 						re_write(fptr, "break;\n", space + 2);
 
 						if (!(iter->next)) {
-							re_write(fptr, "} save_bool(", space + 1);
+							re_write(fptr, "} save_bool(sc, ", space + 1);
 							re_write(fptr, pol ? "false);\n" : "true);\n", 0);
 							re_write(fptr, "} while (0);\n", space);
 						} else re_write(fptr, "}\n", space + 1);
@@ -1597,12 +1666,12 @@ void re_conv_rec(re_exp* re, stringstream *fptr, int space)
 				else 
 				{
 					re_write(fptr, "if (ch == EOF) {\n", space);
-					re_write(fptr, "save_bool(false);\n", space + 1);
+					re_write(fptr, "save_bool(sc, false);\n", space + 1);
 					re_write(fptr, "} else {\n", space);
 					re_conv_rec(iter->elem, fptr, space + 1);
-					re_write(fptr, "save_bool(", space + 1);
+					re_write(fptr, "save_bool(sc, ", space + 1);
 					re_write(fptr, pol ? "" : "!", 0);
-					re_write(fptr, "load_bool());\n", 0);
+					re_write(fptr, "load_bool(sc));\n", 0);
 					re_write(fptr, "}\n", space);
 				}
 			}
@@ -1613,19 +1682,19 @@ void re_conv_rec(re_exp* re, stringstream *fptr, int space)
 			if (re->op.barExp.left && re->op.barExp.right)
 			{
 				iter = re->op.barExp.left;
-				re_write(fptr, "save_pos();\n", space);
+				re_write(fptr, "save_pos(sc);\n", space);
 				re_conv_rec(re_exp_new({
 					.tag = re_exp::plain_exp,
 					.op = {.plainExp = iter}
 				}), fptr, space);
-				re_write(fptr, "if (!load_bool()) {\n", space);
+				re_write(fptr, "if (!load_bool(sc)) {\n", space);
 				iter = re->op.barExp.right;
-				re_write(fptr, "load_pos();\n", space + 1);
+				re_write(fptr, "load_pos(sc);\n", space + 1);
 				re_conv_rec(re_exp_new({
 					.tag = re_exp::plain_exp,
 					.op = {.plainExp = iter}
 				}), fptr, space + 1);
-				re_write(fptr, "} else save_bool(true);\n", space);
+				re_write(fptr, "} else save_bool(sc, true);\n", space);
 			}
 			
 			else 
@@ -1651,13 +1720,13 @@ void re_conv_rec(re_exp* re, stringstream *fptr, int space)
 					while (iter) 
 					{
 						re_conv_rec(iter->elem, fptr, space + 1);
-						re_write(fptr, "if (!load_bool()) {\n", space + 1);
-						re_write(fptr, "save_bool(false);\n", space + 2);
+						re_write(fptr, "if (!load_bool(sc)) {\n", space + 1);
+						re_write(fptr, "save_bool(sc, false);\n", space + 2);
 						re_write(fptr, "break;\n", space + 2);
 						re_write(fptr, "}\n", space + 1);
 						iter = iter->next;
 					}
-					re_write(fptr, "save_bool(true);\n", space + 1);
+					re_write(fptr, "save_bool(sc, true);\n", space + 1);
 					re_write(fptr, "} while (0);\n", space);
 				} 
 				
@@ -1669,7 +1738,7 @@ void re_conv_rec(re_exp* re, stringstream *fptr, int space)
 						case re_exp::opt_exp:
 						case re_exp::kleene_exp:
 						case re_exp::rep_exp:
-							re_write(fptr, "save_pos();\n", space);
+							re_write(fptr, "save_pos(sc);\n", space);
 							break;
 					}
 

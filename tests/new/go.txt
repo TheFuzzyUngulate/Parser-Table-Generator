@@ -1,19 +1,17 @@
-ELEMENT                 [A-Z]+
-STRING                  "([\w!#-&\(-\[\]-\}]|\\[tnr"'])*"
-COLON                   :
-ATTRIBUTE               [a-z]+
-ADDRESS                 @[0-9]+
-LBRACK                  \{
-RBRACK                  \}
-COMMA                   ,
-DIRECTIVE               #[A-Za-z]+
-ELLIPSIS                \.\.\.
+ELEMENT   : "[A-Z]+" ;
+STRING    : "\"([ !#-&\(-\[\]-}]|\\[tnr\"\'])*\"" ;
+COLON     : ":" ;
+ATTRIBUTE : "[a-z]+" ;
+ADDRESS   : "@[0-9]+" ;
+LBRACK    : "{" ;
+RBRACK    : "}" ;
+COMMA     : "," ;
+DIRECTIVE : "#[A-Za-z]+" ;
+ELLIPSIS  : "\.\.\." ;
+SPACE     : "[ \t\n\r]" , skip ;
 
 %%
-%ignore \w
-%ignore \t
-%ignore \n
-
+%nodecollapse
 %start start
 
 start     => item { item };

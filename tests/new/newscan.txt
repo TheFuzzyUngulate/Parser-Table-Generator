@@ -1,0 +1,52 @@
+STRING "([\w!#-&\(-\[\]-\}]|\\[tnr0"'])*"
+LANGLE <
+RANGLE >
+COLON :
+RPAR \)
+BEGIN begin\(
+RETURN return\(
+SAVE save\(
+NIL nil|nul
+AMPERSAND &|and
+ID [A-Za-z][A-Za-z_0-9]*
+
+%%
+%ignore \w
+%ignore \t
+%ignore \n
+%nodecollapse
+
+%start start
+
+start => state rules startb
+    | rules startb 
+    ;
+
+startb => state rules startb
+    | empty
+    ;
+
+state => LANGLE ID RANGLE
+    | ID COLON
+    ;
+
+rules => STRING cmds rulesb;
+
+rulesb => STRING cmds rulesb
+    | empty
+    ;
+
+cmds => cmd cmdsb ;
+
+cmdsb => AMPERSAND cmd cmdsb
+    | empty 
+    ;
+
+cmd => cmdname ID RPAR
+    | NIL 
+    ;
+
+cmdname => BEGIN
+    | RETURN
+    | SAVE
+    ;

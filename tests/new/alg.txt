@@ -1,14 +1,15 @@
-LPAR            \(
-RPAR            \)
-INTEGER         [0-9]+
-PLUS            \+
-MINUS           \-
-MULT            \*
-DIV             /
+LPAR    : "\(" ;
+RPAR    : "\)" ;
+INTEGER : "[0-9]+" ;
+MINUS   : "-" ;
+PLUS    : "\+" ;
+MULT    : "\*" ;
+DIV     : "/" ;
+SPACE   : " " , skip;
 
 %%
-
 %start term
+%nodecollapse
 
 term   => expr { termop term } ;
 termop => MULT | DIV ;

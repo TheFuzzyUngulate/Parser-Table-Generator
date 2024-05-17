@@ -21,8 +21,15 @@ using   std::cout,
         std::tuple,
         std::deque;
 
-typedef deque<std::pair<string, string>> regopts;
-typedef tuple<string, string, regopts> reglit;
+typedef struct
+reglit {
+    string name;
+    string regstr;
+    bool   skip;
+    string state;
+    string newstate;
+    string pretok;
+} reglit;
 
 class Parser {
     public:

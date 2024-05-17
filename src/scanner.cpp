@@ -92,7 +92,7 @@ void Scanner::prescan()
 
                     dirs.start = str;
                 }
-                else
+                /* else
                 if (str == "ignore")
                 {
                     // eliminate spaces before the next argument
@@ -128,14 +128,10 @@ void Scanner::prescan()
                             scan_err("invalid ignore char suggested.\n");
                         }
                     }
-                }
+                } */
                 else
-                if (str == "ateof")
+                if (str == "treeimpl")
                 {
-                    if (!dirs.ateof.empty()) {
-                        scan_warn("only one ateof character may be set");
-                    }
-
                     // eliminate spaces before the next argument
                     while (!line.empty()) {
                         ch = line[0];
@@ -153,7 +149,11 @@ void Scanner::prescan()
                         str.push_back(ch);
                     }
 
-                    dirs.ateof = str;
+                    if (str != "list" && str != "union") {
+                        scan_err("treeimpl must have value of \'list\' or \'union\'.\n");
+                    }
+
+                    dirs.treeimpl = str;
                 }
                 else
                 if (str == "nodecollapse")
@@ -190,64 +190,84 @@ Tokens Scanner::lex()
                 case 0:
                     return Tokens::ENDFILE;
 
-                case '{':
-                    return Tokens::LOPT;
-
-                case '}':
-                    return Tokens::ROPT;
+                case ';': return Tokens::BREAK;
+                case ':': return Tokens::COLON;
+                case ',': return Tokens::COMMA;
 
                 case '\n':
+                {
                     lineno++;
                     statetrans();
-                    //return Tokens::NEWLINE;
                     break;
+                }
 
                 default:
+                {
                     lexeme.clear();
-                    
-                    if (isascii(ch) && !isspace(ch)) {
+
+                    if (ch == '\"')
+                    {
                         do {
+                            ch = get();
                             if (ch == '\\') {
                                 ch = get();
-                                if (ch == 'w') {
-                                    lexeme += ' ';
-                                    ch = get();
-                                } else if (ch == '{') {
-                                    lexeme += '{';
-                                    ch = get();
-                                } else if (ch == '}') {
-                                    lexeme += '}';
-                                    ch = get();
+                                if (ch == '\"') {
+                                    lexeme += '\"';
+                                    ch = '\\';
+                                } else if (ch == '\'') {
+                                    lexeme += '\'';
                                 } else {
-                                    lexeme += '\\';
+                                    lexeme += "\\";
                                     lexeme += ch;
-                                    ch = get();
                                 }
-                            }
-                            else {
-                                lexeme += ch;
-                                ch = get();
-                            }
-                        } while (isascii(ch) && !isspace(ch) && ch != '{' && ch != '}');
-                        unget(ch);
-                        return Tokens::STRING;
-                    } else {
-                        string err = "invalid char ";
-                        err += ch;
-                        scan_err(err.c_str());
+                            } else lexeme += ch;
+                        } while (isprint(ch) && ch != '\"');
+
+                        if (ch == '\"') {
+                            lexeme.pop_back();
+                            cout << "got string " << lexeme << std::endl;
+                            return Tokens::STRING;
+                        } else scan_err("broken string found");
                     }
+
+                    if (isalpha(ch))
+                    {
+                        do {
+                            lexeme += ch;
+                            ch = get();
+                        } while (isalnum(ch) || ch == '_');
+                        unget(ch);
+
+                        string smoll;
+                        for (unsigned char ch : lexeme)
+                            smoll += tolower(ch);
+
+                        if (smoll == "skip")
+                            return Tokens::SKIP;
+                        if (smoll == "goto")
+                            return Tokens::GOTO;
+                        if (smoll == "in")
+                            return Tokens::IN;
+                        if (smoll == "after")
+                            return Tokens::AFTER;
+                        
+                        return Tokens::ID;
+                    }
+                    
+                    string err = "invalid char ";
+                    err += ch;
+                    scan_err(err.c_str());
+                }
             }
         }
+
         else
         if (dirs.state == 1) 
         {
-            switch(ch) {
-                case 0:
-                    /**if (!reached_end) {
-                        reached_end = true;
-                        unget(ch);
-                        return Tokens::BREAK;
-                    } else**/ return Tokens::ENDFILE;
+            switch(ch) 
+            {
+                case 0: 
+                    return Tokens::ENDFILE;
 
                 case '[': return Tokens::LOPT;
                 case ']': return Tokens::ROPT;
@@ -276,17 +296,6 @@ Tokens Scanner::lex()
                     lineno++;
                     statetrans();
                     break;
-                
-                /*case '\"':
-                    lexeme.clear();
-                    do {
-                        ch = get();
-                        lexeme += ch;
-                    } while (isascii(ch) && ch != '\"');
-                    lexeme.pop_back();
-                    if (ch == '\"') return Tokens::TOK;
-                    else scan_err("open quotation mark");
-                    break;*/
 
                 default:
                     lexeme.clear();

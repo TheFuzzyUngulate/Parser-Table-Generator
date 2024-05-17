@@ -1,65 +1,26 @@
-WHEN            when
-WHERE           where
-IF              if
-WHILE           while
-BEFORE          before
-AFTER           after
-PREPTOK         in|on|at|from|by|near|with
-FOR             for
-TO              to
-OF              of
-AND             and
-COCONJ          or|nor|for|but|so|yet
-ARTICLE         the|a|an|some
-BE              be
-HYPHEN          -
-SAXON           's
-HAVE            have
-NEGATIVE        not
-PAST            ed
-PRON_WORD       @
-NOUN_WORD       @
-ADVERB_WORD     @
-ADJECT_WORD     @
-VERB_WORD       @
+BE      :  "be" ;
+ARTICLE :  "the|an" ;
+HAVE    :  "have" ;
+VERB    :  "die|go|speak|know|freeze|live" ;
+NOUN    :  "person|horse|cow|feather|flower" ;
+NOT     :  "not" ;
+SPACE   :  "[ \t\r\n]" , skip ;
 
 %%
+%nodecollapse
+%start Sentence
 
-%start sentence
-
-sentence  => simple [ adverbial ] { conj sentence };
-simple    => subject predicate [ prephr ] ;
-subject   => [ ARTICLE ] detp ;
-predicate => [ inadv ] tense verbphr ;
-verbphr   => verbblock arguments ;
-arguments => [ [ indobj ] dirobj ] ;
-
-indobj => detp ;
-dirobj => detp | TO verbphr ;
-
-tense   => [ perfphr ] ;
-perfphr => [ perf ] progphr ;
-progphr => [ prog ] passphr ;
-passphr => [ pass ] ;
-
-perf  => HAVE infl ;
-prog  => BE infl ;
-pass  => BE infl ;
-
-verbblock => verb [ NEGATIVE ] ;
-verb      => VERB_WORD infl ;
-inadv     => ADVERB_WORD ;
-
-detp    => [ ARTICLE ] nounadj ;
-nounadj => noun | adjphr nounadj ;
-adjphr  => [ ADVERB_WORD ] ADJECT_WORD ;
-noun    => NOUN_WORD { SAXON noun } | NOUN_WORD { prephr } ;
-
-prep    => OF | TO | FOR | PREPTOK | BEFORE | AFTER ;
-prephr  => prep detp ;
-
-infl => [ PAST ] ;
-
-adverbial => inadv | subconj sentence ;
-subconj   => WHERE | WHEN | WHILE | IF | BEFORE | AFTER ;
-conj      => AND | COCONJ ;
+Sentence => Subject Predicate ;
+Subject => Noun ;
+Predicate => [ Negation ] Perf ;
+Perf => [ Perfect ] Prog ;
+Prog => [ Progressive ] CorePredicate ;
+CorePredicate => Verb [ [ IndirectObject ] DirectObject ] ;
+Noun => [ ARTICLE ] NOUN ;
+Verb => VERB | BE ;
+Perfect => HAVE ;
+Progressive => BE ;
+Passive => BE ;
+Negation => NOT ;
+IndirectObject => Noun ;
+DirectObject => Noun ;
