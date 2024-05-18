@@ -92,43 +92,6 @@ void Scanner::prescan()
 
                     dirs.start = str;
                 }
-                /* else
-                if (str == "ignore")
-                {
-                    // eliminate spaces before the next argument
-                    while (!line.empty()) {
-                        ch = line[0];
-                        line.erase(line.begin());
-                        if (ch == 0 || !isspace(ch) || ch == '\n') break;
-                    }
-
-                    str.clear();
-                    
-                    str.push_back(ch);
-                    while (!line.empty()) {
-                        if (isspace(ch) && ch != ' ') break;
-                        ch = line[0];
-                        line.erase(line.begin());
-                        str.push_back(ch);
-                    }
-
-                    if (str == "\\n") {
-                        dirs.ignored.insert('\n');
-                    } else if (str == "\\r") {
-                        dirs.ignored.insert('\r');
-                    } else if (str == "\\w") {
-                        dirs.ignored.insert(' ');
-                    } else if (str == "\\t") {
-                        dirs.ignored.insert('\t');
-                    } else {
-                        if (str.size() == 1) {
-                            dirs.ignored.insert(str[0]);
-                        } else {
-                            cout << "suggested " << str << std::endl;
-                            scan_err("invalid ignore char suggested.\n");
-                        }
-                    }
-                } */
                 else
                 if (str == "treeimpl")
                 {
@@ -170,6 +133,12 @@ void Scanner::prescan()
 
 Tokens Scanner::lex()
 {
+    if (firstcall) 
+    {
+        statetrans();
+        firstcall = false;
+    }
+
     while (1) 
     {
         char ch;
@@ -238,18 +207,16 @@ Tokens Scanner::lex()
                         } while (isalnum(ch) || ch == '_');
                         unget(ch);
 
-                        string smoll;
-                        for (unsigned char ch : lexeme)
-                            smoll += tolower(ch);
-
-                        if (smoll == "skip")
+                        if (lexeme == "skip")
                             return Tokens::SKIP;
-                        if (smoll == "goto")
+                        if (lexeme == "goto")
                             return Tokens::GOTO;
-                        if (smoll == "in")
+                        if (lexeme == "in")
                             return Tokens::IN;
-                        if (smoll == "after")
+                        if (lexeme == "after")
                             return Tokens::AFTER;
+                        if (lexeme == "state")
+                            return Tokens::STATE;
                         
                         return Tokens::ID;
                     }

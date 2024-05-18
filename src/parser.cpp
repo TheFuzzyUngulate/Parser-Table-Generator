@@ -55,15 +55,18 @@ void Parser::sc_parse()
     tb[{Tokens::COMS, Tokens::SKIP}] = {COMM, COMS1};
     tb[{Tokens::COMS, Tokens::GOTO}] = {COMM, COMS1};
     tb[{Tokens::COMS, Tokens::AFTER}] = {COMM, COMS1};
+    tb[{Tokens::COMS, Tokens::STATE}] = {COMM, COMS1};
     tb[{Tokens::COMS1, Tokens::IN}] = {COMM, COMS1};
     tb[{Tokens::COMS1, Tokens::SKIP}] = {COMM, COMS1};
     tb[{Tokens::COMS1, Tokens::GOTO}] = {COMM, COMS1};
     tb[{Tokens::COMS1, Tokens::AFTER}] = {COMM, COMS1};
+    tb[{Tokens::COMS1, Tokens::STATE}] = {COMM, COMS1};
     tb[{Tokens::COMS1, Tokens::BREAK}] = {};
     tb[{Tokens::COMM, Tokens::IN}] = {IN, ID};
     tb[{Tokens::COMM, Tokens::SKIP}] = {SKIP};
     tb[{Tokens::COMM, Tokens::GOTO}] = {GOTO, ID};
     tb[{Tokens::COMM, Tokens::AFTER}] = {AFTER, ID};
+    tb[{Tokens::COMM, Tokens::STATE}] = {STATE, ID};
 
     stack.push_back(pitem{.id = pitem::LIT, .op = {.lit = ENDFILE}});
     stack.push_back(pitem{.id = pitem::NONLIT, .op = {.nonlit = START}});
@@ -152,7 +155,8 @@ void Parser::sc_parse()
                                             << ", " << item.skip
                                             << ", " << item.state
                                             << ", " << item.newstate 
-                                            << ", " << item.pretok << "}\n";
+                                            << ", " << item.pretok 
+                                            << ", " << item.supertok << "}\n";
                                 }
                             } cout << "})\n";
                         }
@@ -189,7 +193,8 @@ void Parser::sc_parse()
                                              << ", " << item.skip
                                              << ", " << item.state
                                              << ", " << item.newstate 
-                                             << ", " << item.pretok << "}\n";
+                                             << ", " << item.pretok 
+                                             << ", " << item.supertok << "}\n";
                                     }
                                 } cout << "})\n";
                             }
@@ -221,7 +226,8 @@ void Parser::sc_parse()
                             cout << ", " << opts.skip;
                             cout << ", " << opts.state;
                             cout << ", " << opts.newstate; 
-                            cout << ", " << opts.pretok << "})\n";
+                            cout << ", " << opts.pretok;
+                            cout << ", " << opts.supertok << "})\n";
                         }
                         
                         break;
@@ -244,7 +250,8 @@ void Parser::sc_parse()
                                 cout << ", " << coms.skip;
                                 cout << ", " << coms.state;
                                 cout << ", " << coms.newstate; 
-                                cout << ", " << coms.pretok << "})\n";
+                                cout << ", " << coms.pretok;
+                                cout << ", " << coms.supertok << "})\n";
                             }
                         }
                         else
@@ -255,7 +262,8 @@ void Parser::sc_parse()
                                 .skip    = false,
                                 .state   = "",
                                 .newstate = "",
-                                .pretok   = ""
+                                .pretok   = "",
+                                .supertok = ""
                             }}});
                             if (_flags.PARSER_TRACE)
                                 cout << "  terms.push({}).\n";
@@ -282,6 +290,9 @@ void Parser::sc_parse()
                         else
                         if (comm.state != "")
                             coms.state = comm.state;
+                        else
+                        if (comm.supertok != "")
+                            coms.supertok = comm.supertok;
 
                         nodes.push_back({coms});
 
@@ -292,7 +303,8 @@ void Parser::sc_parse()
                             cout << ", " << coms.skip;
                             cout << ", " << coms.state;
                             cout << ", " << coms.newstate; 
-                            cout << ", " << coms.pretok << "})\n";
+                            cout << ", " << coms.pretok;
+                            cout << ", " << coms.supertok << "})\n";
                         }
                         
                         break;
@@ -330,7 +342,8 @@ void Parser::sc_parse()
                                 cout << ", " << coms.skip;
                                 cout << ", " << coms.state;
                                 cout << ", " << coms.newstate; 
-                                cout << ", " << coms.pretok << "})\n";
+                                cout << ", " << coms.pretok;
+                                cout << ", " << coms.supertok << "})\n";
                             }
                         }
                         else
@@ -341,7 +354,8 @@ void Parser::sc_parse()
                                 .skip    = false,
                                 .state   = "",
                                 .newstate = "",
-                                .pretok   = ""
+                                .pretok   = "",
+                                .supertok = ""
                             }}});
                             if (_flags.PARSER_TRACE)
                                 cout << "  terms.push({}).\n";
@@ -359,17 +373,14 @@ void Parser::sc_parse()
                             auto keyw = nodes.back()[0].name;
                             nodes.pop_back();
 
-                            string smoll;
-                            for (unsigned char ch : keyw)
-                                smoll += tolower(ch);
-
                             reglit res = (reglit) {
                                 .name     = "",
                                 .regstr   = "",
                                 .skip     = false,
-                                .state    = smoll == "in" ? id : "",
-                                .newstate = smoll == "goto" ? id : "",
-                                .pretok   = smoll == "after" ? id : ""
+                                .state    = keyw == "state" ? id : "",
+                                .newstate = keyw == "goto" ? id : "",
+                                .pretok   = keyw == "after" ? id : "",
+                                .supertok = keyw == "in" ? id : ""
                             };
 
                             nodes.push_back({res});
@@ -381,7 +392,8 @@ void Parser::sc_parse()
                                 cout << ", " << res.skip;
                                 cout << ", " << res.state;
                                 cout << ", " << res.newstate; 
-                                cout << ", " << res.pretok << "})\n";
+                                cout << ", " << res.pretok;
+                                cout << ", " << res.supertok << "})\n";
                             }
                         }
                         else
@@ -412,20 +424,38 @@ void Parser::sc_parse()
     
     sc->unlex(a);
 
-    for (auto tok : _scitems) {
-        int found  = false;
-        auto prosp = tok.pretok;
-        if (prosp == "") continue;
-        for (auto tok2 : _scitems) {
-            if (tok2.name == prosp) {
-                found = true;
-                break;
+    for (auto tok : _scitems) 
+    {
+        if (tok.pretok != "")
+        {
+            int found = false;
+            for (auto tok2 : _scitems) {
+                if (tok2.name == tok.pretok) {
+                    found = true;
+                    break;
+                }
+            } if (!found) {
+                string err = "token \"";
+                err += tok.pretok;
+                err += "\" in after statement doesn't exist";
+                parse_err(err.c_str());
             }
-        } if (!found) {
-            string err = "token \"";
-            err += prosp;
-            err += "\" in after statement doesn't exist";
-            parse_err(err.c_str());
+        }
+
+        if (tok.supertok != "")
+        {
+            int found = false;
+            for (auto tok2 : _scitems) {
+                if (tok2.name == tok.supertok) {
+                    found = true;
+                    break;
+                }
+            } if (!found) {
+                string err = "token \"";
+                err += tok.supertok;
+                err += "\" in after statement doesn't exist";
+                parse_err(err.c_str());
+            }
         }
     }
 }

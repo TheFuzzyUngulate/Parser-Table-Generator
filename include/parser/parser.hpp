@@ -29,6 +29,7 @@ reglit {
     string state;
     string newstate;
     string pretok;
+    string supertok;
 } reglit;
 
 class Parser {

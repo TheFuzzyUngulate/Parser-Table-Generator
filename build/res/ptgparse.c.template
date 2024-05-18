@@ -228,7 +228,6 @@ ptglex(ptg_sc* sc)
     ptg_stack_clear(&(sc->check.counters));
 
     save_pos(sc);
-/* stop */
     sc->spt = sc->ptr;
 
     while (1)

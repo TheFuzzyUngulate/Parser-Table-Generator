@@ -1,3 +1,6 @@
+%start Start
+%nodecollapse
+
 LPAR:      "\("   ;
 RPAR:      "\)"   ;
 LBRACE:    "{"    ;
@@ -7,6 +10,7 @@ COMMA:     ","    ;
 PLUS:      "\+"   ;
 MINUS:     "\-"   ;
 MULT:      "\*"   ;
+COMM_STRT: "//" , skip goto COMMENT ;
 DIV:       "/"    ;
 LAND:      "&&"   ;
 LOR:       "\|\|" ;
@@ -16,22 +20,21 @@ LNEQ:      "~="   ;
 LLT:       "<"    ;
 LGT:       ">"    ;
 ASSIGNOP:  "="    ;
-VAR:       "var"  ;
-IF:        "if"   ;
-ELSE:      "else" ;
-FUNC:      "func" ;
-FOR:       "for"  ;
-BREAK:     "break" ;
-RETURN:    "return" ;
+VAR:       "var"    , in ID ;
+IF:        "if"     , in ID ;
+ELSE:      "else"   , in ID ;
+FUNC:      "func"   , in ID ;
+FOR:       "for"    , in ID ;
+BREAK:     "break"  , in ID ;
+RETURN:    "return" , in ID ;
 ID:        "[A-Za-z][A-Za-z0-9]*" ;
 INT:       "[0-9]+" ;
 STRING:    "\"([ !#-&\(-\[\]-}]|\\[tnr\"\'])*\"" ;
 SPACE:     "[ \t\n\r]" , skip ;
-EOF:       "\0", after NEWLINE ;
+COMM_END:  "\n", skip state COMMENT goto INITIAL ;
+COMM_IN:   "." , skip state COMMENT ;
 
-%nodecollapse
 %%
-%start Start
 
 Type      => TypeName;
 TypeName  => ID;
@@ -40,9 +43,9 @@ Block => LBRACE StatementList RBRACE;
 
 StatementList => { Statement };
 Declaration   => VarDecl;
-TopLevelDecl  => [ Declaration | FunctionDecl ] ;
+TopLevelDecl  => Declaration SEMICOLON | FunctionDecl ;
 
-VarDecl     => VAR VarSpec;
+VarDecl     => VAR VarSpec ;
 VarSpec     => VarName Type;
 VarName     => ID;
 
@@ -68,8 +71,8 @@ ExpressionList => Expression { COMMA Expression };
 Expression => UnaryExpr | Expression BinaryOp Expression;
 UnaryExpr  => PrimaryExpr | UnaryOp UnaryExpr;
 
-Statement => Declaration | SimpleStmt | ReturnStmt | BreakStmt | Block | IfStmt | ForStmt ;
-
+Statement => SemColStmt SEMICOLON | Block | IfStmt | ForStmt ;
+SemColStmt => Declaration | SimpleStmt | ReturnStmt | BreakStmt ;
 SimpleStmt => EmptyStmt | ExpressionStmt | Assignment ;
 
 EmptyStmt => empty;
@@ -88,7 +91,7 @@ ReturnStmt => RETURN [ Expression ];
 
 BreakStmt => BREAK;
 
-Start => { TopLevelDecl SEMICOLON } ;
+Start => { TopLevelDecl } ;
 
 UnaryOp => MINUS | LNEG ;
 

@@ -26,6 +26,7 @@ enum Tokens {
     SKIP,
     GOTO,
     IN,
+    STATE,
     AFTER,
     EMPTY,
     BAR,
@@ -61,6 +62,7 @@ inline const char* tokname(int tok) {
         case Tokens::SKIP: return "skip";
         case Tokens::GOTO: return "goto";
         case Tokens::IN: return "in";
+        case Tokens::STATE: return "state";
         case Tokens::AFTER: return "after";
         case Tokens::EMPTY: return "empty";
         case Tokens::BAR: return "|";
@@ -94,6 +96,7 @@ class Scanner {
             file = fptr;
             dirs.state = 0;
             dirs.ateof = "";
+            firstcall  = true;
             dirs.nodecollapse = false;
             prescan();
         }
@@ -117,6 +120,7 @@ class Scanner {
         vector<char> unget_list;                    // Vector storing unget characters for parser convenience
         s_dirs dirs;                                // Struct containing directives provided
         vector<Tokens> unlex_list;                  // SAVE ME AIEEEE
+        bool firstcall;                             // Detect whether this is the first scanner call
         
         void statetrans() 
         {

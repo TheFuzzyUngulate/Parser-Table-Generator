@@ -276,32 +276,6 @@ void CodeGenerator::generate()
 
             case 1:
             {
-                /* ignore symbols that should be ignored */
-                if (!_directives.ignored.empty())
-                {
-                    i = 0;
-                    ofile << "\tdo {\n";
-                    ofile << "\t\tch = scan(sc);\n";
-                    ofile << "\t\tupdate_pos(sc);\n";
-                    ofile << "\t} while (ch != EOF && (";
-                    for (auto gno : _directives.ignored)
-                    {
-                        ofile << "ch == \'" << ch_to_str(gno) << "\'";
-                        if (i == _directives.ignored.size() - 1)
-                            ofile << "));\n";
-                        else ofile << " || ";
-                        i++;
-                    }
-                    ofile << "\tsc->ptr--;\n";
-                    ofile << "\tupdate_pos(sc);\n";
-                }
-
-                /* break state */
-                break;
-            }
-
-            case 2:
-            {
                 /* set initial statement */
                 /*ofile << "\t\tif (scan(sc) == EOF) {\n";
                 ofile << "\t\t\tptg_tokret(P_TOK_END);\n";
@@ -311,12 +285,20 @@ void CodeGenerator::generate()
                 int scount = 0;
                 std::map<string, int> states;
                 states["INITIAL"] = scount++;
+                std::map<string, deque<pair<reglit, string>>> subtokens;
                 std::map<string, deque<pair<reglit, string>>> stategroups;
 
                 for (i = 0; i < _regexes.size(); ++i)
                 {
                     auto item = _regexes[i].first;
                     auto code = _regexes[i].second;
+
+                    if (item.supertok != "") {
+                        if (subtokens.find(item.supertok) == subtokens.end())
+                            subtokens[item.supertok] = {{item, code}};
+                        else subtokens[item.supertok].push_back({item, code});
+                    }
+                    else 
                     if (!item.state.empty()) {
                         if (states.find(item.state) == states.end()) {
                             states[item.state] = scount++;
@@ -356,9 +338,53 @@ void CodeGenerator::generate()
                         /* return if positive, else keep going */
                         ofile << "\t\t\t\tif (load_bool(sc)) {\n";
 
+                        /* handle subtokens */
+                        if (subtokens.find(item.name) != subtokens.end())
+                        {
+                            auto subitems = subtokens[item.name];
+
+                            /* store jump position */
+                            ofile << "\t\t\t\t\tjmp = sc->ptr;\n";
+
+                            for (auto subi : subitems)
+                            {
+                                ofile << "\t\t\t\t\tget_pos(sc);\n";
+
+                                iss = std::istringstream(subi.second);
+
+                                while (std::getline(iss, inner)) {
+                                    ofile << "\t\t\t\t\t" << inner << "\n";
+                                }
+
+                                ofile << "\t\t\t\t\tif (load_bool(sc) && (jmp == sc->ptr)) {\n";
+
+                                /* if it asks you to go to another state, do that */
+                                if (subi.first.newstate != "")
+                                    ofile << "\t\t\t\t\t\tsc->state = " << states[subi.first.newstate] << ";\n";
+
+                                /* if it asks you to save anything, do that */
+                                if (subi.first.pretok != "") {
+                                    ofile << "\t\t\t\t\t\tptgunlex(sc, " << _elementtoks["#" + subi.first.name] << ");\n";
+                                    ofile << "\t\t\t\t\t\tptg_tokret(" << _elementtoks["#" + subi.first.pretok] << ");\n";
+                                } else {
+                                    if (!subi.first.skip)
+                                        ofile << "\t\t\t\t\t\tptg_tokret(" << _elementtoks["#" + subi.first.name] << ");\n";
+                                    else {
+                                        ofile << "\t\t\t\t\t\tupdate_pos(sc);\n";
+                                        ofile << "\t\t\t\t\t\tsc->spt = sc->ptr;\n";
+                                        ofile << "\t\t\t\t\t\tbreak;\n";
+                                    }
+                                }
+                                
+                                ofile << "\t\t\t\t\t}\n";
+                            }
+
+                            ofile << "\t\t\t\t\tsc->ptr = jmp;\n";
+                        }
+
                         /* if it asks you to go to another state, do that */
                         if (item.newstate != "")
-                            ofile << "\t\t\t\t\tsc->state = " << states[stategroup.first] << ";\n";
+                            ofile << "\t\t\t\t\tsc->state = " << states[item.newstate] << ";\n";
 
                         /* if it asks you to save anything, do that */
                         if (item.pretok != "") {
@@ -398,7 +424,7 @@ void CodeGenerator::generate()
                 break;
             }
 
-            case 3:
+            case 2:
             {
                 /* add rule count */
                 ofile << "#define P_RULE_COUNT "
@@ -416,7 +442,7 @@ void CodeGenerator::generate()
                 break;
             }
 
-            case 4:
+            case 3:
             {
                 /* declare transitions */
 
@@ -507,7 +533,7 @@ void CodeGenerator::generate()
                 break;
             }
 
-            case 5:
+            case 4:
             {
                 if (_directives.treeimpl == "union") {
                     ofile << "\t\t\t\tnewast->op.atom = ptg_lexeme(sc);\n";
@@ -522,7 +548,7 @@ void CodeGenerator::generate()
                 break;
             }
 
-            case 6:
+            case 5:
             {
                 /* loop through all rules */
                 for (i = 0; i < _rules.size(); ++i)
@@ -747,7 +773,7 @@ void CodeGenerator::generate()
                 break;
             }
 
-            case 7:
+            case 6:
             {
                 if (_directives.treeimpl == "union")
                 {
