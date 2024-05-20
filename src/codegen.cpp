@@ -173,7 +173,7 @@ void CodeGenerator::generate()
                 if (_directives.treeimpl == "union")
                 {
                     /* declare it as a union */
-                    ofile << "\tunion {\n\t\tchar* atom;\n";
+                    ofile << "\tunion {\n\t\tstruct{\n\t\t\tchar* lex;\n\t\t\tptgenum tok;\n\t\t} atom;\n";
 
                     /* loop through all groupings */
                     for (i = 0; i < _astgroups.size(); ++i) {
@@ -191,7 +191,10 @@ void CodeGenerator::generate()
                                 else 
                                 if (single->getId() == "tok") {
                                     auto singlit = (Literal*)single;
-                                    ofile << "\t\tchar* " << _astgroupnames[i] << ";\n";
+                                    ofile << "\t\tstruct {\n";
+                                    ofile << "\t\t\tchar* lex;\n";
+                                    ofile << "\t\t\tptgenum tok;\n";
+                                    ofile << "\t\t} " << _astgroupnames[i] << ";\n";
                                 }
                             }
                         }
@@ -212,7 +215,10 @@ void CodeGenerator::generate()
                                 else 
                                 if (rhsitem->getId() == "tok") {
                                     auto singlit = (Literal*)rhsitem;
-                                    ofile << "\t\t\tchar* tok" << std::to_string(tokcount++) << ";\n";
+                                    ofile << "\t\t\tstruct {\n";
+                                    ofile << "\t\t\t\tchar* lex;\n";
+                                    ofile << "\t\t\t\tptgenum tok;\n";
+                                    ofile << "\t\t\t} tok" << std::to_string(tokcount++) << ";\n";
                                 }
                             }
 
@@ -224,7 +230,8 @@ void CodeGenerator::generate()
 
                 } else if (_directives.treeimpl == "" || _directives.treeimpl == "list")
                 {
-                    ofile << "\tchar* value;\n";
+                    ofile << "\tchar* lex;\n";
+                    ofile << "\tptgenum tok;\n";
                     ofile << "\tunsigned int count;\n";
                     ofile << "\tstruct ptgast **children;\n";
                 }
@@ -536,10 +543,12 @@ void CodeGenerator::generate()
             case 4:
             {
                 if (_directives.treeimpl == "union") {
-                    ofile << "\t\t\t\tnewast->op.atom = ptg_lexeme(sc);\n";
+                    ofile << "\t\t\t\tnewast->op.atom.tok = a;\n";
+                    ofile << "\t\t\t\tnewast->op.atom.lex = ptg_lexeme(sc);\n";
                 }
                 else if (_directives.treeimpl == "list" || _directives.treeimpl == "") {
-                    ofile << "\t\t\t\tnewast->value = ptg_lexeme(sc);\n";
+                    ofile << "\t\t\t\tnewast->tok = a;\n";
+                    ofile << "\t\t\t\tnewast->lex = ptg_lexeme(sc);\n";
                     ofile << "\t\t\t\tnewast->count = 0;\n";
                     ofile << "\t\t\t\tnewast->children = NULL;\n";
                 }
@@ -608,7 +617,8 @@ void CodeGenerator::generate()
                                         ofile << "\t\t\t\t\t\tnewast->op." << gname << " = newast0;\n";
                                     }
                                     else if (rhsitem->getId() == "tok") {
-                                        ofile << "\t\t\t\t\t\tnewast->op." << gname << " = newast0->op.atom;\n";
+                                        ofile << "\t\t\t\t\t\tnewast->op." << gname << ".lex = newast0->op.atom.lex;\n";
+                                        ofile << "\t\t\t\t\t\tnewast->op." << gname << ".tok = newast0->op.atom.tok;\n";
                                     }
                                 } 
                                 else 
@@ -650,7 +660,9 @@ void CodeGenerator::generate()
                                                         ofile << "node" << nodecount++ << " = newast" << k << ";\n";
                                                     }
                                                     else if (rhsitem2->getId() == "tok") {
-                                                        ofile << "tok" << tokcount++ << " = newast" << k << "->op.atom;\n";
+                                                        ofile << "tok" << tokcount << ".lex = newast" << j << "->op.atom.lex;\n";
+                                                        ofile << "\t\t\t\t\t\t\tnewast->op." << gname << ".";
+                                                        ofile << "tok" << tokcount++ << ".tok = newast" << j << "->op.atom.tok;\n";
                                                     }
                                                 }
 
@@ -672,7 +684,9 @@ void CodeGenerator::generate()
                                                 ofile << "node" << nodecount++ << " = newast" << j << ";\n";
                                             }
                                             else if (rhsitem->getId() == "tok") {
-                                                ofile << "tok" << tokcount++ << " = newast" << j << "->op.atom;\n";
+                                                ofile << "tok" << tokcount << ".lex = newast" << j << "->op.atom.lex;\n";
+                                                ofile << "\t\t\t\t\t\tnewast->op." << gname << ".";
+                                                ofile << "tok" << tokcount++ << ".tok = newast" << j << "->op.atom.tok;\n";
                                             }
                                         }
                                         
@@ -690,14 +704,16 @@ void CodeGenerator::generate()
                                         if (rhsitems[0]->getId() == "lit") {
                                             ofile << "\t\t\t\t\t\tnewast = newast0;\n";
                                         } else if (rhsitems[0]->getId() == "tok") {
-                                            ofile << "\t\t\t\t\t\tnewast->value = newast0->value;\n";
+                                            ofile << "\t\t\t\t\t\tnewast->lex = newast0->lex;\n";
+                                            ofile << "\t\t\t\t\t\tnewast->tok = newast0->tok;\n";
                                             ofile << "\t\t\t\t\t\tnewast->count = 0;\n";
                                             ofile << "\t\t\t\t\t\tnewast->children = NULL;\n";
                                         }
                                     }
                                     else 
                                     {
-                                        ofile << "\t\t\t\t\t\tnewast->value = NULL;\n";
+                                        ofile << "\t\t\t\t\t\tnewast->lex = NULL;\n";
+                                        ofile << "\t\t\t\t\t\tnewast->tok = -1;\n";
                                         ofile << "\t\t\t\t\t\tnewast->count = 1;\n";
                                         ofile << "\t\t\t\t\t\tnewast->children = (ptgast**)malloc(newast->count * sizeof(ptgast*));\n";
                                         ofile << "\t\t\t\t\t\tnewast->children[0] = newast0;\n";
@@ -729,7 +745,8 @@ void CodeGenerator::generate()
                                             {
                                                 ofile << "{\n";
 
-                                                ofile << "\t\t\t\t\t\t\tnewast->value = NULL;\n";
+                                                ofile << "\t\t\t\t\t\t\tnewast->lex = NULL;\n";
+                                                ofile << "\t\t\t\t\t\t\tnewast->tok = -1;\n";
                                                 ofile << "\t\t\t\t\t\t\tnewast->count = " << rhsitems.size() << ";\n";
                                                 ofile << "\t\t\t\t\t\t\tnewast->children = (ptgast**)malloc(newast->count * sizeof(ptgast*));\n";
 
@@ -744,7 +761,8 @@ void CodeGenerator::generate()
                                     } 
                                     else 
                                     {
-                                        ofile << "\t\t\t\t\t\tnewast->value = NULL;\n";
+                                        ofile << "\t\t\t\t\t\tnewast->lex = NULL;\n";
+                                        ofile << "\t\t\t\t\t\tnewast->tok = -1;\n";
                                         ofile << "\t\t\t\t\t\tnewast->count = " << rhsitems.size() << ";\n";
                                         ofile << "\t\t\t\t\t\tnewast->children = (ptgast**)malloc(newast->count * sizeof(ptgast*));\n";
                                         
@@ -812,10 +830,11 @@ void CodeGenerator::generate()
                             if (single->getId() == "tok") 
                             {
                                 ofile << "\t\t\t\tif (ast->op.";
-                                ofile << _astgroupnames[i] << ") {\n";
+                                ofile << _astgroupnames[i] << ".lex) {\n";
                                 ofile << "\t\t\t\t\taddspacing(INDENT + 1);\n";
-                                ofile << "\t\t\t\t\tprintf(\"%s\\n\", ast->op.";
-                                ofile << _astgroupnames[i] << ");\n\t\t\t\t}\n\n";
+                                ofile << "\t\t\t\t\tprintf(\"%s, %s\\n\", ast->op.";
+                                ofile << _astgroupnames[i] << ".lex, ptgenum_string(";
+                                ofile << "ast->op." << _astgroupnames[i] << ".tok));\n\t\t\t\t}\n\n";
                             }
                         }
 
@@ -840,11 +859,13 @@ void CodeGenerator::generate()
                                 {
                                     ofile << "\t\t\t\tif (ast->op.";
                                     ofile << _astgroupnames[i] << ".tok";
-                                    ofile << std::to_string(tokcount) << ") {\n";
+                                    ofile << std::to_string(tokcount) << ".lex) {\n";
                                     ofile << "\t\t\t\t\taddspacing(INDENT + 1);\n";
-                                    ofile << "\t\t\t\t\tprintf(\"%s\\n\", ast->op.";
+                                    ofile << "\t\t\t\t\tprintf(\"%s, %s\\n\", ast->op.";
                                     ofile << _astgroupnames[i] << ".tok";
-                                    ofile << std::to_string(tokcount++) << ");\n\t\t\t\t}\n\n";
+                                    ofile << std::to_string(tokcount) << ".lex, ptgenum_string(";
+                                    ofile << "ast->op." << _astgroupnames[i] << ".tok";
+                                    ofile << std::to_string(tokcount++) << ".tok));\n\t\t\t\t}\n\n";
                                 }
                             }
                         }
@@ -862,8 +883,8 @@ void CodeGenerator::generate()
                     ofile << "\t\taddspacing(INDENT);\n";
                     ofile << "\t\tprintf(ptgast_type(ast));\n\n";
 
-                    ofile << "\t\tif (ast->value) {\n";
-                    ofile << "\t\t\tprintf(\", value: %s.\\n\", ast->value);\n";
+                    ofile << "\t\tif (ast->lex) {\n";
+                    ofile << "\t\t\tprintf(\", lexeme: %s.\\n\", ast->lex);\n";
                     ofile << "\t\t} else printf(\":\\n\");\n\n";
                     
                     ofile << "\t\tfor (int i = 0; i < ast->count; ++i) {\n";

@@ -194,7 +194,6 @@ Tokens Scanner::lex()
 
                         if (ch == '\"') {
                             lexeme.pop_back();
-                            cout << "got string " << lexeme << std::endl;
                             return Tokens::STRING;
                         } else scan_err("broken string found");
                     }

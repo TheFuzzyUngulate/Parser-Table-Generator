@@ -1,0 +1,26 @@
+AND  : "&" ;
+NOT  : "~" ;
+OR   : "\|" ;
+LPAR : "\(" ;
+RPAR : "\)" ;
+AND  : "and" , in ID ;
+OR   : "or"  , in ID ;
+NOT  : "not" , in ID ;
+ID   : "[A-Za-z][A-Za-z0-9]*" ;
+WS   : "[ \t\r\n]" , skip ;
+
+%%
+
+%start expr
+%nodecollapse
+
+expr => term [ OR expr ] ;
+
+term => fact [ AND term ] ;
+
+fact => atom
+    | NOT fact
+    | LPAR expr RPAR
+    ;
+
+atom => ID ;
