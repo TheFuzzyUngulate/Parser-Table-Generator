@@ -61,6 +61,8 @@ typedef struct ptgast {
         PTGASTATOM
     } id;
 /* stop */
+    int lineno;
+    int column;
 } ptgast;
 
 static inline char*

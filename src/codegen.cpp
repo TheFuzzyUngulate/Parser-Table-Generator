@@ -708,6 +708,8 @@ void CodeGenerator::generate()
                                             ofile << "\t\t\t\t\t\tnewast->tok = newast0->tok;\n";
                                             ofile << "\t\t\t\t\t\tnewast->count = 0;\n";
                                             ofile << "\t\t\t\t\t\tnewast->children = NULL;\n";
+                                            ofile << "\t\t\t\t\t\tnewast->lineno = newast0->lineno;\n";
+                                            ofile << "\t\t\t\t\t\tnewast->column = newast0->column;\n";
                                         }
                                     }
                                     else 
@@ -716,7 +718,14 @@ void CodeGenerator::generate()
                                         ofile << "\t\t\t\t\t\tnewast->tok = -1;\n";
                                         ofile << "\t\t\t\t\t\tnewast->count = 1;\n";
                                         ofile << "\t\t\t\t\t\tnewast->children = (ptgast**)malloc(newast->count * sizeof(ptgast*));\n";
-                                        ofile << "\t\t\t\t\t\tnewast->children[0] = newast0;\n";
+                                        ofile << "\t\t\t\t\t\tnewast->children[0] = newast0;\n\n";
+                                        ofile << "\t\t\t\t\t\tif (newast0) {\n";
+                                        ofile << "\t\t\t\t\t\t\tnewast->lineno = newast0->lineno;\n";
+                                        ofile << "\t\t\t\t\t\t\tnewast->column = newast0->column;\n";
+                                        ofile << "\t\t\t\t\t\t} else {\n";
+                                        ofile << "\t\t\t\t\t\t\tnewast->lineno = -1;\n";
+                                        ofile << "\t\t\t\t\t\t\tnewast->column = -1;\n";
+                                        ofile << "\t\t\t\t\t\t}\n\n";
                                     }
                                 } 
                                 else 
@@ -766,13 +775,26 @@ void CodeGenerator::generate()
                                         ofile << "\t\t\t\t\t\tnewast->count = " << rhsitems.size() << ";\n";
                                         ofile << "\t\t\t\t\t\tnewast->children = (ptgast**)malloc(newast->count * sizeof(ptgast*));\n";
                                         
-                                        /* construct newast by adding everything to its suitable place */
+                                        // construct newast by adding everything to its suitable place
                                         for (k = 0; k < rhsitems.size(); ++k) {
                                             ofile << "\t\t\t\t\t\tnewast->children[" << k << "] = newast" << k << ";\n";
                                         }
                                         
                                         ofile << "\n";
                                     }
+
+                                    // get linenumber and column number
+                                    ofile << "\t\t\t\t\t\t";
+                                    for (k = 0; k < rhsitems.size(); ++k) {
+                                        ofile << "if (newast" << k << ") {\n";
+                                        ofile << "\t\t\t\t\t\t\tnewast->lineno = newast" << k << "->lineno;\n";
+                                        ofile << "\t\t\t\t\t\t\tnewast->column = newast" << k << "->column;\n";
+                                        ofile << "\t\t\t\t\t\t} else ";
+                                    }
+                                    ofile << "{\n";
+                                    ofile << "\t\t\t\t\t\t\tnewast->lineno = -1;\n";
+                                    ofile << "\t\t\t\t\t\t\tnewast->column = -1;\n";
+                                    ofile << "\t\t\t\t\t\t}\n\n";
                                 }
                             }
                         }

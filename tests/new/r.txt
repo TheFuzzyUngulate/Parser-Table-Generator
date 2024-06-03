@@ -1,0 +1,98 @@
+%start Start
+%nodecollapse
+
+LPAR:      "\("   ;
+RPAR:      "\)"   ;
+LBRACE:    "{"    ;
+RBRACE:    "}"    ;
+SEMICOLON: ";"    ;
+COMMA:     ","    ;
+PLUS:      "\+"   ;
+MINUS:     "\-"   ;
+MULT:      "\*"   ;
+COMM_STRT: "//" , skip goto COMMENT ;
+DIV:       "/"    ;
+LAND:      "&&"   ;
+LOR:       "\|\|" ;
+LNEG:      "~"    ;
+LEQ:       "=="   ;
+LNEQ:      "~="   ;
+LLT:       "<"    ;
+LGT:       ">"    ;
+ASSIGNOP:  "="    ;
+VAR:       "var"    , in ID ;
+IF:        "if"     , in ID ;
+ELSE:      "else"   , in ID ;
+FUNC:      "func"   , in ID ;
+FOR:       "for"    , in ID ;
+BREAK:     "break"  , in ID ;
+RETURN:    "return" , in ID ;
+ID:        "[A-Za-z][A-Za-z0-9]*" ;
+INT:       "[0-9]+" ;
+STRING:    "\"([ !#-&\(-\[\]-}]|\\[tnr\"\'])*\"" ;
+SPACE:     "[ \t\n\r]" , skip ;
+COMM_END:  "\n", skip state COMMENT goto INITIAL ;
+COMM_IN:   "." , skip state COMMENT ;
+
+%%
+
+Type      => TypeName;
+TypeName  => ID;
+
+Block => LBRACE StatementList RBRACE;
+
+StatementList => { Statement };
+Declaration   => VarDecl;
+TopLevelDecl  => Declaration SEMICOLON | FunctionDecl ;
+
+VarDecl     => VAR VarSpec ;
+VarSpec     => VarName Type;
+VarName     => ID;
+
+FunctionDecl => FUNC FunctionName Signature FunctionBody;
+FunctionName => ID;
+FunctionBody => Block;
+
+Signature      => Parameters [ Result ];
+Result         => Type;
+Parameters     => LPAR [ ParameterList [ COMMA ] ] RPAR;
+ParameterList  => ParameterDecl { COMMA ParameterDecl };
+ParameterDecl  => ID Type;
+
+Operand     => Literal | OperandName | LPAR Expression RPAR;
+Literal     => BasicLit;
+BasicLit    => INT | STRING;
+OperandName => ID;
+PrimaryExpr => Operand | PrimaryExpr Arguments;
+
+Arguments      => LPAR [ ExpressionList [ COMMA ] ] RPAR;
+ExpressionList => Expression { COMMA Expression };
+
+Expression => UnaryExpr | Expression BinaryOp Expression;
+UnaryExpr  => PrimaryExpr | UnaryOp UnaryExpr;
+
+Statement => SemColStmt SEMICOLON | Block | IfStmt | ForStmt ;
+SemColStmt => Declaration | SimpleStmt | ReturnStmt | BreakStmt ;
+SimpleStmt => EmptyStmt | ExpressionStmt | Assignment ;
+
+EmptyStmt => empty;
+
+ExpressionStmt => Expression;
+
+Assignment => Expression ASSIGNOP Expression;
+
+IfStmt => IF Expression Block [ ELSE IfStmt | ELSE Block ];
+
+ForStmt => FOR [ Condition ] Block;
+
+Condition => Expression;
+
+ReturnStmt => RETURN [ Expression ];
+
+BreakStmt => BREAK;
+
+Start => { TopLevelDecl } ;
+
+UnaryOp => MINUS | LNEG ;
+
+BinaryOp => PLUS | MINUS | MULT | DIV | LAND | LOR | LEQ | LGT | LLT | LNEQ ;

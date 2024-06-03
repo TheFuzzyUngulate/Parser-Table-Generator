@@ -339,6 +339,8 @@ ptgast* ptg_parse(ptg_sc *sc)
                 newast = (ptgast*)malloc(sizeof(ptgast));
                 newast->id = PTGASTATOM;
 /* stop */
+                newast->lineno = sc->line;
+                newast->column = sc->column;
 
                 // push new ast
                 ptg_stack_push(&nodes, &newast);
